@@ -1,0 +1,4383 @@
+{
+  "horizons": [
+    5,
+    22,
+    66,
+    126
+  ],
+  "test_years": [
+    2012,
+    2013,
+    2014,
+    2015,
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025,
+    2026
+  ],
+  "seed": 42,
+  "n_trials_per_fold": 30,
+  "target_mode": "ratio",
+  "n_features": 65,
+  "validation_rule": {
+    "criterion": "validation >= 3.0 etkin bagimsiz gozlem",
+    "formula": "n_val >= VAL_MIN_EFFECTIVE * h, pencere yil yil buyutulur",
+    "max_val_years": 6,
+    "derived_lengths": {
+      "5": {
+        "2012": 1,
+        "2013": 1,
+        "2014": 1,
+        "2015": 1,
+        "2016": 1,
+        "2017": 1,
+        "2018": 1,
+        "2019": 1,
+        "2020": 1,
+        "2021": 1,
+        "2022": 1,
+        "2023": 1,
+        "2024": 1,
+        "2025": 1,
+        "2026": 1
+      },
+      "22": {
+        "2012": 1,
+        "2013": 1,
+        "2014": 1,
+        "2015": 1,
+        "2016": 1,
+        "2017": 1,
+        "2018": 1,
+        "2019": 1,
+        "2020": 1,
+        "2021": 1,
+        "2022": 1,
+        "2023": 1,
+        "2024": 1,
+        "2025": 1,
+        "2026": 1
+      },
+      "66": {
+        "2012": 2,
+        "2013": 2,
+        "2014": 2,
+        "2015": 2,
+        "2016": 2,
+        "2017": 2,
+        "2018": 2,
+        "2019": 2,
+        "2020": 2,
+        "2021": 2,
+        "2022": 2,
+        "2023": 2,
+        "2024": 2,
+        "2025": 2,
+        "2026": 2
+      },
+      "126": {
+        "2012": 3,
+        "2013": 3,
+        "2014": 3,
+        "2015": 3,
+        "2016": 3,
+        "2017": 3,
+        "2018": 3,
+        "2019": 3,
+        "2020": 3,
+        "2021": 2,
+        "2022": 2,
+        "2023": 3,
+        "2024": 3,
+        "2025": 3,
+        "2026": 3
+      }
+    }
+  },
+  "optuna_eligibility": {
+    "min_tp_effective": 10.0,
+    "min_val_effective": 3.0,
+    "min_tp_rows": 200,
+    "fallback": "kapasite kurali (CAPACITY_TIERS)"
+  },
+  "search_spaces": {
+    "yuksek": {
+      "n_estimators": [
+        200,
+        800,
+        50
+      ],
+      "max_depth": [
+        3,
+        6
+      ],
+      "learning_rate": [
+        0.02,
+        0.15
+      ],
+      "min_child_weight": [
+        1.0,
+        20.0
+      ],
+      "reg_lambda": [
+        0.1,
+        20.0
+      ],
+      "subsample": [
+        0.6,
+        1.0
+      ],
+      "colsample_bytree": [
+        0.6,
+        1.0
+      ]
+    },
+    "orta": {
+      "n_estimators": [
+        60,
+        300,
+        20
+      ],
+      "max_depth": [
+        2,
+        4
+      ],
+      "learning_rate": [
+        0.02,
+        0.1
+      ],
+      "min_child_weight": [
+        5.0,
+        50.0
+      ],
+      "reg_lambda": [
+        1.0,
+        50.0
+      ],
+      "subsample": [
+        0.6,
+        1.0
+      ],
+      "colsample_bytree": [
+        0.5,
+        0.9
+      ]
+    },
+    "dusuk": {
+      "n_estimators": [
+        30,
+        150,
+        10
+      ],
+      "max_depth": [
+        1,
+        3
+      ],
+      "learning_rate": [
+        0.01,
+        0.08
+      ],
+      "min_child_weight": [
+        20.0,
+        100.0
+      ],
+      "reg_lambda": [
+        5.0,
+        100.0
+      ],
+      "subsample": [
+        0.5,
+        0.9
+      ],
+      "colsample_bytree": [
+        0.4,
+        0.8
+      ]
+    }
+  },
+  "capacity_tiers": [
+    {
+      "min_effective_obs": 100,
+      "name": "yuksek",
+      "params": {
+        "n_estimators": 400,
+        "max_depth": 4,
+        "learning_rate": 0.05,
+        "min_child_weight": 1.0,
+        "reg_lambda": 1.0,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8
+      }
+    },
+    {
+      "min_effective_obs": 30,
+      "name": "orta",
+      "params": {
+        "n_estimators": 150,
+        "max_depth": 3,
+        "learning_rate": 0.05,
+        "min_child_weight": 20.0,
+        "reg_lambda": 10.0,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8
+      }
+    },
+    {
+      "min_effective_obs": 0,
+      "name": "dusuk",
+      "params": {
+        "n_estimators": 80,
+        "max_depth": 2,
+        "learning_rate": 0.05,
+        "min_child_weight": 50.0,
+        "reg_lambda": 25.0,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8
+      }
+    }
+  ],
+  "smearing_source": "validation artiklari",
+  "smearing_shrinkage": {
+    "formula": "S = 1 + w*(S_ham-1), w = n_eff/(n_eff+K)",
+    "K": 10.0,
+    "n_eff": "validation diliminin etkin bagimsiz gozlem sayisi (satir/h)",
+    "rationale": "Katsayi bir ortalama tahminidir; varyansi ~1/n_eff ile olceklenir. Uzun ufuklarda n_eff 3-7'ye dustugu icin olculen katsayi asiri gurultuludur ve tek skalar olarak tum test tahminlerini carpar. K onceden ilan edilmistir, test sonucuna gore ayarlanmaz.",
+    "applied_during_search": true
+  },
+  "smearing_caveat": "Siralama icin kullanilan val_rmse, ayni dilimden hesaplanan smearing katsayisini icerir; val_rmse test RMSE'sinin hafif IYIMSER tahminidir.",
+  "refit_policy": "Secim sonrasi train_proper+validation ile yeniden egitim. Smearing yeniden egitim ONCESI modelin validation artiklarindan; uyumsuzluk muhafazakar yonde.",
+  "aggregate": [
+    {
+      "horizon": 5,
+      "grup": "tumu",
+      "model": "xgboost",
+      "n_folds": 15,
+      "rmse_fold_mean": 0.010927475990540414,
+      "mae_fold_mean": 0.007980241078776077,
+      "r2_oos_fold_mean": 0.2810299943024959
+    },
+    {
+      "horizon": 5,
+      "grup": "tumu",
+      "model": "train_mean",
+      "n_folds": 15,
+      "rmse_fold_mean": 0.013458356262711616,
+      "mae_fold_mean": 0.01003850131697371,
+      "r2_oos_fold_mean": 0.0
+    },
+    {
+      "horizon": 5,
+      "grup": "tumu",
+      "model": "past_vol",
+      "n_folds": 15,
+      "rmse_fold_mean": 0.013317793292048267,
+      "mae_fold_mean": 0.009538438142499514,
+      "r2_oos_fold_mean": -0.07467923971272192
+    },
+    {
+      "horizon": 22,
+      "grup": "tumu",
+      "model": "xgboost",
+      "n_folds": 15,
+      "rmse_fold_mean": 0.008788316500780956,
+      "mae_fold_mean": 0.006594713297155927,
+      "r2_oos_fold_mean": 0.219306644593611
+    },
+    {
+      "horizon": 22,
+      "grup": "tumu",
+      "model": "train_mean",
+      "n_folds": 15,
+      "rmse_fold_mean": 0.011267317775464747,
+      "mae_fold_mean": 0.009044839815105763,
+      "r2_oos_fold_mean": 0.0
+    },
+    {
+      "horizon": 22,
+      "grup": "tumu",
+      "model": "past_vol",
+      "n_folds": 15,
+      "rmse_fold_mean": 0.00949263292038043,
+      "mae_fold_mean": 0.0072278120488609215,
+      "r2_oos_fold_mean": 0.073759040550394
+    },
+    {
+      "horizon": 66,
+      "grup": "tumu",
+      "model": "xgboost",
+      "n_folds": 14,
+      "rmse_fold_mean": 0.00979681624954101,
+      "mae_fold_mean": 0.0078018343675103794,
+      "r2_oos_fold_mean": -0.7696530052577888
+    },
+    {
+      "horizon": 66,
+      "grup": "tumu",
+      "model": "train_mean",
+      "n_folds": 14,
+      "rmse_fold_mean": 0.009292960229523348,
+      "mae_fold_mean": 0.007461190344192861,
+      "r2_oos_fold_mean": 0.0
+    },
+    {
+      "horizon": 66,
+      "grup": "tumu",
+      "model": "past_vol",
+      "n_folds": 14,
+      "rmse_fold_mean": 0.008912876674174465,
+      "mae_fold_mean": 0.007011962716055749,
+      "r2_oos_fold_mean": -0.11829773298973469
+    },
+    {
+      "horizon": 66,
+      "grup": "optuna",
+      "model": "xgboost",
+      "n_folds": 12,
+      "rmse_fold_mean": 0.010862516113297811,
+      "mae_fold_mean": 0.008602501598891078,
+      "r2_oos_fold_mean": -1.05009882833993
+    },
+    {
+      "horizon": 66,
+      "grup": "optuna",
+      "model": "train_mean",
+      "n_folds": 12,
+      "rmse_fold_mean": 0.0088532799584276,
+      "mae_fold_mean": 0.006756234797505654,
+      "r2_oos_fold_mean": 0.0
+    },
+    {
+      "horizon": 66,
+      "grup": "optuna",
+      "model": "past_vol",
+      "n_folds": 12,
+      "rmse_fold_mean": 0.00982884886422516,
+      "mae_fold_mean": 0.007690002016751795,
+      "r2_oos_fold_mean": -0.2883906322713778
+    },
+    {
+      "horizon": 66,
+      "grup": "kapasite_kurali",
+      "model": "xgboost",
+      "n_folds": 2,
+      "rmse_fold_mean": 0.0034026170670001985,
+      "mae_fold_mean": 0.0029978309792261957,
+      "r2_oos_fold_mean": 0.9130219332350586
+    },
+    {
+      "horizon": 66,
+      "grup": "kapasite_kurali",
+      "model": "train_mean",
+      "n_folds": 2,
+      "rmse_fold_mean": 0.011931041856097824,
+      "mae_fold_mean": 0.0116909236243161,
+      "r2_oos_fold_mean": 0.0
+    },
+    {
+      "horizon": 66,
+      "grup": "kapasite_kurali",
+      "model": "past_vol",
+      "n_folds": 2,
+      "rmse_fold_mean": 0.0034170435338702976,
+      "mae_fold_mean": 0.002943726911879473,
+      "r2_oos_fold_mean": 0.9022596627001237
+    },
+    {
+      "horizon": 126,
+      "grup": "tumu",
+      "model": "xgboost",
+      "n_folds": 14,
+      "rmse_fold_mean": 0.009715237844824453,
+      "mae_fold_mean": 0.00794406874000773,
+      "r2_oos_fold_mean": -0.7444222227709186
+    },
+    {
+      "horizon": 126,
+      "grup": "tumu",
+      "model": "train_mean",
+      "n_folds": 14,
+      "rmse_fold_mean": 0.009041849862876239,
+      "mae_fold_mean": 0.007323057381321072,
+      "r2_oos_fold_mean": 0.0
+    },
+    {
+      "horizon": 126,
+      "grup": "tumu",
+      "model": "past_vol",
+      "n_folds": 14,
+      "rmse_fold_mean": 0.008507621062478569,
+      "mae_fold_mean": 0.006894556706311888,
+      "r2_oos_fold_mean": -0.20700724148335256
+    },
+    {
+      "horizon": 126,
+      "grup": "optuna",
+      "model": "xgboost",
+      "n_folds": 8,
+      "rmse_fold_mean": 0.011404427800395736,
+      "mae_fold_mean": 0.009134415599665468,
+      "r2_oos_fold_mean": -1.3081865502690533
+    },
+    {
+      "horizon": 126,
+      "grup": "optuna",
+      "model": "train_mean",
+      "n_folds": 8,
+      "rmse_fold_mean": 0.009042152711572084,
+      "mae_fold_mean": 0.006346715842899124,
+      "r2_oos_fold_mean": 0.0
+    },
+    {
+      "horizon": 126,
+      "grup": "optuna",
+      "model": "past_vol",
+      "n_folds": 8,
+      "rmse_fold_mean": 0.010680544882426361,
+      "mae_fold_mean": 0.008518417448733629,
+      "r2_oos_fold_mean": -0.49444815721385255
+    },
+    {
+      "horizon": 126,
+      "grup": "kapasite_kurali",
+      "model": "xgboost",
+      "n_folds": 6,
+      "rmse_fold_mean": 0.007462984570729411,
+      "mae_fold_mean": 0.006356939593797412,
+      "r2_oos_fold_mean": 0.007263547226593947
+    },
+    {
+      "horizon": 126,
+      "grup": "kapasite_kurali",
+      "model": "train_mean",
+      "n_folds": 6,
+      "rmse_fold_mean": 0.009041446064615113,
+      "mae_fold_mean": 0.008624846099217003,
+      "r2_oos_fold_mean": 0.0
+    },
+    {
+      "horizon": 126,
+      "grup": "kapasite_kurali",
+      "model": "past_vol",
+      "n_folds": 6,
+      "rmse_fold_mean": 0.005610389302548182,
+      "mae_fold_mean": 0.004729409049749563,
+      "r2_oos_fold_mean": 0.17624731282398085
+    }
+  ],
+  "gains": [
+    {
+      "horizon": 5,
+      "grup": "tumu",
+      "n_folds": 15,
+      "vs_past_vol_%": -17.948298558853992,
+      "vs_train_mean_%": -18.805270292802266,
+      "r2_oos": 0.2810299943024959
+    },
+    {
+      "horizon": 22,
+      "grup": "tumu",
+      "n_folds": 15,
+      "vs_past_vol_%": -7.419610823540079,
+      "vs_train_mean_%": -22.001698399613467,
+      "r2_oos": 0.219306644593611
+    },
+    {
+      "horizon": 66,
+      "grup": "kapasite_kurali",
+      "n_folds": 2,
+      "vs_past_vol_%": -0.42219148591762234,
+      "vs_train_mean_%": -71.48097284344738,
+      "r2_oos": 0.9130219332350586
+    },
+    {
+      "horizon": 66,
+      "grup": "optuna",
+      "n_folds": 12,
+      "vs_past_vol_%": 10.51666643115221,
+      "vs_train_mean_%": 22.69482230659139,
+      "r2_oos": -1.05009882833993
+    },
+    {
+      "horizon": 66,
+      "grup": "tumu",
+      "n_folds": 14,
+      "vs_past_vol_%": 9.91755644872554,
+      "vs_train_mean_%": 5.421910861266066,
+      "r2_oos": -0.7696530052577888
+    },
+    {
+      "horizon": 126,
+      "grup": "kapasite_kurali",
+      "n_folds": 6,
+      "vs_past_vol_%": 33.02079710118866,
+      "vs_train_mean_%": -17.458064590610324,
+      "r2_oos": 0.007263547226593947
+    },
+    {
+      "horizon": 126,
+      "grup": "optuna",
+      "n_folds": 8,
+      "vs_past_vol_%": 6.7775841582805585,
+      "vs_train_mean_%": 26.125140375039546,
+      "r2_oos": -1.3081865502690533
+    },
+    {
+      "horizon": 126,
+      "grup": "tumu",
+      "n_folds": 14,
+      "vs_past_vol_%": 14.194529510392439,
+      "vs_train_mean_%": 7.447458121517703,
+      "r2_oos": -0.7444222227709186
+    }
+  ],
+  "folds": [
+    {
+      "horizon": 5,
+      "fold": 1,
+      "test_year": 2012,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2011",
+      "n_train_proper": 602,
+      "n_val": 235,
+      "n_test": 243,
+      "tp_effective": 120.4,
+      "val_effective": 47.0,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 400,
+        "max_depth": 6,
+        "learning_rate": 0.08741169448864673,
+        "min_child_weight": 6.009974718380312,
+        "reg_lambda": 0.22856175997064762,
+        "subsample": 0.662397808134481,
+        "colsample_bytree": 0.6232334448672797
+      },
+      "val_rmse": 0.010234044417795672,
+      "trial_val_rmse_best": 0.010234044417795672,
+      "trial_val_rmse_median": 0.010578206372704999,
+      "trial_val_rmse_worst": 0.012187393841810678,
+      "selection_signal_pct": 3.2535000999542696,
+      "smearing_raw": 1.05143802197055,
+      "smearing": 1.0424138075897518,
+      "smearing_shrink_w": 0.8246,
+      "smearing_n_eff": 47.0,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.02288655080568846,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.00848764371966387,
+          "mae": 0.006841416481073808,
+          "r2_oos": 0.48864266355316277,
+          "r2": -0.5461107863157406,
+          "sst_own": 0.011322437862501774,
+          "n": 243
+        },
+        "train_mean": {
+          "rmse": 0.011869294225177738,
+          "mae": 0.01073285449466535,
+          "r2_oos": 0.0,
+          "r2": -2.023542787239312,
+          "sst_own": 0.011322437862501774,
+          "n": 243
+        },
+        "past_vol": {
+          "rmse": 0.009116384812276786,
+          "mae": 0.00696441096513711,
+          "r2_oos": 0.4100767584582081,
+          "r2": -0.7836581619885192,
+          "sst_own": 0.011322437862501774,
+          "n": 243
+        }
+      }
+    },
+    {
+      "horizon": 5,
+      "fold": 2,
+      "test_year": 2013,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2012",
+      "n_train_proper": 842,
+      "n_val": 238,
+      "n_test": 243,
+      "tp_effective": 168.4,
+      "val_effective": 47.6,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 250,
+        "max_depth": 4,
+        "learning_rate": 0.031508087832558124,
+        "min_child_weight": 2.1829703793194866,
+        "reg_lambda": 0.21881874056014797,
+        "subsample": 0.6894842495585424,
+        "colsample_bytree": 0.9434579105694232
+      },
+      "val_rmse": 0.007748128549087407,
+      "trial_val_rmse_best": 0.007748128549087407,
+      "trial_val_rmse_median": 0.008033866328138673,
+      "trial_val_rmse_worst": 0.008796900872315163,
+      "selection_signal_pct": 3.5566658366030803,
+      "smearing_raw": 0.9478066936827929,
+      "smearing": 0.9568680315850858,
+      "smearing_shrink_w": 0.8264,
+      "smearing_n_eff": 47.6,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.020730304987363744,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.004906785590981879,
+          "mae": 0.003909677658636053,
+          "r2_oos": 0.8199028876551715,
+          "r2": -0.4826107258122667,
+          "sst_own": 0.003946147355645529,
+          "n": 243
+        },
+        "train_mean": {
+          "rmse": 0.011562285969327695,
+          "mae": 0.010848161315146581,
+          "r2_oos": 0.0,
+          "r2": -7.232284829606483,
+          "sst_own": 0.003946147355645529,
+          "n": 243
+        },
+        "past_vol": {
+          "rmse": 0.005726652048506736,
+          "mae": 0.00444851279116189,
+          "r2_oos": 0.7546906062087386,
+          "r2": -1.019456801067764,
+          "sst_own": 0.003946147355645529,
+          "n": 243
+        }
+      }
+    },
+    {
+      "horizon": 5,
+      "fold": 3,
+      "test_year": 2014,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2013",
+      "n_train_proper": 1085,
+      "n_val": 238,
+      "n_test": 250,
+      "tp_effective": 217.0,
+      "val_effective": 47.6,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 450,
+        "max_depth": 3,
+        "learning_rate": 0.020999276711697237,
+        "min_child_weight": 2.8332279700765506,
+        "reg_lambda": 3.291849854113361,
+        "subsample": 0.7678319112164969,
+        "colsample_bytree": 0.8847911208853647
+      },
+      "val_rmse": 0.004480476132236688,
+      "trial_val_rmse_best": 0.004480476132236688,
+      "trial_val_rmse_median": 0.004709317367509557,
+      "trial_val_rmse_worst": 0.005360248861408914,
+      "selection_signal_pct": 4.8593292278767635,
+      "smearing_raw": 1.0466404716031514,
+      "smearing": 1.038543167505382,
+      "smearing_shrink_w": 0.8264,
+      "smearing_n_eff": 47.6,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.018777039971114226,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.005884203225806835,
+          "mae": 0.0038743717402280357,
+          "r2_oos": 0.718078336539512,
+          "r2": 0.40791213939707616,
+          "sst_own": 0.01461938755480397,
+          "n": 250
+        },
+        "train_mean": {
+          "rmse": 0.011082135071616914,
+          "mae": 0.00988682350713329,
+          "r2_oos": 0.0,
+          "r2": -1.1001857513724076,
+          "sst_own": 0.01461938755480397,
+          "n": 250
+        },
+        "past_vol": {
+          "rmse": 0.008701175262667461,
+          "mae": 0.005783268670706316,
+          "r2_oos": 0.3835342473020097,
+          "r2": -0.2946925900253856,
+          "sst_own": 0.01461938755480397,
+          "n": 250
+        }
+      }
+    },
+    {
+      "horizon": 5,
+      "fold": 4,
+      "test_year": 2015,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2014",
+      "n_train_proper": 1328,
+      "n_val": 245,
+      "n_test": 252,
+      "tp_effective": 265.6,
+      "val_effective": 49.0,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 500,
+        "max_depth": 4,
+        "learning_rate": 0.038632715533014866,
+        "min_child_weight": 5.731812525069487,
+        "reg_lambda": 1.2104193822867495,
+        "subsample": 0.6436120918447003,
+        "colsample_bytree": 0.9383630770096758
+      },
+      "val_rmse": 0.005649486881592353,
+      "trial_val_rmse_best": 0.005649486881592353,
+      "trial_val_rmse_median": 0.005923835416116139,
+      "trial_val_rmse_worst": 0.006259584109713316,
+      "selection_signal_pct": 4.631265307901772,
+      "smearing_raw": 0.9607252650675006,
+      "smearing": 0.9673819998018225,
+      "smearing_shrink_w": 0.8305,
+      "smearing_n_eff": 49.0,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.01745825458798936,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.01386129207046265,
+          "mae": 0.010013752834582198,
+          "r2_oos": 0.09510918358777842,
+          "r2": -0.2978093397025552,
+          "sst_own": 0.03730757964223772,
+          "n": 252
+        },
+        "train_mean": {
+          "rmse": 0.014571545753423705,
+          "mae": 0.010574428849130403,
+          "r2_oos": 0.0,
+          "r2": -0.4342165001167835,
+          "sst_own": 0.03730757964223772,
+          "n": 252
+        },
+        "past_vol": {
+          "rmse": 0.015897019811092428,
+          "mae": 0.012160003622751216,
+          "r2_oos": -0.19020064790028823,
+          "r2": -0.7070054076682792,
+          "sst_own": 0.03730757964223772,
+          "n": 252
+        }
+      }
+    },
+    {
+      "horizon": 5,
+      "fold": 5,
+      "test_year": 2016,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2015",
+      "n_train_proper": 1578,
+      "n_val": 247,
+      "n_test": 250,
+      "tp_effective": 315.6,
+      "val_effective": 49.4,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 200,
+        "max_depth": 3,
+        "learning_rate": 0.020266944129488464,
+        "min_child_weight": 2.758844791733734,
+        "reg_lambda": 3.2766474592909005,
+        "subsample": 0.7476819356963897,
+        "colsample_bytree": 0.7297558601527953
+      },
+      "val_rmse": 0.01276503867816529,
+      "trial_val_rmse_best": 0.01276503867816529,
+      "trial_val_rmse_median": 0.013189294037225668,
+      "trial_val_rmse_worst": 0.014062102105795853,
+      "selection_signal_pct": 3.216664651367633,
+      "smearing_raw": 1.152512586167499,
+      "smearing": 1.126837066610681,
+      "smearing_shrink_w": 0.8316,
+      "smearing_n_eff": 49.4,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.0185171049762089,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.011522730811647869,
+          "mae": 0.009186430635388425,
+          "r2_oos": 0.4039507343949924,
+          "r2": 0.2512853476487108,
+          "sst_own": 0.044333754168137764,
+          "n": 250
+        },
+        "train_mean": {
+          "rmse": 0.01492499992508262,
+          "mae": 0.010748330269853742,
+          "r2_oos": 0.0,
+          "r2": -0.25612880604981836,
+          "sst_own": 0.044333754168137764,
+          "n": 250
+        },
+        "past_vol": {
+          "rmse": 0.014853764839260916,
+          "mae": 0.011474626737650965,
+          "r2_oos": 0.009522959902576456,
+          "r2": -0.24416674179733477,
+          "sst_own": 0.044333754168137764,
+          "n": 250
+        }
+      }
+    },
+    {
+      "horizon": 5,
+      "fold": 6,
+      "test_year": 2017,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2016",
+      "n_train_proper": 1830,
+      "n_val": 245,
+      "n_test": 251,
+      "tp_effective": 366.0,
+      "val_effective": 49.0,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 300,
+        "max_depth": 3,
+        "learning_rate": 0.025337996880029436,
+        "min_child_weight": 8.23575720541854,
+        "reg_lambda": 10.52883801531131,
+        "subsample": 0.7775006517332933,
+        "colsample_bytree": 0.942299890642938
+      },
+      "val_rmse": 0.011125933693711273,
+      "trial_val_rmse_best": 0.011125933693711273,
+      "trial_val_rmse_median": 0.011445173565043695,
+      "trial_val_rmse_worst": 0.012596332797620713,
+      "selection_signal_pct": 2.7892968989780718,
+      "smearing_raw": 1.1110690119128044,
+      "smearing": 1.0922437556563969,
+      "smearing_shrink_w": 0.8305,
+      "smearing_n_eff": 49.0,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.019349991956961476,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.006386835488567235,
+          "mae": 0.005426150280428409,
+          "r2_oos": 0.37464247361352565,
+          "r2": -0.16712849669636487,
+          "sst_own": 0.008772563249072263,
+          "n": 251
+        },
+        "train_mean": {
+          "rmse": 0.008076469163464058,
+          "mae": 0.006944908612881124,
+          "r2_oos": 0.0,
+          "r2": -0.8663379706012733,
+          "sst_own": 0.008772563249072263,
+          "n": 251
+        },
+        "past_vol": {
+          "rmse": 0.009007097860357981,
+          "mae": 0.007264337474907329,
+          "r2_oos": -0.24373164390855662,
+          "r2": -1.321223592264881,
+          "sst_own": 0.008772563249072263,
+          "n": 251
+        }
+      }
+    },
+    {
+      "horizon": 5,
+      "fold": 7,
+      "test_year": 2018,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2017",
+      "n_train_proper": 2080,
+      "n_val": 246,
+      "n_test": 251,
+      "tp_effective": 416.0,
+      "val_effective": 49.2,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 200,
+        "max_depth": 5,
+        "learning_rate": 0.027819526841969353,
+        "min_child_weight": 3.4841643308001506,
+        "reg_lambda": 10.374337397703437,
+        "subsample": 0.7745502436392577,
+        "colsample_bytree": 0.7082137862797586
+      },
+      "val_rmse": 0.006298241803626938,
+      "trial_val_rmse_best": 0.006298241803626938,
+      "trial_val_rmse_median": 0.006478654703219145,
+      "trial_val_rmse_worst": 0.00734255065447653,
+      "selection_signal_pct": 2.784727815522601,
+      "smearing_raw": 1.0641279718714962,
+      "smearing": 1.0532955441905003,
+      "smearing_shrink_w": 0.8311,
+      "smearing_n_eff": 49.2,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.0187972594004855,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.009085416602702416,
+          "mae": 0.006561533461291456,
+          "r2_oos": 0.1941679178060437,
+          "r2": 0.16363535725786282,
+          "sst_own": 0.02477238090563056,
+          "n": 251
+        },
+        "train_mean": {
+          "rmse": 0.010120980063241915,
+          "mae": 0.007749362293021681,
+          "r2_oos": 0.0,
+          "r2": -0.037889482465196744,
+          "sst_own": 0.02477238090563056,
+          "n": 251
+        },
+        "past_vol": {
+          "rmse": 0.010840181904204507,
+          "mae": 0.00742473636552403,
+          "r2_oos": -0.14717058136400185,
+          "r2": -0.1906362809911828,
+          "sst_own": 0.02477238090563056,
+          "n": 251
+        }
+      }
+    },
+    {
+      "horizon": 5,
+      "fold": 8,
+      "test_year": 2019,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2018",
+      "n_train_proper": 2331,
+      "n_val": 246,
+      "n_test": 252,
+      "tp_effective": 466.2,
+      "val_effective": 49.2,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 250,
+        "max_depth": 3,
+        "learning_rate": 0.021908197340907744,
+        "min_child_weight": 2.6501137707458966,
+        "reg_lambda": 0.7840758945457351,
+        "subsample": 0.7085396127095583,
+        "colsample_bytree": 0.9314950036607718
+      },
+      "val_rmse": 0.007974559998356633,
+      "trial_val_rmse_best": 0.007974559998356633,
+      "trial_val_rmse_median": 0.00825349230839747,
+      "trial_val_rmse_worst": 0.009114155091769422,
+      "selection_signal_pct": 3.3795670925511065,
+      "smearing_raw": 1.2450313490484362,
+      "smearing": 1.20364091846593,
+      "smearing_shrink_w": 0.8311,
+      "smearing_n_eff": 49.2,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.018595171215277373,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.012792495240261511,
+          "mae": 0.009542245581949996,
+          "r2_oos": -0.2962351502159808,
+          "r2": -0.3187557118871114,
+          "sst_own": 0.03127135610882781,
+          "n": 252
+        },
+        "train_mean": {
+          "rmse": 0.01123604233859608,
+          "mae": 0.00796277393343482,
+          "r2_oos": 0.0,
+          "r2": -0.017373824238123836,
+          "sst_own": 0.03127135610882781,
+          "n": 252
+        },
+        "past_vol": {
+          "rmse": 0.015028673204948538,
+          "mae": 0.009440612835102403,
+          "r2_oos": -0.7890173311988844,
+          "r2": -0.8200994038700911,
+          "sst_own": 0.03127135610882781,
+          "n": 252
+        }
+      }
+    },
+    {
+      "horizon": 5,
+      "fold": 9,
+      "test_year": 2020,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2019",
+      "n_train_proper": 2582,
+      "n_val": 247,
+      "n_test": 253,
+      "tp_effective": 516.4,
+      "val_effective": 49.4,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 550,
+        "max_depth": 5,
+        "learning_rate": 0.14106990203000438,
+        "min_child_weight": 16.328176997790177,
+        "reg_lambda": 3.518656707714989,
+        "subsample": 0.8163775632702192,
+        "colsample_bytree": 0.7031707810405968
+      },
+      "val_rmse": 0.01161504939347163,
+      "trial_val_rmse_best": 0.01161504939347163,
+      "trial_val_rmse_median": 0.011911030248281248,
+      "trial_val_rmse_worst": 0.01257867637585036,
+      "selection_signal_pct": 2.484930762830751,
+      "smearing_raw": 1.059963084010331,
+      "smearing": 1.0498682887223965,
+      "smearing_shrink_w": 0.8316,
+      "smearing_n_eff": 49.4,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.01843896042652374,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.024495007838502888,
+          "mae": 0.015447262858116378,
+          "r2_oos": 0.4124595807990523,
+          "r2": 0.2825029256411442,
+          "sst_own": 0.2115707142286981,
+          "n": 253
+        },
+        "train_mean": {
+          "rmse": 0.03195646326374125,
+          "mae": 0.018107153888696582,
+          "r2_oos": 0.0,
+          "r2": -0.22118759988401915,
+          "sst_own": 0.2115707142286981,
+          "n": 253
+        },
+        "past_vol": {
+          "rmse": 0.030542587124491902,
+          "mae": 0.018106895368540828,
+          "r2_oos": 0.08653013221407013,
+          "r2": -0.11551807540787196,
+          "sst_own": 0.2115707142286981,
+          "n": 253
+        }
+      }
+    },
+    {
+      "horizon": 5,
+      "fold": 10,
+      "test_year": 2021,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2020",
+      "n_train_proper": 2834,
+      "n_val": 248,
+      "n_test": 252,
+      "tp_effective": 566.8,
+      "val_effective": 49.6,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 450,
+        "max_depth": 4,
+        "learning_rate": 0.03817774292927895,
+        "min_child_weight": 1.0460273666595798,
+        "reg_lambda": 6.070630609297899,
+        "subsample": 0.9464322236819167,
+        "colsample_bytree": 0.8995720660915041
+      },
+      "val_rmse": 0.024151777461021724,
+      "trial_val_rmse_best": 0.024151777461021724,
+      "trial_val_rmse_median": 0.024729710870858703,
+      "trial_val_rmse_worst": 0.026473525700775324,
+      "selection_signal_pct": 2.337000270059816,
+      "smearing_raw": 1.0483668038806857,
+      "smearing": 1.0402515683302351,
+      "smearing_shrink_w": 0.8322,
+      "smearing_n_eff": 49.6,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.019554831587895297,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.011153116361929904,
+          "mae": 0.007832534286055627,
+          "r2_oos": -0.06907406504824176,
+          "r2": -0.10248534836298728,
+          "sst_own": 0.028432836047569743,
+          "n": 252
+        },
+        "train_mean": {
+          "rmse": 0.010786792792048853,
+          "mae": 0.008231312499164468,
+          "r2_oos": 0.0,
+          "r2": -0.031252543118458265,
+          "sst_own": 0.028432836047569743,
+          "n": 252
+        },
+        "past_vol": {
+          "rmse": 0.013363006751929887,
+          "mae": 0.009740809145070077,
+          "r2_oos": -0.5347007421947825,
+          "r2": -0.5826640433141548,
+          "sst_own": 0.028432836047569743,
+          "n": 252
+        }
+      }
+    },
+    {
+      "horizon": 5,
+      "fold": 11,
+      "test_year": 2022,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2021",
+      "n_train_proper": 3087,
+      "n_val": 247,
+      "n_test": 251,
+      "tp_effective": 617.4,
+      "val_effective": 49.4,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 350,
+        "max_depth": 5,
+        "learning_rate": 0.051373858568338614,
+        "min_child_weight": 1.7729658242291584,
+        "reg_lambda": 0.12382122725499348,
+        "subsample": 0.7730982444721965,
+        "colsample_bytree": 0.6031694015462562
+      },
+      "val_rmse": 0.010986519822697736,
+      "trial_val_rmse_best": 0.010986519822697736,
+      "trial_val_rmse_median": 0.011387006814276771,
+      "trial_val_rmse_worst": 0.012105473731471939,
+      "selection_signal_pct": 3.517052357226246,
+      "smearing_raw": 1.07545270476634,
+      "smearing": 1.0627502292164512,
+      "smearing_shrink_w": 0.8316,
+      "smearing_n_eff": 49.4,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.019430936277460616,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.01469337468046995,
+          "mae": 0.009911642820653493,
+          "r2_oos": 0.005083490756762732,
+          "r2": -0.3493277829269259,
+          "sst_own": 0.04016052349942921,
+          "n": 251
+        },
+        "train_mean": {
+          "rmse": 0.014730864492697148,
+          "mae": 0.010165012364141964,
+          "r2_oos": 0.0,
+          "r2": -0.35622212556635957,
+          "sst_own": 0.04016052349942921,
+          "n": 251
+        },
+        "past_vol": {
+          "rmse": 0.014399182752889868,
+          "mae": 0.011011710080505797,
+          "r2_oos": 0.044525241405588556,
+          "r2": -0.29583600802591703,
+          "sst_own": 0.04016052349942921,
+          "n": 251
+        }
+      }
+    },
+    {
+      "horizon": 5,
+      "fold": 12,
+      "test_year": 2023,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2022",
+      "n_train_proper": 3339,
+      "n_val": 246,
+      "n_test": 250,
+      "tp_effective": 667.8,
+      "val_effective": 49.2,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 350,
+        "max_depth": 5,
+        "learning_rate": 0.020262810432624234,
+        "min_child_weight": 4.069040661855308,
+        "reg_lambda": 19.497315211782432,
+        "subsample": 0.8907859007152178,
+        "colsample_bytree": 0.6985146610075006
+      },
+      "val_rmse": 0.01160546372850935,
+      "trial_val_rmse_best": 0.01160546372850935,
+      "trial_val_rmse_median": 0.01253006152399164,
+      "trial_val_rmse_worst": 0.01445035893790208,
+      "selection_signal_pct": 7.379036357578441,
+      "smearing_raw": 1.239890123507498,
+      "smearing": 1.1993681431852854,
+      "smearing_shrink_w": 0.8311,
+      "smearing_n_eff": 49.2,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.01993697100282924,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.007592751334840284,
+          "mae": 0.00615517671517378,
+          "r2_oos": -0.0005359734048626663,
+          "r2": -0.03960824007325403,
+          "sst_own": 0.013863364729741064,
+          "n": 250
+        },
+        "train_mean": {
+          "rmse": 0.007590717396014009,
+          "mae": 0.006513247044827208,
+          "r2_oos": 0.0,
+          "r2": -0.039051336190768726,
+          "sst_own": 0.013863364729741064,
+          "n": 250
+        },
+        "past_vol": {
+          "rmse": 0.009478288391488978,
+          "mae": 0.0073843006153765794,
+          "r2_oos": -0.5591725908129621,
+          "r2": -0.6200603638362308,
+          "sst_own": 0.013863364729741064,
+          "n": 250
+        }
+      }
+    },
+    {
+      "horizon": 5,
+      "fold": 13,
+      "test_year": 2024,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2023",
+      "n_train_proper": 3590,
+      "n_val": 245,
+      "n_test": 252,
+      "tp_effective": 718.0,
+      "val_effective": 49.0,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 450,
+        "max_depth": 3,
+        "learning_rate": 0.028937778866098204,
+        "min_child_weight": 3.5758062329004803,
+        "reg_lambda": 0.1023372964457539,
+        "subsample": 0.7006526144549801,
+        "colsample_bytree": 0.9304239081041008
+      },
+      "val_rmse": 0.006887087018889707,
+      "trial_val_rmse_best": 0.006887087018889707,
+      "trial_val_rmse_median": 0.007043497608103887,
+      "trial_val_rmse_worst": 0.00845076513016244,
+      "selection_signal_pct": 2.2206380681413465,
+      "smearing_raw": 1.1003804874835326,
+      "smearing": 1.0833668455371712,
+      "smearing_shrink_w": 0.8305,
+      "smearing_n_eff": 49.0,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.01982972063942961,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.006155241902207833,
+          "mae": 0.005103150062908032,
+          "r2_oos": 0.4333616754963482,
+          "r2": 0.1737547907679976,
+          "sst_own": 0.011555316288366283,
+          "n": 252
+        },
+        "train_mean": {
+          "rmse": 0.00817696526943766,
+          "mae": 0.007010504968790308,
+          "r2_oos": 0.0,
+          "r2": -0.4581527113538497,
+          "sst_own": 0.011555316288366283,
+          "n": 252
+        },
+        "past_vol": {
+          "rmse": 0.007721155909276109,
+          "mae": 0.005833704896249664,
+          "r2_oos": 0.10837889928496891,
+          "r2": -0.3001197255079264,
+          "sst_own": 0.011555316288366283,
+          "n": 252
+        }
+      }
+    },
+    {
+      "horizon": 5,
+      "fold": 14,
+      "test_year": 2025,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2024",
+      "n_train_proper": 3840,
+      "n_val": 247,
+      "n_test": 250,
+      "tp_effective": 768.0,
+      "val_effective": 49.4,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 650,
+        "max_depth": 3,
+        "learning_rate": 0.022885873710809135,
+        "min_child_weight": 7.968780345317021,
+        "reg_lambda": 1.4318215168907855,
+        "subsample": 0.6429110730060451,
+        "colsample_bytree": 0.7223503564864048
+      },
+      "val_rmse": 0.005802421513597922,
+      "trial_val_rmse_best": 0.005802421513597922,
+      "trial_val_rmse_median": 0.005985750983476154,
+      "trial_val_rmse_worst": 0.006715496767891553,
+      "selection_signal_pct": 3.0627647288421893,
+      "smearing_raw": 0.9856517050090656,
+      "smearing": 0.9880672428863273,
+      "smearing_shrink_w": 0.8316,
+      "smearing_n_eff": 49.4,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.019581839333818643,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.008011505215309862,
+          "mae": 0.005825449704821729,
+          "r2_oos": 0.14216122933188202,
+          "r2": -0.020308501185396288,
+          "sst_own": 0.015726668880139634,
+          "n": 250
+        },
+        "train_mean": {
+          "rmse": 0.008649903938502276,
+          "mae": 0.007147746632105031,
+          "r2_oos": 0.0,
+          "r2": -0.18939424991334985,
+          "sst_own": 0.015726668880139634,
+          "n": 250
+        },
+        "past_vol": {
+          "rmse": 0.01105404428383449,
+          "mae": 0.007953181404398635,
+          "r2_oos": -0.6331265200698848,
+          "r2": -0.9424312923521196,
+          "sst_own": 0.015726668880139634,
+          "n": 250
+        }
+      }
+    },
+    {
+      "horizon": 5,
+      "fold": 15,
+      "test_year": 2026,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2025",
+      "n_train_proper": 4092,
+      "n_val": 245,
+      "n_test": 162,
+      "tp_effective": 818.4,
+      "val_effective": 49.0,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 300,
+        "max_depth": 4,
+        "learning_rate": 0.062420493444464376,
+        "min_child_weight": 3.3716416731168044,
+        "reg_lambda": 9.659997846305329,
+        "subsample": 0.8353117386502165,
+        "colsample_bytree": 0.6594965455347387
+      },
+      "val_rmse": 0.007803059655023324,
+      "trial_val_rmse_best": 0.007803059655023324,
+      "trial_val_rmse_median": 0.00806597840422571,
+      "trial_val_rmse_worst": 0.008467150673962556,
+      "selection_signal_pct": 3.2596014522509087,
+      "smearing_raw": 0.9596269527443867,
+      "smearing": 0.9664698421097448,
+      "smearing_shrink_w": 0.8305,
+      "smearing_n_eff": 49.0,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.019388255594687317,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.018883739774751204,
+          "mae": 0.014072821060333763,
+          "r2_oos": 0.49373492967229327,
+          "r2": 0.17039300915568922,
+          "sst_own": 0.06963356427101944,
+          "n": 162
+        },
+        "train_mean": {
+          "rmse": 0.026539884278302353,
+          "mae": 0.017954899081613126,
+          "r2_oos": 0.0,
+          "r2": -0.6386810773006795,
+          "sst_own": 0.06963356427101944,
+          "n": 162
+        },
+        "past_vol": {
+          "rmse": 0.024037684423497404,
+          "mae": 0.01808546116440984,
+          "r2_oos": 0.17967261698237114,
+          "r2": -0.34425495974257503,
+          "sst_own": 0.06963356427101944,
+          "n": 162
+        }
+      }
+    },
+    {
+      "horizon": 22,
+      "fold": 1,
+      "test_year": 2012,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2011",
+      "n_train_proper": 585,
+      "n_val": 218,
+      "n_test": 243,
+      "tp_effective": 26.59,
+      "val_effective": 9.91,
+      "capacity_tier": "dusuk",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 50,
+        "max_depth": 1,
+        "learning_rate": 0.018826002986047252,
+        "min_child_weight": 46.53920936389925,
+        "reg_lambda": 18.23658142455605,
+        "subsample": 0.6164916560792167,
+        "colsample_bytree": 0.6447411578889518
+      },
+      "val_rmse": 0.006847530406853683,
+      "trial_val_rmse_best": 0.006847530406853683,
+      "trial_val_rmse_median": 0.007001240786919875,
+      "trial_val_rmse_worst": 0.007781906859105925,
+      "selection_signal_pct": 2.1954734131321865,
+      "smearing_raw": 1.033354981115313,
+      "smearing": 1.0166013376327356,
+      "smearing_shrink_w": 0.4977,
+      "smearing_n_eff": 9.91,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.024414531511388185,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.005760432848839873,
+          "mae": 0.004888284569180809,
+          "r2_oos": 0.7458266078394769,
+          "r2": -0.783599770906952,
+          "sst_own": 0.0045208396394647585,
+          "n": 243
+        },
+        "train_mean": {
+          "rmse": 0.011425890976253898,
+          "mae": 0.010582121692774244,
+          "r2_oos": 0.0,
+          "r2": -6.0172560382737466,
+          "sst_own": 0.0045208396394647585,
+          "n": 243
+        },
+        "past_vol": {
+          "rmse": 0.005826012711851835,
+          "mae": 0.004793439435189355,
+          "r2_oos": 0.7400063720520058,
+          "r2": -0.8244418556307598,
+          "sst_own": 0.0045208396394647585,
+          "n": 243
+        }
+      }
+    },
+    {
+      "horizon": 22,
+      "fold": 2,
+      "test_year": 2013,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2012",
+      "n_train_proper": 825,
+      "n_val": 221,
+      "n_test": 243,
+      "tp_effective": 37.5,
+      "val_effective": 10.05,
+      "capacity_tier": "orta",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 60,
+        "max_depth": 4,
+        "learning_rate": 0.03033258620436455,
+        "min_child_weight": 22.987528923660832,
+        "reg_lambda": 3.3852267834519774,
+        "subsample": 0.8080272084711243,
+        "colsample_bytree": 0.7186841117373118
+      },
+      "val_rmse": 0.00518521304424511,
+      "trial_val_rmse_best": 0.00518521304424511,
+      "trial_val_rmse_median": 0.005327858347191704,
+      "trial_val_rmse_worst": 0.005772827667355312,
+      "selection_signal_pct": 2.6773478882332014,
+      "smearing_raw": 0.8828809425762311,
+      "smearing": 0.9413076832411498,
+      "smearing_shrink_w": 0.5011,
+      "smearing_n_eff": 10.05,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.0220152021817759,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.003902130167279269,
+          "mae": 0.0031328998543385576,
+          "r2_oos": 0.8882980051802273,
+          "r2": -2.5928637556973744,
+          "sst_own": 0.001029838277567198,
+          "n": 243
+        },
+        "train_mean": {
+          "rmse": 0.011675387083775683,
+          "mae": 0.011492460395965645,
+          "r2_oos": 0.0,
+          "r2": -31.16472330233971,
+          "sst_own": 0.001029838277567198,
+          "n": 243
+        },
+        "past_vol": {
+          "rmse": 0.0031382587746606925,
+          "mae": 0.0026860645087635098,
+          "r2_oos": 0.9277504864127172,
+          "r2": -1.3238856132635868,
+          "sst_own": 0.001029838277567198,
+          "n": 243
+        }
+      }
+    },
+    {
+      "horizon": 22,
+      "fold": 3,
+      "test_year": 2014,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2013",
+      "n_train_proper": 1068,
+      "n_val": 221,
+      "n_test": 250,
+      "tp_effective": 48.55,
+      "val_effective": 10.05,
+      "capacity_tier": "orta",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 60,
+        "max_depth": 3,
+        "learning_rate": 0.02012598379066407,
+        "min_child_weight": 10.930293592275529,
+        "reg_lambda": 30.85454878764052,
+        "subsample": 0.7968284813546551,
+        "colsample_bytree": 0.585173951394105
+      },
+      "val_rmse": 0.0034703736661084524,
+      "trial_val_rmse_best": 0.0034703736661084524,
+      "trial_val_rmse_median": 0.0037259026482194275,
+      "trial_val_rmse_worst": 0.004647798427653787,
+      "selection_signal_pct": 6.858176561137204,
+      "smearing_raw": 0.9176905221381982,
+      "smearing": 0.9587519396656277,
+      "smearing_shrink_w": 0.5011,
+      "smearing_n_eff": 10.05,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.019953023358295907,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.004755260771118753,
+          "mae": 0.002768120573188992,
+          "r2_oos": 0.7818385439976386,
+          "r2": 0.5065611630198508,
+          "sst_own": 0.011456589604767269,
+          "n": 250
+        },
+        "train_mean": {
+          "rmse": 0.01018088018103901,
+          "mae": 0.00971661279259369,
+          "r2_oos": 0.0,
+          "r2": -1.2618057562597502,
+          "sst_own": 0.011456589604767269,
+          "n": 250
+        },
+        "past_vol": {
+          "rmse": 0.004567191109653751,
+          "mae": 0.002847634152658702,
+          "r2_oos": 0.798753786979195,
+          "r2": 0.5448201569640672,
+          "sst_own": 0.011456589604767269,
+          "n": 250
+        }
+      }
+    },
+    {
+      "horizon": 22,
+      "fold": 4,
+      "test_year": 2015,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2014",
+      "n_train_proper": 1311,
+      "n_val": 228,
+      "n_test": 252,
+      "tp_effective": 59.59,
+      "val_effective": 10.36,
+      "capacity_tier": "orta",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 220,
+        "max_depth": 3,
+        "learning_rate": 0.09521543463433191,
+        "min_child_weight": 43.036760506716774,
+        "reg_lambda": 12.231822374746555,
+        "subsample": 0.830083226726109,
+        "colsample_bytree": 0.6031707810405968
+      },
+      "val_rmse": 0.004391217876349302,
+      "trial_val_rmse_best": 0.004391217876349302,
+      "trial_val_rmse_median": 0.0046241581421964635,
+      "trial_val_rmse_worst": 0.0048418968996861746,
+      "selection_signal_pct": 5.037463224311683,
+      "smearing_raw": 0.9349631853984516,
+      "smearing": 0.9669009068545691,
+      "smearing_shrink_w": 0.5089,
+      "smearing_n_eff": 10.36,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.01849249178283279,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.01124266998435767,
+          "mae": 0.008535168397203372,
+          "r2_oos": 0.07878920186620353,
+          "r2": -1.1379603935524965,
+          "sst_own": 0.01489840618521564,
+          "n": 252
+        },
+        "train_mean": {
+          "rmse": 0.011713588217114915,
+          "mae": 0.009051303237476646,
+          "r2_oos": 0.0,
+          "r2": -1.3208156025565598,
+          "sst_own": 0.01489840618521564,
+          "n": 252
+        },
+        "past_vol": {
+          "rmse": 0.011173354950237495,
+          "mae": 0.008703992725853692,
+          "r2_oos": 0.0901133655212687,
+          "r2": -1.1116790978559172,
+          "sst_own": 0.01489840618521564,
+          "n": 252
+        }
+      }
+    },
+    {
+      "horizon": 22,
+      "fold": 5,
+      "test_year": 2016,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2015",
+      "n_train_proper": 1561,
+      "n_val": 230,
+      "n_test": 250,
+      "tp_effective": 70.95,
+      "val_effective": 10.45,
+      "capacity_tier": "orta",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 240,
+        "max_depth": 3,
+        "learning_rate": 0.09340956001230712,
+        "min_child_weight": 35.579123045738804,
+        "reg_lambda": 13.887945836601379,
+        "subsample": 0.7696954281685017,
+        "colsample_bytree": 0.6371197153065266
+      },
+      "val_rmse": 0.009444857727191905,
+      "trial_val_rmse_best": 0.009444857727191905,
+      "trial_val_rmse_median": 0.01012515780847531,
+      "trial_val_rmse_worst": 0.010984013670704411,
+      "selection_signal_pct": 6.7189084274218125,
+      "smearing_raw": 1.2308335307479845,
+      "smearing": 1.1179815823823032,
+      "smearing_shrink_w": 0.5111,
+      "smearing_n_eff": 10.45,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.01943862207388294,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.00911773554344968,
+          "mae": 0.007229597601682863,
+          "r2_oos": 0.29654594424753944,
+          "r2": -0.10298382003932138,
+          "sst_own": 0.018842774465477184,
+          "n": 250
+        },
+        "train_mean": {
+          "rmse": 0.010870990658435534,
+          "mae": 0.007719818936778528,
+          "r2_oos": 0.0,
+          "r2": -0.5679543120403188,
+          "sst_own": 0.018842774465477184,
+          "n": 250
+        },
+        "past_vol": {
+          "rmse": 0.011284450798707003,
+          "mae": 0.00874457959950953,
+          "r2_oos": -0.07751322572670927,
+          "r2": -0.6894915085586673,
+          "sst_own": 0.018842774465477184,
+          "n": 250
+        }
+      }
+    },
+    {
+      "horizon": 22,
+      "fold": 6,
+      "test_year": 2017,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2016",
+      "n_train_proper": 1813,
+      "n_val": 228,
+      "n_test": 251,
+      "tp_effective": 82.41,
+      "val_effective": 10.36,
+      "capacity_tier": "orta",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 260,
+        "max_depth": 3,
+        "learning_rate": 0.08225530522960942,
+        "min_child_weight": 45.54248717215978,
+        "reg_lambda": 3.4540217409791003,
+        "subsample": 0.9597671669816954,
+        "colsample_bytree": 0.568930819483242
+      },
+      "val_rmse": 0.007656826956604132,
+      "trial_val_rmse_best": 0.007656826956604132,
+      "trial_val_rmse_median": 0.008209224340618214,
+      "trial_val_rmse_worst": 0.009354114785606788,
+      "selection_signal_pct": 6.728983897795171,
+      "smearing_raw": 1.0013736546783962,
+      "smearing": 1.0006990921131125,
+      "smearing_shrink_w": 0.5089,
+      "smearing_n_eff": 10.36,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.020321033635651065,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.006044890195226076,
+          "mae": 0.0043395296238061985,
+          "r2_oos": 0.13147305509261897,
+          "r2": -3.962029612024283,
+          "sst_own": 0.001848379752376323,
+          "n": 251
+        },
+        "train_mean": {
+          "rmse": 0.00648629606685567,
+          "mae": 0.005891992195248797,
+          "r2_oos": 0.0,
+          "r2": -4.71315563796749,
+          "sst_own": 0.001848379752376323,
+          "n": 251
+        },
+        "past_vol": {
+          "rmse": 0.0033039774945141367,
+          "mae": 0.0025030881222140645,
+          "r2_oos": 0.7405338997329232,
+          "r2": -0.4823702136022878,
+          "sst_own": 0.001848379752376323,
+          "n": 251
+        }
+      }
+    },
+    {
+      "horizon": 22,
+      "fold": 7,
+      "test_year": 2018,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2017",
+      "n_train_proper": 2063,
+      "n_val": 229,
+      "n_test": 251,
+      "tp_effective": 93.77,
+      "val_effective": 10.41,
+      "capacity_tier": "orta",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 60,
+        "max_depth": 4,
+        "learning_rate": 0.03014367607521446,
+        "min_child_weight": 22.519330765747092,
+        "reg_lambda": 41.23092578416284,
+        "subsample": 0.9199113620908143,
+        "colsample_bytree": 0.5159147611350149
+      },
+      "val_rmse": 0.0031305401022426764,
+      "trial_val_rmse_best": 0.0031305401022426764,
+      "trial_val_rmse_median": 0.0034358937015374,
+      "trial_val_rmse_worst": 0.004576054637122466,
+      "selection_signal_pct": 8.887166653557772,
+      "smearing_raw": 0.9084817629068936,
+      "smearing": 0.9533236608144291,
+      "smearing_shrink_w": 0.51,
+      "smearing_n_eff": 10.41,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.019893833933431283,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.006443442793799871,
+          "mae": 0.0050581948495857666,
+          "r2_oos": 0.21941007807913115,
+          "r2": 0.17998410899868267,
+          "sst_own": 0.012708298495965492,
+          "n": 251
+        },
+        "train_mean": {
+          "rmse": 0.007293004930656831,
+          "mae": 0.0062748435031091225,
+          "r2_oos": 0.0,
+          "r2": -0.05050791455701775,
+          "sst_own": 0.012708298495965492,
+          "n": 251
+        },
+        "past_vol": {
+          "rmse": 0.0065399953259382,
+          "mae": 0.005053345023869369,
+          "r2_oos": 0.19584112098000162,
+          "r2": 0.15522473302819229,
+          "sst_own": 0.012708298495965492,
+          "n": 251
+        }
+      }
+    },
+    {
+      "horizon": 22,
+      "fold": 8,
+      "test_year": 2019,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2018",
+      "n_train_proper": 2314,
+      "n_val": 229,
+      "n_test": 252,
+      "tp_effective": 105.18,
+      "val_effective": 10.41,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 400,
+        "max_depth": 6,
+        "learning_rate": 0.08741169448864673,
+        "min_child_weight": 6.009974718380312,
+        "reg_lambda": 0.22856175997064762,
+        "subsample": 0.662397808134481,
+        "colsample_bytree": 0.6232334448672797
+      },
+      "val_rmse": 0.005524823567678234,
+      "trial_val_rmse_best": 0.005524823567678234,
+      "trial_val_rmse_median": 0.00577889042571606,
+      "trial_val_rmse_worst": 0.00624489847554112,
+      "selection_signal_pct": 4.396464361172659,
+      "smearing_raw": 1.1576165963422618,
+      "smearing": 1.0803879745264542,
+      "smearing_shrink_w": 0.51,
+      "smearing_n_eff": 10.41,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.01961542767848343,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.009100995319378363,
+          "mae": 0.007005612047169028,
+          "r2_oos": -0.4372945149086167,
+          "r2": -0.4793319655031001,
+          "sst_own": 0.014109534350084097,
+          "n": 252
+        },
+        "train_mean": {
+          "rmse": 0.007591297418188237,
+          "mae": 0.006250313170969793,
+          "r2_oos": 0.0,
+          "r2": -0.029247624727181343,
+          "sst_own": 0.014109534350084097,
+          "n": 252
+        },
+        "past_vol": {
+          "rmse": 0.010255124362707884,
+          "mae": 0.007658927656852282,
+          "r2_oos": -0.8249452885174089,
+          "r2": -0.8783206034636037,
+          "sst_own": 0.014109534350084097,
+          "n": 252
+        }
+      }
+    },
+    {
+      "horizon": 22,
+      "fold": 9,
+      "test_year": 2020,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2019",
+      "n_train_proper": 2565,
+      "n_val": 230,
+      "n_test": 253,
+      "tp_effective": 116.59,
+      "val_effective": 10.45,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 350,
+        "max_depth": 3,
+        "learning_rate": 0.020172176834470736,
+        "min_child_weight": 3.406337335998288,
+        "reg_lambda": 1.2221866541252373,
+        "subsample": 0.7281272798971883,
+        "colsample_bytree": 0.8978583353867213
+      },
+      "val_rmse": 0.009269777868641542,
+      "trial_val_rmse_best": 0.009269777868641542,
+      "trial_val_rmse_median": 0.009499337478140635,
+      "trial_val_rmse_worst": 0.010097037095859388,
+      "selection_signal_pct": 2.416585472695783,
+      "smearing_raw": 1.0510457391048522,
+      "smearing": 1.026090044431369,
+      "smearing_shrink_w": 0.5111,
+      "smearing_n_eff": 10.45,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.019454829073145562,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.02204756571158655,
+          "mae": 0.014608210838644367,
+          "r2_oos": 0.49178864893918395,
+          "r2": 0.29602633788583965,
+          "sst_own": 0.17469698162252903,
+          "n": 253
+        },
+        "train_mean": {
+          "rmse": 0.03092704777341426,
+          "mae": 0.01909967188913073,
+          "r2_oos": 0.0,
+          "r2": -0.38519861991417437,
+          "sst_own": 0.17469698162252903,
+          "n": 253
+        },
+        "past_vol": {
+          "rmse": 0.02495142739882379,
+          "mae": 0.01689488771070748,
+          "r2_oos": 0.3491006162196597,
+          "r2": 0.09837507188448613,
+          "sst_own": 0.17469698162252903,
+          "n": 253
+        }
+      }
+    },
+    {
+      "horizon": 22,
+      "fold": 10,
+      "test_year": 2021,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2020",
+      "n_train_proper": 2817,
+      "n_val": 231,
+      "n_test": 252,
+      "tp_effective": 128.05,
+      "val_effective": 10.5,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 300,
+        "max_depth": 3,
+        "learning_rate": 0.027898194118497158,
+        "min_child_weight": 4.0424418146799574,
+        "reg_lambda": 0.24003203366677797,
+        "subsample": 0.6861264807475209,
+        "colsample_bytree": 0.9599050527240224
+      },
+      "val_rmse": 0.023099956594173746,
+      "trial_val_rmse_best": 0.023099956594173746,
+      "trial_val_rmse_median": 0.023960235000902122,
+      "trial_val_rmse_worst": 0.025366432907635992,
+      "selection_signal_pct": 3.5904422752781247,
+      "smearing_raw": 1.2433283832284419,
+      "smearing": 1.1246316109218848,
+      "smearing_shrink_w": 0.5122,
+      "smearing_n_eff": 10.5,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.020916620267610493,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.009795795130841103,
+          "mae": 0.008343227209863337,
+          "r2_oos": -0.7192366167094364,
+          "r2": -0.8355524249350808,
+          "sst_own": 0.013173862776868724,
+          "n": 252
+        },
+        "train_mean": {
+          "rmse": 0.007470881839001275,
+          "mae": 0.00640135096600245,
+          "r2_oos": 0.0,
+          "r2": -0.06765549726847331,
+          "sst_own": 0.013173862776868724,
+          "n": 252
+        },
+        "past_vol": {
+          "rmse": 0.01148033066408873,
+          "mae": 0.009360445962208756,
+          "r2_oos": -1.3613755327615982,
+          "r2": -1.52113556866819,
+          "sst_own": 0.013173862776868724,
+          "n": 252
+        }
+      }
+    },
+    {
+      "horizon": 22,
+      "fold": 11,
+      "test_year": 2022,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2021",
+      "n_train_proper": 3070,
+      "n_val": 230,
+      "n_test": 251,
+      "tp_effective": 139.55,
+      "val_effective": 10.45,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 350,
+        "max_depth": 3,
+        "learning_rate": 0.027794791031750175,
+        "min_child_weight": 2.1058083755443104,
+        "reg_lambda": 18.65409720488931,
+        "subsample": 0.6650335194628292,
+        "colsample_bytree": 0.7065916059622793
+      },
+      "val_rmse": 0.008498240629526393,
+      "trial_val_rmse_best": 0.008498240629526393,
+      "trial_val_rmse_median": 0.008798349047451071,
+      "trial_val_rmse_worst": 0.009747187613592107,
+      "selection_signal_pct": 3.410962855714628,
+      "smearing_raw": 1.0733118301962112,
+      "smearing": 1.0374704909891745,
+      "smearing_shrink_w": 0.5111,
+      "smearing_n_eff": 10.45,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.02077660612764008,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.01072081666365121,
+          "mae": 0.0067769135046129554,
+          "r2_oos": 0.18716693343013036,
+          "r2": -0.3801735890728244,
+          "sst_own": 0.020902380412322744,
+          "n": 251
+        },
+        "train_mean": {
+          "rmse": 0.011891241186900027,
+          "mae": 0.008416560332664358,
+          "r2_oos": 0.0,
+          "r2": -0.6979791372133939,
+          "sst_own": 0.020902380412322744,
+          "n": 251
+        },
+        "past_vol": {
+          "rmse": 0.012302746530422539,
+          "mae": 0.008339714601329425,
+          "r2_oos": -0.07040906207783082,
+          "r2": -0.8175322556923135,
+          "sst_own": 0.020902380412322744,
+          "n": 251
+        }
+      }
+    },
+    {
+      "horizon": 22,
+      "fold": 12,
+      "test_year": 2023,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2022",
+      "n_train_proper": 3322,
+      "n_val": 229,
+      "n_test": 250,
+      "tp_effective": 151.0,
+      "val_effective": 10.41,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 300,
+        "max_depth": 4,
+        "learning_rate": 0.025070028171771713,
+        "min_child_weight": 1.202324943611535,
+        "reg_lambda": 4.80379467562914,
+        "subsample": 0.8021530881580936,
+        "colsample_bytree": 0.8721323406338342
+      },
+      "val_rmse": 0.011958160085192503,
+      "trial_val_rmse_best": 0.011958160085192503,
+      "trial_val_rmse_median": 0.01297525806793444,
+      "trial_val_rmse_worst": 0.020307291635087665,
+      "selection_signal_pct": 7.838749544839307,
+      "smearing_raw": 1.130877691698054,
+      "smearing": 1.0667505376366466,
+      "smearing_shrink_w": 0.51,
+      "smearing_n_eff": 10.41,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.021262322357463892,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.00578727388306929,
+          "mae": 0.004792999375572952,
+          "r2_oos": -0.3524888770236827,
+          "r2": -0.5610809634908789,
+          "sst_own": 0.005363677442257721,
+          "n": 250
+        },
+        "train_mean": {
+          "rmse": 0.00497630722516561,
+          "mae": 0.0038001363569967117,
+          "r2_oos": 0.0,
+          "r2": -0.154228319367941,
+          "sst_own": 0.005363677442257721,
+          "n": 250
+        },
+        "past_vol": {
+          "rmse": 0.006250023812707347,
+          "mae": 0.004831795653256006,
+          "r2_oos": -0.5774259259196473,
+          "r2": -0.8207096754016527,
+          "sst_own": 0.005363677442257721,
+          "n": 250
+        }
+      }
+    },
+    {
+      "horizon": 22,
+      "fold": 13,
+      "test_year": 2024,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2023",
+      "n_train_proper": 3573,
+      "n_val": 228,
+      "n_test": 252,
+      "tp_effective": 162.41,
+      "val_effective": 10.36,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 400,
+        "max_depth": 5,
+        "learning_rate": 0.03127538183464694,
+        "min_child_weight": 7.899063126356088,
+        "reg_lambda": 0.19230706991463317,
+        "subsample": 0.6720910323700383,
+        "colsample_bytree": 0.6452800948687071
+      },
+      "val_rmse": 0.005224377790916427,
+      "trial_val_rmse_best": 0.005224377790916427,
+      "trial_val_rmse_median": 0.005587171072444731,
+      "trial_val_rmse_worst": 0.006614788938575815,
+      "selection_signal_pct": 6.493326888048193,
+      "smearing_raw": 1.0000547759654592,
+      "smearing": 1.0000278770538498,
+      "smearing_shrink_w": 0.5089,
+      "smearing_n_eff": 10.36,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.02112732686551213,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.0054280273110519535,
+          "mae": 0.0043929042875596545,
+          "r2_oos": 0.3623868814005784,
+          "r2": -0.36259636612387847,
+          "sst_own": 0.005449006960499638,
+          "n": 252
+        },
+        "train_mean": {
+          "rmse": 0.006797722039364658,
+          "mae": 0.006003081240873899,
+          "r2_oos": 0.0,
+          "r2": -1.1370268684511262,
+          "sst_own": 0.005449006960499638,
+          "n": 252
+        },
+        "past_vol": {
+          "rmse": 0.0048851845145922975,
+          "mae": 0.00395115970779208,
+          "r2_oos": 0.48354184532948796,
+          "r2": -0.10368495296157176,
+          "sst_own": 0.005449006960499638,
+          "n": 252
+        }
+      }
+    },
+    {
+      "horizon": 22,
+      "fold": 14,
+      "test_year": 2025,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2024",
+      "n_train_proper": 3823,
+      "n_val": 230,
+      "n_test": 250,
+      "tp_effective": 173.77,
+      "val_effective": 10.45,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 200,
+        "max_depth": 3,
+        "learning_rate": 0.02647797392294985,
+        "min_child_weight": 10.409177263908424,
+        "reg_lambda": 0.9063603209182395,
+        "subsample": 0.7115094024907318,
+        "colsample_bytree": 0.9385013256327
+      },
+      "val_rmse": 0.004277135915119618,
+      "trial_val_rmse_best": 0.004277135915119618,
+      "trial_val_rmse_median": 0.004556763906870282,
+      "trial_val_rmse_worst": 0.0057263052972764995,
+      "selection_signal_pct": 6.136547722585896,
+      "smearing_raw": 0.9144145937769933,
+      "smearing": 0.9562563479304632,
+      "smearing_shrink_w": 0.5111,
+      "smearing_n_eff": 10.45,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.02087808137001321,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.005749526370007384,
+          "mae": 0.004297324127325162,
+          "r2_oos": 0.06429663262244412,
+          "r2": -0.24562131988718305,
+          "sst_own": 0.00663465150917702,
+          "n": 250
+        },
+        "train_mean": {
+          "rmse": 0.005943783389914285,
+          "mae": 0.005422418844665936,
+          "r2_oos": 0.0,
+          "r2": -0.33121389033601245,
+          "sst_own": 0.00663465150917702,
+          "n": 250
+        },
+        "past_vol": {
+          "rmse": 0.007721920872255916,
+          "mae": 0.005919613755577615,
+          "r2_oos": -0.6878146262633811,
+          "r2": -1.2468422747940981,
+          "sst_own": 0.00663465150917702,
+          "n": 250
+        }
+      }
+    },
+    {
+      "horizon": 22,
+      "fold": 15,
+      "test_year": 2026,
+      "include_in_main": true,
+      "n_val_years": 1,
+      "val_years": "2025",
+      "n_train_proper": 4075,
+      "n_val": 228,
+      "n_test": 145,
+      "tp_effective": 185.23,
+      "val_effective": 10.36,
+      "capacity_tier": "yuksek",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 350,
+        "max_depth": 3,
+        "learning_rate": 0.020172176834470736,
+        "min_child_weight": 3.406337335998288,
+        "reg_lambda": 1.2221866541252373,
+        "subsample": 0.7281272798971883,
+        "colsample_bytree": 0.8978583353867213
+      },
+      "val_rmse": 0.006035658609153427,
+      "trial_val_rmse_best": 0.006035658609153427,
+      "trial_val_rmse_median": 0.006317414987740112,
+      "trial_val_rmse_worst": 0.007207203138511718,
+      "selection_signal_pct": 4.459994778457264,
+      "smearing_raw": 0.984011066385888,
+      "smearing": 0.9918627748571037,
+      "smearing_shrink_w": 0.5089,
+      "smearing_n_eff": 10.36,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.020705119677509633,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.01592818481805727,
+          "mae": 0.012751712597604898,
+          "r2_oos": 0.5507991448507281,
+          "r2": -0.38943377370391596,
+          "sst_own": 0.02647663104062193,
+          "n": 145
+        },
+        "train_mean": {
+          "rmse": 0.023765447645891318,
+          "mae": 0.01954991167133591,
+          "r2_oos": 0.0,
+          "r2": -2.0931236166997045,
+          "sst_own": 0.02647663104062193,
+          "n": 145
+        },
+        "past_vol": {
+          "rmse": 0.018709494484544835,
+          "mae": 0.016128492117131965,
+          "r2_oos": 0.3802277762952265,
+          "r2": -0.917032102115727,
+          "sst_own": 0.02647663104062193,
+          "n": 145
+        }
+      }
+    },
+    {
+      "horizon": 66,
+      "fold": 1,
+      "test_year": 2012,
+      "include_in_main": true,
+      "n_val_years": 2,
+      "val_years": "2010,2011",
+      "n_train_proper": 291,
+      "n_val": 424,
+      "n_test": 243,
+      "tp_effective": 4.41,
+      "val_effective": 6.42,
+      "capacity_tier": "dusuk",
+      "optuna_used": false,
+      "n_trials": 0,
+      "selection_procedure": "kapasite_kurali",
+      "best_params": {
+        "n_estimators": 80,
+        "max_depth": 2,
+        "learning_rate": 0.05,
+        "min_child_weight": 50.0,
+        "reg_lambda": 25.0,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8
+      },
+      "val_rmse": 0.007843909368220296,
+      "trial_val_rmse_best": NaN,
+      "trial_val_rmse_median": NaN,
+      "trial_val_rmse_worst": NaN,
+      "selection_signal_pct": NaN,
+      "smearing_raw": 0.6880667561317143,
+      "smearing": 0.8779892108854676,
+      "smearing_shrink_w": 0.3911,
+      "smearing_n_eff": 6.42,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.025224107653345085,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.004122144059716514,
+          "mae": 0.0036679307915278817,
+          "r2_oos": 0.8740357448230246,
+          "r2": -0.6922361713545175,
+          "sst_own": 0.0024400101360648775,
+          "n": 243
+        },
+        "train_mean": {
+          "rmse": 0.011614472868614488,
+          "mae": 0.011173843834607969,
+          "r2_oos": 0.0,
+          "r2": -12.434256956284818,
+          "sst_own": 0.0024400101360648775,
+          "n": 243
+        },
+        "past_vol": {
+          "rmse": 0.004732705347069779,
+          "mae": 0.004197101090868935,
+          "r2_oos": 0.8339572469130483,
+          "r2": -1.2306610106990639,
+          "sst_own": 0.0024400101360648775,
+          "n": 243
+        }
+      }
+    },
+    {
+      "horizon": 66,
+      "fold": 2,
+      "test_year": 2013,
+      "include_in_main": true,
+      "n_val_years": 2,
+      "val_years": "2011,2012",
+      "n_train_proper": 541,
+      "n_val": 417,
+      "n_test": 243,
+      "tp_effective": 8.2,
+      "val_effective": 6.32,
+      "capacity_tier": "dusuk",
+      "optuna_used": false,
+      "n_trials": 0,
+      "selection_procedure": "kapasite_kurali",
+      "best_params": {
+        "n_estimators": 80,
+        "max_depth": 2,
+        "learning_rate": 0.05,
+        "min_child_weight": 50.0,
+        "reg_lambda": 25.0,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8
+      },
+      "val_rmse": 0.007550002261924643,
+      "trial_val_rmse_best": NaN,
+      "trial_val_rmse_median": NaN,
+      "trial_val_rmse_worst": NaN,
+      "selection_signal_pct": NaN,
+      "smearing_raw": 0.7622029100390999,
+      "smearing": 0.9079281462268382,
+      "smearing_shrink_w": 0.3872,
+      "smearing_n_eff": 6.32,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.02286500656311751,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.002683090074283883,
+          "mae": 0.0023277311669245102,
+          "r2_oos": 0.9520081216470928,
+          "r2": -6.4321637763070445,
+          "sst_own": 0.0002353756366120285,
+          "n": 243
+        },
+        "train_mean": {
+          "rmse": 0.012247610843581159,
+          "mae": 0.01220800341402423,
+          "r2_oos": 0.0,
+          "r2": -153.86294830251893,
+          "sst_own": 0.0002353756366120285,
+          "n": 243
+        },
+        "past_vol": {
+          "rmse": 0.0021013817206708154,
+          "mae": 0.0016903527328900117,
+          "r2_oos": 0.9705620784871991,
+          "r2": -3.5588433173705,
+          "sst_own": 0.0002353756366120285,
+          "n": 243
+        }
+      }
+    },
+    {
+      "horizon": 66,
+      "fold": 3,
+      "test_year": 2014,
+      "include_in_main": true,
+      "n_val_years": 2,
+      "val_years": "2012,2013",
+      "n_train_proper": 781,
+      "n_val": 420,
+      "n_test": 250,
+      "tp_effective": 11.83,
+      "val_effective": 6.36,
+      "capacity_tier": "dusuk",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 70,
+        "max_depth": 3,
+        "learning_rate": 0.017696387965421424,
+        "min_child_weight": 70.31094694130624,
+        "reg_lambda": 11.808289643937993,
+        "subsample": 0.7537828561502161,
+        "colsample_bytree": 0.6847911208853648
+      },
+      "val_rmse": 0.0037559159085845807,
+      "trial_val_rmse_best": 0.0037559159085845807,
+      "trial_val_rmse_median": 0.003899441925835362,
+      "trial_val_rmse_worst": 0.00440577355497928,
+      "selection_signal_pct": 3.6806809789848134,
+      "smearing_raw": 0.9077322808703335,
+      "smearing": 0.964118109227352,
+      "smearing_shrink_w": 0.3889,
+      "smearing_n_eff": 6.36,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.020442396234694772,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.008561861496911764,
+          "mae": 0.006238431968201945,
+          "r2_oos": 0.32216240740433977,
+          "r2": 0.07714126232641172,
+          "sst_own": 0.01985825925999631,
+          "n": 250
+        },
+        "train_mean": {
+          "rmse": 0.010399330306251085,
+          "mae": 0.009620712590471694,
+          "r2_oos": 0.0,
+          "r2": -0.361474706853691,
+          "sst_own": 0.01985825925999631,
+          "n": 250
+        },
+        "past_vol": {
+          "rmse": 0.00851922555934345,
+          "mae": 0.006087815267991634,
+          "r2_oos": 0.3288965231777329,
+          "r2": 0.08630959062491106,
+          "sst_own": 0.01985825925999631,
+          "n": 250
+        }
+      }
+    },
+    {
+      "horizon": 66,
+      "fold": 4,
+      "test_year": 2015,
+      "include_in_main": true,
+      "n_val_years": 2,
+      "val_years": "2013,2014",
+      "n_train_proper": 1024,
+      "n_val": 427,
+      "n_test": 252,
+      "tp_effective": 15.52,
+      "val_effective": 6.47,
+      "capacity_tier": "dusuk",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 70,
+        "max_depth": 1,
+        "learning_rate": 0.030910312708043654,
+        "min_child_weight": 25.091799108588162,
+        "reg_lambda": 55.29073188281503,
+        "subsample": 0.5298202574719083,
+        "colsample_bytree": 0.7947547746402069
+      },
+      "val_rmse": 0.0031114398767446293,
+      "trial_val_rmse_best": 0.0031114398767446293,
+      "trial_val_rmse_median": 0.003164744524146408,
+      "trial_val_rmse_worst": 0.003714131404327342,
+      "selection_signal_pct": 1.684327028455981,
+      "smearing_raw": 1.003917754527643,
+      "smearing": 1.001538989129074,
+      "smearing_shrink_w": 0.3928,
+      "smearing_n_eff": 6.47,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.018838241305343128,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.00827920936750949,
+          "mae": 0.007450605161602421,
+          "r2_oos": 0.4574599026154951,
+          "r2": -1.3821557130349968,
+          "sst_own": 0.007251170634542215,
+          "n": 252
+        },
+        "train_mean": {
+          "rmse": 0.01124017168547034,
+          "mae": 0.00987759955018629,
+          "r2_oos": 0.0,
+          "r2": -3.39074590895488,
+          "sst_own": 0.007251170634542215,
+          "n": 252
+        },
+        "past_vol": {
+          "rmse": 0.008507881391660563,
+          "mae": 0.007680419773695776,
+          "r2_oos": 0.4270760679018043,
+          "r2": -1.5155634110024958,
+          "sst_own": 0.007251170634542215,
+          "n": 252
+        }
+      }
+    },
+    {
+      "horizon": 66,
+      "fold": 5,
+      "test_year": 2016,
+      "include_in_main": true,
+      "n_val_years": 2,
+      "val_years": "2014,2015",
+      "n_train_proper": 1267,
+      "n_val": 436,
+      "n_test": 250,
+      "tp_effective": 19.2,
+      "val_effective": 6.61,
+      "capacity_tier": "dusuk",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 90,
+        "max_depth": 1,
+        "learning_rate": 0.058488822956504705,
+        "min_child_weight": 28.88358701770705,
+        "reg_lambda": 7.393507084108434,
+        "subsample": 0.504749696995747,
+        "colsample_bytree": 0.5603864950608999
+      },
+      "val_rmse": 0.0071393538232911195,
+      "trial_val_rmse_best": 0.0071393538232911195,
+      "trial_val_rmse_median": 0.007495781749424091,
+      "trial_val_rmse_worst": 0.008076530646156922,
+      "selection_signal_pct": 4.755046745596036,
+      "smearing_raw": 1.220645022705366,
+      "smearing": 1.08777484479885,
+      "smearing_shrink_w": 0.3978,
+      "smearing_n_eff": 6.61,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.020136158179263244,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.006513813566186939,
+          "mae": 0.005280781541875153,
+          "r2_oos": -0.08157094473699411,
+          "r2": -0.7381744001562693,
+          "sst_own": 0.006102633770700222,
+          "n": 250
+        },
+        "train_mean": {
+          "rmse": 0.006263366402851864,
+          "mae": 0.004748409815458106,
+          "r2_oos": 0.0,
+          "r2": -0.6070831124064096,
+          "sst_own": 0.006102633770700222,
+          "n": 250
+        },
+        "past_vol": {
+          "rmse": 0.008170152773476136,
+          "mae": 0.006059485246528369,
+          "r2_oos": -0.7015500110152466,
+          "r2": -1.7345322876175429,
+          "sst_own": 0.006102633770700222,
+          "n": 250
+        }
+      }
+    },
+    {
+      "horizon": 66,
+      "fold": 6,
+      "test_year": 2017,
+      "include_in_main": true,
+      "n_val_years": 2,
+      "val_years": "2015,2016",
+      "n_train_proper": 1517,
+      "n_val": 436,
+      "n_test": 251,
+      "tp_effective": 22.98,
+      "val_effective": 6.61,
+      "capacity_tier": "dusuk",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 80,
+        "max_depth": 2,
+        "learning_rate": 0.0323353009544667,
+        "min_child_weight": 20.16624071380243,
+        "reg_lambda": 31.954055501464698,
+        "subsample": 0.8100371790995036,
+        "colsample_bytree": 0.49014356775205625
+      },
+      "val_rmse": 0.007213029068465666,
+      "trial_val_rmse_best": 0.007213029068465666,
+      "trial_val_rmse_median": 0.007519958004734692,
+      "trial_val_rmse_worst": 0.008283463271991793,
+      "selection_signal_pct": 4.08152460526746,
+      "smearing_raw": 1.0781296626590027,
+      "smearing": 1.0310807782110631,
+      "smearing_shrink_w": 0.3978,
+      "smearing_n_eff": 6.61,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.020450687959926207,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.005154689128473686,
+          "mae": 0.0041433597557159595,
+          "r2_oos": 0.32699502118226986,
+          "r2": -6.23986272658475,
+          "sst_own": 0.0009211881598697792,
+          "n": 251
+        },
+        "train_mean": {
+          "rmse": 0.006283380215212356,
+          "mae": 0.0059842121101146865,
+          "r2_oos": 0.0,
+          "r2": -9.75751733561175,
+          "sst_own": 0.0009211881598697792,
+          "n": 251
+        },
+        "past_vol": {
+          "rmse": 0.004344587912579061,
+          "mae": 0.003433192143355996,
+          "r2_oos": 0.5219090765126864,
+          "r2": -4.143071397413407,
+          "sst_own": 0.0009211881598697792,
+          "n": 251
+        }
+      }
+    },
+    {
+      "horizon": 66,
+      "fold": 7,
+      "test_year": 2018,
+      "include_in_main": true,
+      "n_val_years": 2,
+      "val_years": "2016,2017",
+      "n_train_proper": 1769,
+      "n_val": 435,
+      "n_test": 251,
+      "tp_effective": 26.8,
+      "val_effective": 6.59,
+      "capacity_tier": "dusuk",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 120,
+        "max_depth": 2,
+        "learning_rate": 0.061779368231943264,
+        "min_child_weight": 29.846481579038596,
+        "reg_lambda": 62.42810560583018,
+        "subsample": 0.6582213174214643,
+        "colsample_bytree": 0.7370588859587085
+      },
+      "val_rmse": 0.004454132026398469,
+      "trial_val_rmse_best": 0.004454132026398469,
+      "trial_val_rmse_median": 0.004646372999684758,
+      "trial_val_rmse_worst": 0.0060608406900454215,
+      "selection_signal_pct": 4.1374416840691,
+      "smearing_raw": 0.9530708253819831,
+      "smearing": 0.9813569032339384,
+      "smearing_shrink_w": 0.3973,
+      "smearing_n_eff": 6.59,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.019848568791297292,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.005588043692394947,
+          "mae": 0.003892347465794957,
+          "r2_oos": -0.2526079999985207,
+          "r2": -0.2803374292037837,
+          "sst_own": 0.006121655221944902,
+          "n": 251
+        },
+        "train_mean": {
+          "rmse": 0.004992892351642948,
+          "mae": 0.004451510113240366,
+          "r2_oos": 0.0,
+          "r2": -0.022137355984710005,
+          "sst_own": 0.006121655221944902,
+          "n": 251
+        },
+        "past_vol": {
+          "rmse": 0.006371889726565562,
+          "mae": 0.004801752744445231,
+          "r2_oos": -0.6286662511804257,
+          "r2": -0.66472061576309,
+          "sst_own": 0.006121655221944902,
+          "n": 251
+        }
+      }
+    },
+    {
+      "horizon": 66,
+      "fold": 8,
+      "test_year": 2019,
+      "include_in_main": true,
+      "n_val_years": 2,
+      "val_years": "2017,2018",
+      "n_train_proper": 2019,
+      "n_val": 436,
+      "n_test": 252,
+      "tp_effective": 30.59,
+      "val_effective": 6.61,
+      "capacity_tier": "orta",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 60,
+        "max_depth": 3,
+        "learning_rate": 0.02012598379066407,
+        "min_child_weight": 10.930293592275529,
+        "reg_lambda": 30.85454878764052,
+        "subsample": 0.7968284813546551,
+        "colsample_bytree": 0.585173951394105
+      },
+      "val_rmse": 0.0038551871642138694,
+      "trial_val_rmse_best": 0.0038551871642138694,
+      "trial_val_rmse_median": 0.004354483107963711,
+      "trial_val_rmse_worst": 0.006650875943647076,
+      "selection_signal_pct": 11.466250559950561,
+      "smearing_raw": 0.9679397000636454,
+      "smearing": 0.9872460850618151,
+      "smearing_shrink_w": 0.3978,
+      "smearing_n_eff": 6.61,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.019784319888153774,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.013506869860184845,
+          "mae": 0.010674013362615467,
+          "r2_oos": -0.7828880560124676,
+          "r2": -0.8809548462703718,
+          "sst_own": 0.024441710822027906,
+          "n": 252
+        },
+        "train_mean": {
+          "rmse": 0.010115623988303507,
+          "mae": 0.006749208898102141,
+          "r2_oos": 0.0,
+          "r2": -0.05500445747403582,
+          "sst_own": 0.024441710822027906,
+          "n": 252
+        },
+        "past_vol": {
+          "rmse": 0.013363784370055845,
+          "mae": 0.010889943648205393,
+          "r2_oos": -0.7453139651987448,
+          "r2": -0.8413140129763599,
+          "sst_own": 0.024441710822027906,
+          "n": 252
+        }
+      }
+    },
+    {
+      "horizon": 66,
+      "fold": 9,
+      "test_year": 2020,
+      "include_in_main": true,
+      "n_val_years": 2,
+      "val_years": "2018,2019",
+      "n_train_proper": 2270,
+      "n_val": 437,
+      "n_test": 253,
+      "tp_effective": 34.39,
+      "val_effective": 6.62,
+      "capacity_tier": "orta",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 180,
+        "max_depth": 3,
+        "learning_rate": 0.07282521432360169,
+        "min_child_weight": 13.555006239399672,
+        "reg_lambda": 3.8915345066158786,
+        "subsample": 0.9029259064573442,
+        "colsample_bytree": 0.6167158815486562
+      },
+      "val_rmse": 0.006761700291440678,
+      "trial_val_rmse_best": 0.006761700291440678,
+      "trial_val_rmse_median": 0.007086693246797381,
+      "trial_val_rmse_worst": 0.007640400247505519,
+      "selection_signal_pct": 4.585960532489168,
+      "smearing_raw": 1.1420390294786014,
+      "smearing": 1.0565825486619405,
+      "smearing_shrink_w": 0.3984,
+      "smearing_n_eff": 6.62,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.020148335882127204,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.02768127400905882,
+          "mae": 0.020163058073598052,
+          "r2_oos": -0.008066239067658243,
+          "r2": -0.511104700675737,
+          "sst_own": 0.12829156801428201,
+          "n": 253
+        },
+        "train_mean": {
+          "rmse": 0.02757030301162362,
+          "mae": 0.017133198970705338,
+          "r2_oos": 0.0,
+          "r2": -0.49901330102407737,
+          "sst_own": 0.12829156801428201,
+          "n": 253
+        },
+        "past_vol": {
+          "rmse": 0.035535446728380875,
+          "mae": 0.02671304589394074,
+          "r2_oos": -0.6612709869600875,
+          "r2": -1.4902673060585676,
+          "sst_own": 0.12829156801428201,
+          "n": 253
+        }
+      }
+    },
+    {
+      "horizon": 66,
+      "fold": 10,
+      "test_year": 2021,
+      "include_in_main": true,
+      "n_val_years": 2,
+      "val_years": "2019,2020",
+      "n_train_proper": 2521,
+      "n_val": 439,
+      "n_test": 252,
+      "tp_effective": 38.2,
+      "val_effective": 6.65,
+      "capacity_tier": "orta",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 200,
+        "max_depth": 3,
+        "learning_rate": 0.09521543463433191,
+        "min_child_weight": 42.78192738544103,
+        "reg_lambda": 1.0883860031050554,
+        "subsample": 0.8163775632702192,
+        "colsample_bytree": 0.5062379198633825
+      },
+      "val_rmse": 0.023402007542922824,
+      "trial_val_rmse_best": 0.023402007542922824,
+      "trial_val_rmse_median": 0.023966130878098756,
+      "trial_val_rmse_worst": 0.026611744107326123,
+      "selection_signal_pct": 2.3538356610221602,
+      "smearing_raw": 1.4857016383112949,
+      "smearing": 1.1940154860952306,
+      "smearing_shrink_w": 0.3995,
+      "smearing_n_eff": 6.65,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.02139696755481052,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.007345251311287143,
+          "mae": 0.005250207977916756,
+          "r2_oos": -1.7101476509429192,
+          "r2": -1.7106873358397086,
+          "sst_own": 0.005015733264541759,
+          "n": 252
+        },
+        "train_mean": {
+          "rmse": 0.004461800864235401,
+          "mae": 0.0032966294872771493,
+          "r2_oos": 0.0,
+          "r2": -0.000199134868759554,
+          "sst_own": 0.005015733264541759,
+          "n": 252
+        },
+        "past_vol": {
+          "rmse": 0.005546022349987124,
+          "mae": 0.0046732623480947874,
+          "r2_oos": -0.5450511594642087,
+          "r2": -0.5453588330240753,
+          "sst_own": 0.005015733264541759,
+          "n": 252
+        }
+      }
+    },
+    {
+      "horizon": 66,
+      "fold": 11,
+      "test_year": 2022,
+      "include_in_main": true,
+      "n_val_years": 2,
+      "val_years": "2020,2021",
+      "n_train_proper": 2773,
+      "n_val": 439,
+      "n_test": 251,
+      "tp_effective": 42.02,
+      "val_effective": 6.65,
+      "capacity_tier": "orta",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 280,
+        "max_depth": 4,
+        "learning_rate": 0.07155791476443525,
+        "min_child_weight": 13.353621741801621,
+        "reg_lambda": 1.6200831936670417,
+        "subsample": 0.632925898205628,
+        "colsample_bytree": 0.6124315459979708
+      },
+      "val_rmse": 0.020588253836218907,
+      "trial_val_rmse_best": 0.020588253836218907,
+      "trial_val_rmse_median": 0.02143361224196945,
+      "trial_val_rmse_worst": 0.023575232512851887,
+      "selection_signal_pct": 3.9440780966226208,
+      "smearing_raw": 1.2883507344990408,
+      "smearing": 1.1151828684668599,
+      "smearing_shrink_w": 0.3995,
+      "smearing_n_eff": 6.65,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.02120566916311641,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.029307887156370886,
+          "mae": 0.025781072729664494,
+          "r2_oos": -9.414579222411575,
+          "r2": -21.60598803535654,
+          "sst_own": 0.009537163971997676,
+          "n": 251
+        },
+        "train_mean": {
+          "rmse": 0.009081626709820247,
+          "mae": 0.006718984031728078,
+          "r2_oos": 0.0,
+          "r2": -1.1706098299881145,
+          "sst_own": 0.009537163971997676,
+          "n": 251
+        },
+        "past_vol": {
+          "rmse": 0.008590837127697159,
+          "mae": 0.007011640104525135,
+          "r2_oos": 0.10516352712271482,
+          "r2": -0.9423408442593282,
+          "sst_own": 0.009537163971997676,
+          "n": 251
+        }
+      }
+    },
+    {
+      "horizon": 66,
+      "fold": 12,
+      "test_year": 2023,
+      "include_in_main": true,
+      "n_val_years": 2,
+      "val_years": "2021,2022",
+      "n_train_proper": 3026,
+      "n_val": 437,
+      "n_test": 250,
+      "tp_effective": 45.85,
+      "val_effective": 6.62,
+      "capacity_tier": "orta",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 80,
+        "max_depth": 2,
+        "learning_rate": 0.034093316589559094,
+        "min_child_weight": 6.656081109081305,
+        "reg_lambda": 8.245334434731056,
+        "subsample": 0.6976053321822816,
+        "colsample_bytree": 0.8398910677129454
+      },
+      "val_rmse": 0.006174409893336151,
+      "trial_val_rmse_best": 0.006174409893336151,
+      "trial_val_rmse_median": 0.0069045923620434085,
+      "trial_val_rmse_worst": 0.011922808453140879,
+      "selection_signal_pct": 10.575316114551335,
+      "smearing_raw": 1.0852107027417834,
+      "smearing": 1.033944464082187,
+      "smearing_shrink_w": 0.3984,
+      "smearing_n_eff": 6.62,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.021933710261881005,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.005341952068186918,
+          "mae": 0.004418767081749232,
+          "r2_oos": -0.9653474218740783,
+          "r2": -2.543957021538268,
+          "sst_own": 0.0020130359740099316,
+          "n": 250
+        },
+        "train_mean": {
+          "rmse": 0.003810485560252079,
+          "mae": 0.002860292217962362,
+          "r2_oos": 0.0,
+          "r2": -0.803221650327294,
+          "sst_own": 0.0020130359740099316,
+          "n": 250
+        },
+        "past_vol": {
+          "rmse": 0.004956521801312894,
+          "mae": 0.003897224925340347,
+          "r2_oos": -0.6919728935813416,
+          "r2": -2.0510021534727936,
+          "sst_own": 0.0020130359740099316,
+          "n": 250
+        }
+      }
+    },
+    {
+      "horizon": 66,
+      "fold": 13,
+      "test_year": 2024,
+      "include_in_main": true,
+      "n_val_years": 2,
+      "val_years": "2022,2023",
+      "n_train_proper": 3278,
+      "n_val": 435,
+      "n_test": 252,
+      "tp_effective": 49.67,
+      "val_effective": 6.59,
+      "capacity_tier": "orta",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 80,
+        "max_depth": 3,
+        "learning_rate": 0.023823466445083888,
+        "min_child_weight": 9.30107068536731,
+        "reg_lambda": 30.85454878764052,
+        "subsample": 0.7106892265289856,
+        "colsample_bytree": 0.7506069966101463
+      },
+      "val_rmse": 0.006136496464934373,
+      "trial_val_rmse_best": 0.006136496464934373,
+      "trial_val_rmse_median": 0.0069171083250229096,
+      "trial_val_rmse_worst": 0.014220093541015912,
+      "selection_signal_pct": 11.28523399387346,
+      "smearing_raw": 0.9838274234715353,
+      "smearing": 0.9935752778174592,
+      "smearing_shrink_w": 0.3973,
+      "smearing_n_eff": 6.59,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.021681103072365253,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.005667850136035469,
+          "mae": 0.004902293225648603,
+          "r2_oos": 0.19755035360143391,
+          "r2": -1.6919206065674923,
+          "sst_own": 0.003007287927332661,
+          "n": 252
+        },
+        "train_mean": {
+          "rmse": 0.006327169419632945,
+          "mae": 0.005540215703289951,
+          "r2_oos": 0.0,
+          "r2": -2.3546286905963085,
+          "sst_own": 0.003007287927332661,
+          "n": 252
+        },
+        "past_vol": {
+          "rmse": 0.0061246243129793095,
+          "mae": 0.005303502203761687,
+          "r2_oos": 0.06299915817410273,
+          "r2": -2.1432899071020484,
+          "sst_own": 0.003007287927332661,
+          "n": 252
+        }
+      }
+    },
+    {
+      "horizon": 66,
+      "fold": 14,
+      "test_year": 2025,
+      "include_in_main": true,
+      "n_val_years": 2,
+      "val_years": "2023,2024",
+      "n_train_proper": 3529,
+      "n_val": 436,
+      "n_test": 250,
+      "tp_effective": 53.47,
+      "val_effective": 6.61,
+      "capacity_tier": "orta",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 140,
+        "max_depth": 4,
+        "learning_rate": 0.06496385739540578,
+        "min_child_weight": 19.84396665222186,
+        "reg_lambda": 1.841072920573868,
+        "subsample": 0.662397808134481,
+        "colsample_bytree": 0.5232334448672797
+      },
+      "val_rmse": 0.004961916615476591,
+      "trial_val_rmse_best": 0.004961916615476591,
+      "trial_val_rmse_median": 0.005285468535956074,
+      "trial_val_rmse_worst": 0.005951436236106814,
+      "selection_signal_pct": 6.121537159448003,
+      "smearing_raw": 0.8807122696363674,
+      "smearing": 0.9525461218626425,
+      "smearing_shrink_w": 0.3978,
+      "smearing_n_eff": 6.61,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.02147870693351986,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.0074014915669728355,
+          "mae": 0.0050350808423098815,
+          "r2_oos": -0.690146089838485,
+          "r2": -0.764791400476599,
+          "sst_own": 0.007760418228632512,
+          "n": 250
+        },
+        "train_mean": {
+          "rmse": 0.005693208985834801,
+          "mae": 0.004093844081531692,
+          "r2_oos": 0.0,
+          "r2": -0.04416500507671928,
+          "sst_own": 0.007760418228632512,
+          "n": 250
+        },
+        "past_vol": {
+          "rmse": 0.007915212316663934,
+          "mae": 0.005728739901136421,
+          "r2_oos": -0.9329066727455191,
+          "r2": -1.0182735057601495,
+          "sst_own": 0.007760418228632512,
+          "n": 250
+        }
+      }
+    },
+    {
+      "horizon": 66,
+      "fold": 15,
+      "test_year": 2026,
+      "include_in_main": false,
+      "n_val_years": 2,
+      "val_years": "2024,2025",
+      "n_train_proper": 3779,
+      "n_val": 436,
+      "n_test": 101,
+      "tp_effective": 57.26,
+      "val_effective": 6.61,
+      "capacity_tier": "orta",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 220,
+        "max_depth": 3,
+        "learning_rate": 0.07872388332407482,
+        "min_child_weight": 9.819828503693776,
+        "reg_lambda": 49.22695681401979,
+        "subsample": 0.8605474819306238,
+        "colsample_bytree": 0.6181024805797954
+      },
+      "val_rmse": 0.004835887586213561,
+      "trial_val_rmse_best": 0.004835887586213561,
+      "trial_val_rmse_median": 0.005046214183275784,
+      "trial_val_rmse_worst": 0.005830892385308323,
+      "selection_signal_pct": 4.168007726649603,
+      "smearing_raw": 0.8419705181665086,
+      "smearing": 0.9371342572268228,
+      "smearing_shrink_w": 0.3978,
+      "smearing_n_eff": 6.61,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.02132501433364393,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.017787245045723363,
+          "mae": 0.013917178736900434,
+          "r2_oos": 0.42708458110250225,
+          "r2": -6.017607157630282,
+          "sst_own": 0.004553545674501429,
+          "n": 101
+        },
+        "train_mean": {
+          "rmse": 0.023499760322482008,
+          "mae": 0.022520082694685466,
+          "r2_oos": 0.0,
+          "r2": -11.248940988767185,
+          "sst_own": 0.004553545674501429,
+          "n": 101
+        },
+        "past_vol": {
+          "rmse": 0.02376289558600925,
+          "mae": 0.021441863430523893,
+          "r2_oos": -0.022520099776515368,
+          "r2": -11.524788361990872,
+          "sst_own": 0.004553545674501429,
+          "n": 101
+        }
+      }
+    },
+    {
+      "horizon": 126,
+      "fold": 1,
+      "test_year": 2012,
+      "include_in_main": true,
+      "n_val_years": 3,
+      "val_years": "2009,2010,2011",
+      "n_train_proper": 721,
+      "n_val": 0,
+      "n_test": 243,
+      "tp_effective": 5.72,
+      "val_effective": 0.0,
+      "capacity_tier": "dusuk",
+      "optuna_used": false,
+      "n_trials": 0,
+      "selection_procedure": "kapasite_kurali",
+      "best_params": {
+        "n_estimators": 80,
+        "max_depth": 2,
+        "learning_rate": 0.05,
+        "min_child_weight": 50.0,
+        "reg_lambda": 25.0,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8
+      },
+      "val_rmse": NaN,
+      "trial_val_rmse_best": NaN,
+      "trial_val_rmse_median": NaN,
+      "trial_val_rmse_worst": NaN,
+      "selection_signal_pct": NaN,
+      "smearing_raw": 1.0051164928503376,
+      "smearing": 1.0018621864437625,
+      "smearing_shrink_w": 0.364,
+      "smearing_n_eff": 5.72,
+      "smearing_source": "train (validation kurulamadi)",
+      "refit_on": "train (val yok)",
+      "train_mean_target": 0.02419863223952334,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.007484976035676242,
+          "mae": 0.006460985527197696,
+          "r2_oos": 0.4784571775058909,
+          "r2": -9.070225408461882,
+          "sst_own": 0.0013519104039557716,
+          "n": 243
+        },
+        "train_mean": {
+          "rmse": 0.010364430119433908,
+          "mae": 0.010092472164955386,
+          "r2_oos": 0.0,
+          "r2": -18.308530333720825,
+          "sst_own": 0.0013519104039557716,
+          "n": 243
+        },
+        "past_vol": {
+          "rmse": 0.003901276615447174,
+          "mae": 0.003406903883693716,
+          "r2_oos": 0.8583154048221666,
+          "r2": -1.7357213038121504,
+          "sst_own": 0.0013519104039557716,
+          "n": 243
+        }
+      }
+    },
+    {
+      "horizon": 126,
+      "fold": 2,
+      "test_year": 2013,
+      "include_in_main": true,
+      "n_val_years": 3,
+      "val_years": "2010,2011,2012",
+      "n_train_proper": 231,
+      "n_val": 607,
+      "n_test": 243,
+      "tp_effective": 1.83,
+      "val_effective": 4.82,
+      "capacity_tier": "dusuk",
+      "optuna_used": false,
+      "n_trials": 0,
+      "selection_procedure": "kapasite_kurali",
+      "best_params": {
+        "n_estimators": 80,
+        "max_depth": 2,
+        "learning_rate": 0.05,
+        "min_child_weight": 50.0,
+        "reg_lambda": 25.0,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8
+      },
+      "val_rmse": 0.01154999589805819,
+      "trial_val_rmse_best": NaN,
+      "trial_val_rmse_median": NaN,
+      "trial_val_rmse_worst": NaN,
+      "selection_signal_pct": NaN,
+      "smearing_raw": 0.5987704465766812,
+      "smearing": 0.8695520412812241,
+      "smearing_shrink_w": 0.3251,
+      "smearing_n_eff": 4.82,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.022541767403987414,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.0021701790324264517,
+          "mae": 0.0018675451897500782,
+          "r2_oos": 0.9687489407702641,
+          "r2": -4.470947202733532,
+          "sst_own": 0.00020918708891845073,
+          "n": 243
+        },
+        "train_mean": {
+          "rmse": 0.012276178430812013,
+          "mae": 0.012241066319866203,
+          "r2_oos": 0.0,
+          "r2": -174.0643766188838,
+          "sst_own": 0.00020918708891845073,
+          "n": 243
+        },
+        "past_vol": {
+          "rmse": 0.0018919425255237352,
+          "mae": 0.0014869549935655282,
+          "r2_oos": 0.9762485846855422,
+          "r2": -3.158026715841772,
+          "sst_own": 0.00020918708891845073,
+          "n": 243
+        }
+      }
+    },
+    {
+      "horizon": 126,
+      "fold": 3,
+      "test_year": 2014,
+      "include_in_main": true,
+      "n_val_years": 3,
+      "val_years": "2011,2012,2013",
+      "n_train_proper": 481,
+      "n_val": 600,
+      "n_test": 250,
+      "tp_effective": 3.82,
+      "val_effective": 4.76,
+      "capacity_tier": "dusuk",
+      "optuna_used": false,
+      "n_trials": 0,
+      "selection_procedure": "kapasite_kurali",
+      "best_params": {
+        "n_estimators": 80,
+        "max_depth": 2,
+        "learning_rate": 0.05,
+        "min_child_weight": 50.0,
+        "reg_lambda": 25.0,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8
+      },
+      "val_rmse": 0.009524016268409534,
+      "trial_val_rmse_best": NaN,
+      "trial_val_rmse_median": NaN,
+      "trial_val_rmse_worst": NaN,
+      "selection_signal_pct": NaN,
+      "smearing_raw": 0.6660853680429674,
+      "smearing": 0.8922856025945056,
+      "smearing_shrink_w": 0.3226,
+      "smearing_n_eff": 4.76,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.02044217522459941,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.012303682368198265,
+          "mae": 0.009599760008187425,
+          "r2_oos": -0.9149841056586199,
+          "r2": -1.070680864915698,
+          "sst_own": 0.018276669570672338,
+          "n": 250
+        },
+        "train_mean": {
+          "rmse": 0.008891039179363219,
+          "mae": 0.00822916165845496,
+          "r2_oos": 0.0,
+          "r2": -0.0813044655550963,
+          "sst_own": 0.018276669570672338,
+          "n": 250
+        },
+        "past_vol": {
+          "rmse": 0.011743657322213155,
+          "mae": 0.009265491544320386,
+          "r2_oos": -0.744623395975647,
+          "r2": -0.8864690687803642,
+          "sst_own": 0.018276669570672338,
+          "n": 250
+        }
+      }
+    },
+    {
+      "horizon": 126,
+      "fold": 4,
+      "test_year": 2015,
+      "include_in_main": true,
+      "n_val_years": 3,
+      "val_years": "2012,2013,2014",
+      "n_train_proper": 721,
+      "n_val": 610,
+      "n_test": 252,
+      "tp_effective": 5.72,
+      "val_effective": 4.84,
+      "capacity_tier": "dusuk",
+      "optuna_used": false,
+      "n_trials": 0,
+      "selection_procedure": "kapasite_kurali",
+      "best_params": {
+        "n_estimators": 80,
+        "max_depth": 2,
+        "learning_rate": 0.05,
+        "min_child_weight": 50.0,
+        "reg_lambda": 25.0,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8
+      },
+      "val_rmse": 0.00475208991990562,
+      "trial_val_rmse_best": NaN,
+      "trial_val_rmse_median": NaN,
+      "trial_val_rmse_worst": NaN,
+      "selection_signal_pct": NaN,
+      "smearing_raw": 0.7260154621756008,
+      "smearing": 0.9106253646669072,
+      "smearing_shrink_w": 0.3262,
+      "smearing_n_eff": 4.84,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.018504281906817768,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.010772716321368262,
+          "mae": 0.010118859736334609,
+          "r2_oos": 0.07779667727435935,
+          "r2": -12.730310770766115,
+          "sst_own": 0.0021299559461768897,
+          "n": 252
+        },
+        "train_mean": {
+          "rmse": 0.011217908216888652,
+          "mae": 0.010834632371562748,
+          "r2_oos": 0.0,
+          "r2": -13.888593905935144,
+          "sst_own": 0.0021299559461768897,
+          "n": 252
+        },
+        "past_vol": {
+          "rmse": 0.0051850826388381704,
+          "mae": 0.004291794145797461,
+          "r2_oos": 0.7863575251423449,
+          "r2": -2.1808360492145864,
+          "sst_own": 0.0021299559461768897,
+          "n": 252
+        }
+      }
+    },
+    {
+      "horizon": 126,
+      "fold": 5,
+      "test_year": 2016,
+      "include_in_main": true,
+      "n_val_years": 3,
+      "val_years": "2013,2014,2015",
+      "n_train_proper": 964,
+      "n_val": 619,
+      "n_test": 250,
+      "tp_effective": 7.65,
+      "val_effective": 4.91,
+      "capacity_tier": "dusuk",
+      "optuna_used": false,
+      "n_trials": 0,
+      "selection_procedure": "kapasite_kurali",
+      "best_params": {
+        "n_estimators": 80,
+        "max_depth": 2,
+        "learning_rate": 0.05,
+        "min_child_weight": 50.0,
+        "reg_lambda": 25.0,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8
+      },
+      "val_rmse": 0.007478356192236444,
+      "trial_val_rmse_best": NaN,
+      "trial_val_rmse_median": NaN,
+      "trial_val_rmse_worst": NaN,
+      "selection_signal_pct": NaN,
+      "smearing_raw": 1.189463108690685,
+      "smearing": 1.062414935752812,
+      "smearing_shrink_w": 0.3294,
+      "smearing_n_eff": 4.91,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.020015000088382716,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.006203496386741026,
+          "mae": 0.004549536562533519,
+          "r2_oos": -0.8596854750501461,
+          "r2": -1.5865502517169046,
+          "sst_own": 0.003719565026309116,
+          "n": 250
+        },
+        "train_mean": {
+          "rmse": 0.00454900887448199,
+          "mae": 0.003528429134007191,
+          "r2_oos": 0.0,
+          "r2": -0.3908536074613149,
+          "sst_own": 0.003719565026309116,
+          "n": 250
+        },
+        "past_vol": {
+          "rmse": 0.007244196299701882,
+          "mae": 0.006663237855521956,
+          "r2_oos": -1.5359860021468053,
+          "r2": -2.527185279557282,
+          "sst_own": 0.003719565026309116,
+          "n": 250
+        }
+      }
+    },
+    {
+      "horizon": 126,
+      "fold": 6,
+      "test_year": 2017,
+      "include_in_main": true,
+      "n_val_years": 3,
+      "val_years": "2014,2015,2016",
+      "n_train_proper": 1207,
+      "n_val": 626,
+      "n_test": 251,
+      "tp_effective": 9.58,
+      "val_effective": 4.97,
+      "capacity_tier": "dusuk",
+      "optuna_used": false,
+      "n_trials": 0,
+      "selection_procedure": "kapasite_kurali",
+      "best_params": {
+        "n_estimators": 80,
+        "max_depth": 2,
+        "learning_rate": 0.05,
+        "min_child_weight": 50.0,
+        "reg_lambda": 25.0,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8
+      },
+      "val_rmse": 0.00795567803768994,
+      "trial_val_rmse_best": NaN,
+      "trial_val_rmse_median": NaN,
+      "trial_val_rmse_worst": NaN,
+      "selection_signal_pct": NaN,
+      "smearing_raw": 1.4761148061792115,
+      "smearing": 1.158031743726504,
+      "smearing_shrink_w": 0.3319,
+      "smearing_n_eff": 4.97,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.021349462900638376,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.00584285727996622,
+          "mae": 0.005544950538781147,
+          "r2_oos": 0.29324806851781526,
+          "r2": -18.547934830746158,
+          "sst_own": 0.00043835240673249874,
+          "n": 251
+        },
+        "train_mean": {
+          "rmse": 0.006950111566710899,
+          "mae": 0.006823314946455531,
+          "r2_oos": 0.0,
+          "r2": -26.6588346773254,
+          "sst_own": 0.00043835240673249874,
+          "n": 251
+        },
+        "past_vol": {
+          "rmse": 0.0036961804135649786,
+          "mae": 0.0032620718755983313,
+          "r2_oos": 0.7171717604162835,
+          "r2": -6.822699520724995,
+          "sst_own": 0.00043835240673249874,
+          "n": 251
+        }
+      }
+    },
+    {
+      "horizon": 126,
+      "fold": 7,
+      "test_year": 2018,
+      "include_in_main": true,
+      "n_val_years": 3,
+      "val_years": "2015,2016,2017",
+      "n_train_proper": 1457,
+      "n_val": 627,
+      "n_test": 251,
+      "tp_effective": 11.56,
+      "val_effective": 4.98,
+      "capacity_tier": "dusuk",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 90,
+        "max_depth": 2,
+        "learning_rate": 0.016690615339407477,
+        "min_child_weight": 72.64844375192841,
+        "reg_lambda": 11.151672241291598,
+        "subsample": 0.7847552985651038,
+        "colsample_bytree": 0.6693386818617739
+      },
+      "val_rmse": 0.0052492600753478134,
+      "trial_val_rmse_best": 0.0052492600753478134,
+      "trial_val_rmse_median": 0.005392097795552433,
+      "trial_val_rmse_worst": 0.005861812256113203,
+      "selection_signal_pct": 2.649019465530403,
+      "smearing_raw": 1.1384945737434569,
+      "smearing": 1.0460180698130088,
+      "smearing_shrink_w": 0.3323,
+      "smearing_n_eff": 4.98,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.019939797413809926,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.005679438387234541,
+          "mae": 0.005194255881379065,
+          "r2_oos": -2.8162721820814687,
+          "r2": -2.9058867555730297,
+          "sst_own": 0.002072835600633003,
+          "n": 251
+        },
+        "train_mean": {
+          "rmse": 0.0029072723753718007,
+          "mae": 0.0026347927530220197,
+          "r2_oos": 0.0,
+          "r2": -0.023482228000489158,
+          "sst_own": 0.002072835600633003,
+          "n": 251
+        },
+        "past_vol": {
+          "rmse": 0.005001118973035278,
+          "mae": 0.004555216773797072,
+          "r2_oos": -1.959122396997706,
+          "r2": -2.0286091838053597,
+          "sst_own": 0.002072835600633003,
+          "n": 251
+        }
+      }
+    },
+    {
+      "horizon": 126,
+      "fold": 8,
+      "test_year": 2019,
+      "include_in_main": true,
+      "n_val_years": 3,
+      "val_years": "2016,2017,2018",
+      "n_train_proper": 1709,
+      "n_val": 626,
+      "n_test": 252,
+      "tp_effective": 13.56,
+      "val_effective": 4.97,
+      "capacity_tier": "dusuk",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 90,
+        "max_depth": 2,
+        "learning_rate": 0.029892346821904753,
+        "min_child_weight": 22.51301285717876,
+        "reg_lambda": 5.177888447948796,
+        "subsample": 0.8573705295408386,
+        "colsample_bytree": 0.7981098783963183
+      },
+      "val_rmse": 0.003498157356281214,
+      "trial_val_rmse_best": 0.003498157356281214,
+      "trial_val_rmse_median": 0.003871206478269392,
+      "trial_val_rmse_worst": 0.004656460630325887,
+      "selection_signal_pct": 9.63650800034174,
+      "smearing_raw": 0.9535054496910671,
+      "smearing": 0.9845675564722206,
+      "smearing_shrink_w": 0.3319,
+      "smearing_n_eff": 4.97,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.019105152388771158,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.01901786349803971,
+          "mae": 0.012889145445875015,
+          "r2_oos": 0.035964655509988064,
+          "r2": -0.581414129387261,
+          "sst_own": 0.05763394899405162,
+          "n": 252
+        },
+        "train_mean": {
+          "rmse": 0.01936935895031072,
+          "mae": 0.012615104155238508,
+          "r2_oos": 0.0,
+          "r2": -0.6404109438786718,
+          "sst_own": 0.05763394899405162,
+          "n": 252
+        },
+        "past_vol": {
+          "rmse": 0.01710685298424852,
+          "mae": 0.011604401464043021,
+          "r2_oos": 0.21997279266835779,
+          "r2": -0.27956516742994375,
+          "sst_own": 0.05763394899405162,
+          "n": 252
+        }
+      }
+    },
+    {
+      "horizon": 126,
+      "fold": 9,
+      "test_year": 2020,
+      "include_in_main": true,
+      "n_val_years": 3,
+      "val_years": "2017,2018,2019",
+      "n_train_proper": 1959,
+      "n_val": 628,
+      "n_test": 253,
+      "tp_effective": 15.55,
+      "val_effective": 4.98,
+      "capacity_tier": "dusuk",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 70,
+        "max_depth": 1,
+        "learning_rate": 0.030910312708043654,
+        "min_child_weight": 25.091799108588162,
+        "reg_lambda": 55.29073188281503,
+        "subsample": 0.5298202574719083,
+        "colsample_bytree": 0.7947547746402069
+      },
+      "val_rmse": 0.004096447076565995,
+      "trial_val_rmse_best": 0.004096447076565995,
+      "trial_val_rmse_median": 0.00414797946587475,
+      "trial_val_rmse_worst": 0.0042882831371206164,
+      "selection_signal_pct": 1.2423491903156523,
+      "smearing_raw": 1.053928890673941,
+      "smearing": 1.0179382115165438,
+      "smearing_shrink_w": 0.3326,
+      "smearing_n_eff": 4.98,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.0199376405830992,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.024850807169621233,
+          "mae": 0.021722276594006013,
+          "r2_oos": -0.6340870308993403,
+          "r2": -1.550587444728016,
+          "sst_own": 0.061257786875458714,
+          "n": 253
+        },
+        "train_mean": {
+          "rmse": 0.019440297549087226,
+          "mae": 0.011858237994607413,
+          "r2_oos": 0.0,
+          "r2": -0.5608638931087215,
+          "sst_own": 0.061257786875458714,
+          "n": 253
+        },
+        "past_vol": {
+          "rmse": 0.029182917687784762,
+          "mae": 0.02552633481181194,
+          "r2_oos": -1.2534690861760769,
+          "r2": -2.5173585308489446,
+          "sst_own": 0.061257786875458714,
+          "n": 253
+        }
+      }
+    },
+    {
+      "horizon": 126,
+      "fold": 10,
+      "test_year": 2021,
+      "include_in_main": true,
+      "n_val_years": 2,
+      "val_years": "2019,2020",
+      "n_train_proper": 2461,
+      "n_val": 379,
+      "n_test": 252,
+      "tp_effective": 19.53,
+      "val_effective": 3.01,
+      "capacity_tier": "dusuk",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 150,
+        "max_depth": 2,
+        "learning_rate": 0.06490349256389154,
+        "min_child_weight": 70.87596151947392,
+        "reg_lambda": 28.379374504424455,
+        "subsample": 0.6623559118051048,
+        "colsample_bytree": 0.5495910822966339
+      },
+      "val_rmse": 0.019957166373801308,
+      "trial_val_rmse_best": 0.019957166373801308,
+      "trial_val_rmse_median": 0.02013906305728575,
+      "trial_val_rmse_worst": 0.02299728438363895,
+      "selection_signal_pct": 0.903203306762766,
+      "smearing_raw": 1.5800502910766385,
+      "smearing": 1.1341299940927676,
+      "smearing_shrink_w": 0.2312,
+      "smearing_n_eff": 3.01,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.02178309767370686,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.007752299676766136,
+          "mae": 0.005821903894633822,
+          "r2_oos": -0.7170173861867124,
+          "r2": -0.8548122664612097,
+          "sst_own": 0.00816510336059425,
+          "n": 252
+        },
+        "train_mean": {
+          "rmse": 0.005916204892964442,
+          "mae": 0.004482251025138923,
+          "r2_oos": 0.0,
+          "r2": -0.0802524665056088,
+          "sst_own": 0.00816510336059425,
+          "n": 252
+        },
+        "past_vol": {
+          "rmse": 0.00764192672202554,
+          "mae": 0.005410975448090828,
+          "r2_oos": -0.6684735464035922,
+          "r2": -0.8023726638018409,
+          "sst_own": 0.00816510336059425,
+          "n": 252
+        }
+      }
+    },
+    {
+      "horizon": 126,
+      "fold": 11,
+      "test_year": 2022,
+      "include_in_main": true,
+      "n_val_years": 2,
+      "val_years": "2020,2021",
+      "n_train_proper": 2713,
+      "n_val": 379,
+      "n_test": 251,
+      "tp_effective": 21.53,
+      "val_effective": 3.01,
+      "capacity_tier": "dusuk",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 150,
+        "max_depth": 2,
+        "learning_rate": 0.05990287424877138,
+        "min_child_weight": 67.97123655234687,
+        "reg_lambda": 27.248159549043002,
+        "subsample": 0.7983099176207107,
+        "colsample_bytree": 0.556277604820589
+      },
+      "val_rmse": 0.015674853525582226,
+      "trial_val_rmse_best": 0.015674853525582226,
+      "trial_val_rmse_median": 0.01619982776399513,
+      "trial_val_rmse_worst": 0.02304431107344996,
+      "selection_signal_pct": 3.240616172350206,
+      "smearing_raw": 1.1271107650877945,
+      "smearing": 1.0293929102918085,
+      "smearing_shrink_w": 0.2312,
+      "smearing_n_eff": 3.01,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.020854910318079498,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.011340029758935388,
+          "mae": 0.010139409852680626,
+          "r2_oos": -1.5466558127404002,
+          "r2": -4.567731921970759,
+          "sst_own": 0.005797273550644221,
+          "n": 251
+        },
+        "train_mean": {
+          "rmse": 0.007106063234428757,
+          "mae": 0.005235596081473627,
+          "r2_oos": 0.0,
+          "r2": -1.1862914863157128,
+          "sst_own": 0.005797273550644221,
+          "n": 251
+        },
+        "past_vol": {
+          "rmse": 0.008881886281926285,
+          "mae": 0.007966737761713277,
+          "r2_oos": -0.5622562876686263,
+          "r2": -2.4155476211731086,
+          "sst_own": 0.005797273550644221,
+          "n": 251
+        }
+      }
+    },
+    {
+      "horizon": 126,
+      "fold": 12,
+      "test_year": 2023,
+      "include_in_main": true,
+      "n_val_years": 3,
+      "val_years": "2020,2021,2022",
+      "n_train_proper": 2713,
+      "n_val": 630,
+      "n_test": 250,
+      "tp_effective": 21.53,
+      "val_effective": 5.0,
+      "capacity_tier": "dusuk",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 150,
+        "max_depth": 2,
+        "learning_rate": 0.06588357908259104,
+        "min_child_weight": 73.84102189678126,
+        "reg_lambda": 9.914464456755137,
+        "subsample": 0.8548035025179624,
+        "colsample_bytree": 0.5579072393775217
+      },
+      "val_rmse": 0.013741467974338386,
+      "trial_val_rmse_best": 0.013741467974338386,
+      "trial_val_rmse_median": 0.013966033035147186,
+      "trial_val_rmse_worst": 0.01961739881883704,
+      "selection_signal_pct": 1.6079373451548873,
+      "smearing_raw": 1.2170619496752986,
+      "smearing": 1.0723539832250994,
+      "smearing_shrink_w": 0.3333,
+      "smearing_n_eff": 5.0,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.02145088443367317,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.007852373103309091,
+          "mae": 0.006697868033046543,
+          "r2_oos": -4.828814160923406,
+          "r2": -21.01888034017993,
+          "sst_own": 0.0007000783237040402,
+          "n": 250
+        },
+        "train_mean": {
+          "rmse": 0.003252451448624571,
+          "mae": 0.0027889293879271864,
+          "r2_oos": 0.0,
+          "r2": -2.777591759194409,
+          "sst_own": 0.0007000783237040402,
+          "n": 250
+        },
+        "past_vol": {
+          "rmse": 0.002807586077596765,
+          "mae": 0.0023828979939170634,
+          "r2_oos": 0.2548486103873545,
+          "r2": -1.8148777487529917,
+          "sst_own": 0.0007000783237040402,
+          "n": 250
+        }
+      }
+    },
+    {
+      "horizon": 126,
+      "fold": 13,
+      "test_year": 2024,
+      "include_in_main": true,
+      "n_val_years": 3,
+      "val_years": "2021,2022,2023",
+      "n_train_proper": 2966,
+      "n_val": 627,
+      "n_test": 252,
+      "tp_effective": 23.54,
+      "val_effective": 4.98,
+      "capacity_tier": "dusuk",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 90,
+        "max_depth": 1,
+        "learning_rate": 0.016811906831378415,
+        "min_child_weight": 23.652863676818797,
+        "reg_lambda": 39.2654494749132,
+        "subsample": 0.5308462011438297,
+        "colsample_bytree": 0.7076846243377496
+      },
+      "val_rmse": 0.0068718177079237054,
+      "trial_val_rmse_best": 0.0068718177079237054,
+      "trial_val_rmse_median": 0.0070858149029635175,
+      "trial_val_rmse_worst": 0.008388799677744212,
+      "selection_signal_pct": 3.0200788190263266,
+      "smearing_raw": 1.0322548412908605,
+      "smearing": 1.0107174273923527,
+      "smearing_shrink_w": 0.3323,
+      "smearing_n_eff": 4.98,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.022115213454334343,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.003924167738584904,
+          "mae": 0.003373935494867853,
+          "r2_oos": 0.39747866369603213,
+          "r2": -2.4785149493882064,
+          "sst_own": 0.00111558275628548,
+          "n": 252
+        },
+        "train_mean": {
+          "rmse": 0.005055467790107417,
+          "mae": 0.004596829219937153,
+          "r2_oos": 0.0,
+          "r2": -4.7732643473281415,
+          "sst_own": 0.00111558275628548,
+          "n": 252
+        },
+        "past_vol": {
+          "rmse": 0.004062003120555295,
+          "mae": 0.003472875192693277,
+          "r2_oos": 0.3544084907063818,
+          "r2": -2.7271704435426107,
+          "sst_own": 0.00111558275628548,
+          "n": 252
+        }
+      }
+    },
+    {
+      "horizon": 126,
+      "fold": 14,
+      "test_year": 2025,
+      "include_in_main": true,
+      "n_val_years": 3,
+      "val_years": "2022,2023,2024",
+      "n_train_proper": 3218,
+      "n_val": 627,
+      "n_test": 250,
+      "tp_effective": 25.54,
+      "val_effective": 4.98,
+      "capacity_tier": "dusuk",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 70,
+        "max_depth": 1,
+        "learning_rate": 0.030910312708043654,
+        "min_child_weight": 25.091799108588162,
+        "reg_lambda": 55.29073188281503,
+        "subsample": 0.5298202574719083,
+        "colsample_bytree": 0.7947547746402069
+      },
+      "val_rmse": 0.00534968562985502,
+      "trial_val_rmse_best": 0.00534968562985502,
+      "trial_val_rmse_median": 0.005620626920388172,
+      "trial_val_rmse_worst": 0.007289841730749749,
+      "selection_signal_pct": 4.8204816717214145,
+      "smearing_raw": 0.9411476827040728,
+      "smearing": 0.9804449374962658,
+      "smearing_shrink_w": 0.3323,
+      "smearing_n_eff": 4.98,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.02157592546867717,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.010818443070674885,
+          "mae": 0.007236529600834812,
+          "r2_oos": -0.3560891485271187,
+          "r2": -0.5105712747832973,
+          "sst_own": 0.01936994176097773,
+          "n": 250
+        },
+        "train_mean": {
+          "rmse": 0.00929010545168173,
+          "mae": 0.006561986125848163,
+          "r2_oos": 0.0,
+          "r2": -0.11391738251424366,
+          "sst_own": 0.01936994176097773,
+          "n": 250
+        },
+        "past_vol": {
+          "rmse": 0.010760067212238437,
+          "mae": 0.007227900143802557,
+          "r2_oos": -0.34149383422691315,
+          "r2": -0.49431330048103983,
+          "sst_own": 0.01936994176097773,
+          "n": 250
+        }
+      }
+    },
+    {
+      "horizon": 126,
+      "fold": 15,
+      "test_year": 2026,
+      "include_in_main": false,
+      "n_val_years": 3,
+      "val_years": "2023,2024,2025",
+      "n_train_proper": 3469,
+      "n_val": 626,
+      "n_test": 41,
+      "tp_effective": 27.53,
+      "val_effective": 4.97,
+      "capacity_tier": "dusuk",
+      "optuna_used": true,
+      "n_trials": 30,
+      "selection_procedure": "optuna",
+      "best_params": {
+        "n_estimators": 50,
+        "max_depth": 1,
+        "learning_rate": 0.016743675589583066,
+        "min_child_weight": 62.15816880500622,
+        "reg_lambda": 9.684261221326098,
+        "subsample": 0.7067707787950908,
+        "colsample_bytree": 0.532810174360666
+      },
+      "val_rmse": 0.003329986925887716,
+      "trial_val_rmse_best": 0.003329986925887716,
+      "trial_val_rmse_median": 0.0033682307050146793,
+      "trial_val_rmse_worst": 0.005171239317006023,
+      "selection_signal_pct": 1.1354263551491692,
+      "smearing_raw": 0.9611053256731363,
+      "smearing": 0.9870901027950071,
+      "smearing_shrink_w": 0.3319,
+      "smearing_n_eff": 4.97,
+      "smearing_source": "validation",
+      "refit_on": "train_proper+validation",
+      "train_mean_target": 0.021586967555679345,
+      "metrics": {
+        "xgboost": {
+          "rmse": 0.026580119738943548,
+          "mae": 0.026574528932388437,
+          "r2_oos": -0.4307700615117158,
+          "r2": -485.6941881359274,
+          "sst_own": 5.951707270173859e-05,
+          "n": 41
+        },
+        "train_mean": {
+          "rmse": 0.022221430391270534,
+          "mae": 0.022188743378445903,
+          "r2_oos": 0.0,
+          "r2": -339.16240710383505,
+          "sst_own": 5.951707270173859e-05,
+          "n": 41
+        },
+        "past_vol": {
+          "rmse": 0.02714441040574689,
+          "mae": 0.027138147266034855,
+          "r2_oos": -0.4921648448714051,
+          "r2": -506.5783854271777,
+          "sst_own": 5.951707270173859e-05,
+          "n": 41
+        }
+      }
+    }
+  ],
+  "runtime_seconds": 653.78
+}

@@ -1,0 +1,37 @@
+# Pins line endings. The goal is reproducibility: every text file is stored in
+# the repository with LF and checked out with LF on every platform, so that the
+# same commit yields byte-for-byte identical files on any operating system.
+# This matters because the metric CSV/JSON outputs live in the repository; a mix
+# of CRLF and LF would change file checksums and diffs for no reason.
+
+# Default: anything detected as text gets LF.
+* text=auto eol=lf
+
+# --- Explicitly text --------------------------------------------------------
+*.py    text eol=lf
+*.md    text eol=lf
+*.txt   text eol=lf
+*.csv   text eol=lf
+*.json  text eol=lf
+*.cfg   text eol=lf
+*.toml  text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+.gitignore     text eol=lf
+.gitattributes text eol=lf
+
+# --- Explicitly binary (must not be converted) ------------------------------
+# These files are excluded by .gitignore, but if one is ever added by mistake,
+# line-ending conversion would corrupt its contents.
+*.xlsx binary
+*.xls  binary
+*.pt   binary
+*.pth  binary
+*.pkl  binary
+*.joblib binary
+*.h5   binary
+*.onnx binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.pdf  binary

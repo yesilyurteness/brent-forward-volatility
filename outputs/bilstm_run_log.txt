@@ -1,0 +1,175 @@
+=== Attention BiLSTM | ufuklar [5, 22, 66, 126] | 15 fold | 65 ozellik ===
+torch 2.14.0+cpu | CUDA False | deterministik algoritmalar: acik
+Lookback L=20 | ozelliklerin ilk tam-dolu satiri 127 -> ilk sekans satiri 146 (31.07.2008)
+Early stopping YOK: sabit epoch + kosinus lr. Gerekce modul docstring'inde.
+
+--- h=5 ---
+  h=  5 2012 | n= 823 ( 164.6) | yuksek | kayip 0.3643->0.1592->0.1073 (yakinsiyor) | sd_or 2.40 | RMSE 0.021406 | 16.2s
+  h=  5 2013 | n=1066 ( 213.2) | yuksek | kayip 0.4044->0.2249->0.1272 (yakinsiyor) | sd_or 2.98 | RMSE 0.012643 | 20.3s
+  h=  5 2014 | n=1309 ( 261.8) | yuksek | kayip 0.3956->0.1708->0.0975 (yakinsiyor) | sd_or 0.83 | RMSE 0.008661 | 24.6s
+  h=  5 2015 | n=1559 ( 311.8) | yuksek | kayip 0.4100->0.1911->0.1095 (yetersiz_egitilmis) | sd_or 0.69 | RMSE 0.012115 | 29.2s
+  h=  5 2016 | n=1811 ( 362.2) | yuksek | kayip 0.4142->0.1691->0.1039 (yakinsiyor) | sd_or 0.94 | RMSE 0.014748 | 34.6s
+  h=  5 2017 | n=2061 ( 412.2) | yuksek | kayip 0.4023->0.1790->0.1202 (yakinsiyor) | sd_or 0.96 | RMSE 0.008391 | 38.4s
+  h=  5 2018 | n=2312 ( 462.4) | yuksek | kayip 0.4078->0.1877->0.1340 (yakinsiyor) | sd_or 0.55 | RMSE 0.010170 | 43.2s
+  h=  5 2019 | n=2563 ( 512.6) | yuksek | kayip 0.4098->0.2091->0.1708 (yakinsiyor) | sd_or 0.47 | RMSE 0.012183 | 47.5s
+  h=  5 2020 | n=2815 ( 563.0) | yuksek | kayip 0.4109->0.1721->0.0983 (yakinsiyor) | sd_or 0.79 | RMSE 0.025001 | 54.4s
+  h=  5 2021 | n=3068 ( 613.6) | yuksek | kayip 0.4193->0.1808->0.1070 (yakinsiyor) | sd_or 1.14 | RMSE 0.016113 | 63.6s
+  h=  5 2022 | n=3320 ( 664.0) | yuksek | kayip 0.4219->0.1830->0.1084 (yetersiz_egitilmis) | sd_or 1.51 | RMSE 0.022938 | 68.3s
+  h=  5 2023 | n=3571 ( 714.2) | yuksek | kayip 0.4134->0.2018->0.1390 (yakinsiyor) | sd_or 1.01 | RMSE 0.008760 | 65.6s
+  h=  5 2024 | n=3821 ( 764.2) | yuksek | kayip 0.4047->0.1790->0.1088 (yetersiz_egitilmis) | sd_or 0.90 | RMSE 0.007410 | 79.5s
+  h=  5 2025 | n=4073 ( 814.6) | yuksek | kayip 0.3941->0.1924->0.1445 (yakinsiyor) | sd_or 1.33 | RMSE 0.013900 | 80.3s
+  h=  5 2026 | n=4323 ( 864.6) | yuksek | kayip 0.3976->0.2031->0.1408 (yakinsiyor) | sd_or 0.85 | RMSE 0.018969 | 83.5s
+
+--- h=22 ---
+  h= 22 2012 | n= 806 (  36.6) | orta   | kayip 0.1039->0.0318->0.0254 (yakinsiyor) | sd_or 0.88 | RMSE 0.007678 | 3.1s
+  h= 22 2013 | n=1049 (  47.7) | orta   | kayip 0.1157->0.0442->0.0352 (yakinsadi) | sd_or 1.12 | RMSE 0.004170 | 3.8s
+  h= 22 2014 | n=1292 (  58.7) | orta   | kayip 0.1160->0.0544->0.0434 (yakinsiyor) | sd_or 0.70 | RMSE 0.005646 | 4.8s
+  h= 22 2015 | n=1542 (  70.1) | orta   | kayip 0.1109->0.0511->0.0402 (yakinsiyor) | sd_or 0.83 | RMSE 0.008802 | 5.7s
+  h= 22 2016 | n=1794 (  81.5) | orta   | kayip 0.1133->0.0533->0.0475 (yakinsiyor) | sd_or 0.73 | RMSE 0.007897 | 6.8s
+  h= 22 2017 | n=2044 (  92.9) | orta   | kayip 0.1209->0.0435->0.0372 (yakinsadi) | sd_or 1.27 | RMSE 0.009050 | 8.2s
+  h= 22 2018 | n=2295 ( 104.3) | yuksek | kayip 0.1113->0.0136->0.0077 (yetersiz_egitilmis) | sd_or 0.63 | RMSE 0.006958 | 44.0s
+  h= 22 2019 | n=2546 ( 115.7) | yuksek | kayip 0.1106->0.0142->0.0075 (yakinsiyor) | sd_or 0.59 | RMSE 0.009536 | 47.3s
+  h= 22 2020 | n=2798 ( 127.2) | yuksek | kayip 0.1216->0.0117->0.0071 (yakinsiyor) | sd_or 0.58 | RMSE 0.023355 | 51.7s
+  h= 22 2021 | n=3051 ( 138.7) | yuksek | kayip 0.1333->0.0144->0.0080 (yakinsiyor) | sd_or 0.71 | RMSE 0.008576 | 54.9s
+  h= 22 2022 | n=3303 ( 150.1) | yuksek | kayip 0.1468->0.0150->0.0081 (yetersiz_egitilmis) | sd_or 1.84 | RMSE 0.026890 | 65.3s
+  h= 22 2023 | n=3554 ( 161.5) | yuksek | kayip 0.1450->0.0172->0.0088 (yetersiz_egitilmis) | sd_or 1.16 | RMSE 0.006018 | 65.5s
+  h= 22 2024 | n=3804 ( 172.9) | yuksek | kayip 0.1470->0.0159->0.0081 (yetersiz_egitilmis) | sd_or 1.31 | RMSE 0.008970 | 73.9s
+  h= 22 2025 | n=4056 ( 184.4) | yuksek | kayip 0.1404->0.0150->0.0076 (yetersiz_egitilmis) | sd_or 1.27 | RMSE 0.007718 | 83.8s
+  h= 22 2026 | n=4306 ( 195.7) | yuksek | kayip 0.1384->0.0141->0.0079 (yakinsiyor) | sd_or 0.78 | RMSE 0.016413 | 83.5s
+
+--- h=66 ---
+  h= 66 2012 | n= 762 (  11.5) | dusuk  | kayip 0.1003->0.0467->0.0432 (yakinsadi) | sd_or 0.72 | RMSE 0.006135 | 1.7s
+  h= 66 2013 | n=1005 (  15.2) | dusuk  | kayip 0.1012->0.0562->0.0547 (yakinsadi) | sd_or 1.50 | RMSE 0.002589 | 2.2s
+  h= 66 2014 | n=1248 (  18.9) | dusuk  | kayip 0.1001->0.0571->0.0527 (yakinsiyor) | sd_or 0.39 | RMSE 0.007086 | 2.8s
+  h= 66 2015 | n=1498 (  22.7) | dusuk  | kayip 0.0981->0.0560->0.0551 (yakinsadi) | sd_or 0.73 | RMSE 0.008225 | 3.4s
+  h= 66 2016 | n=1750 (  26.5) | dusuk  | kayip 0.1158->0.0628->0.0612 (yakinsadi) | sd_or 1.55 | RMSE 0.006999 | 4.4s
+  h= 66 2017 | n=2000 (  30.3) | orta   | kayip 0.0945->0.0300->0.0221 (yakinsiyor) | sd_or 1.18 | RMSE 0.007185 | 9.1s
+  h= 66 2018 | n=2251 (  34.1) | orta   | kayip 0.0929->0.0273->0.0215 (yakinsiyor) | sd_or 1.02 | RMSE 0.005298 | 9.8s
+  h= 66 2019 | n=2502 (  37.9) | orta   | kayip 0.0860->0.0314->0.0254 (yakinsiyor) | sd_or 0.58 | RMSE 0.013190 | 10.7s
+  h= 66 2020 | n=2754 (  41.7) | orta   | kayip 0.0961->0.0420->0.0293 (yakinsiyor) | sd_or 0.52 | RMSE 0.028523 | 12.2s
+  h= 66 2021 | n=3007 (  45.6) | orta   | kayip 0.1531->0.0433->0.0282 (yakinsiyor) | sd_or 1.34 | RMSE 0.007466 | 13.8s
+  h= 66 2022 | n=3259 (  49.4) | orta   | kayip 0.1455->0.0362->0.0239 (yakinsiyor) | sd_or 3.92 | RMSE 0.047831 | 12.7s
+  h= 66 2023 | n=3510 (  53.2) | orta   | kayip 0.1426->0.0440->0.0288 (yakinsiyor) | sd_or 2.42 | RMSE 0.007227 | 14.4s
+  h= 66 2024 | n=3760 (  57.0) | orta   | kayip 0.1342->0.0433->0.0283 (yakinsiyor) | sd_or 1.22 | RMSE 0.006907 | 14.2s
+  h= 66 2025 | n=4012 (  60.8) | orta   | kayip 0.1320->0.0509->0.0313 (yakinsiyor) | sd_or 0.33 | RMSE 0.007591 | 16.6s
+  h= 66 2026 | n=4262 (  64.6) | orta   | kayip 0.1276->0.0404->0.0285 (yakinsiyor) | sd_or 1.08 | RMSE 0.022960 | 17.9s
+
+--- h=126 ---
+  h=126 2012 | n= 702 (   5.6) | dusuk  | kayip 0.1318->0.0308->0.0258 (yakinsadi) | sd_or 1.02 | RMSE 0.009266 | 1.5s
+  h=126 2013 | n= 945 (   7.5) | dusuk  | kayip 0.1169->0.0544->0.0523 (yakinsadi) | sd_or 1.34 | RMSE 0.003187 | 2.2s
+  h=126 2014 | n=1188 (   9.4) | dusuk  | kayip 0.1036->0.0531->0.0501 (yakinsadi) | sd_or 0.27 | RMSE 0.009957 | 3.0s
+  h=126 2015 | n=1438 (  11.4) | dusuk  | kayip 0.1002->0.0553->0.0516 (yakinsadi) | sd_or 0.93 | RMSE 0.007320 | 3.2s
+  h=126 2016 | n=1690 (  13.4) | dusuk  | kayip 0.1564->0.0606->0.0566 (yakinsiyor) | sd_or 2.19 | RMSE 0.009093 | 4.2s
+  h=126 2017 | n=1940 (  15.4) | dusuk  | kayip 0.1432->0.0579->0.0520 (yakinsiyor) | sd_or 1.65 | RMSE 0.007075 | 4.3s
+  h=126 2018 | n=2191 (  17.4) | dusuk  | kayip 0.1297->0.0581->0.0518 (yakinsadi) | sd_or 2.21 | RMSE 0.005411 | 6.2s
+  h=126 2019 | n=2442 (  19.4) | dusuk  | kayip 0.1251->0.0581->0.0549 (yakinsadi) | sd_or 0.34 | RMSE 0.017121 | 7.9s
+  h=126 2020 | n=2694 (  21.4) | dusuk  | kayip 0.1158->0.0585->0.0549 (yakinsadi) | sd_or 0.54 | RMSE 0.018840 | 5.9s
+  h=126 2021 | n=2947 (  23.4) | dusuk  | kayip 0.1459->0.0853->0.0825 (yakinsadi) | sd_or 0.63 | RMSE 0.006377 | 6.9s
+  h=126 2022 | n=3199 (  25.4) | dusuk  | kayip 0.1451->0.0799->0.0741 (yakinsadi) | sd_or 3.62 | RMSE 0.038161 | 6.7s
+  h=126 2023 | n=3450 (  27.4) | dusuk  | kayip 0.1533->0.0810->0.0735 (yakinsadi) | sd_or 2.54 | RMSE 0.010349 | 7.3s
+  h=126 2024 | n=3700 (  29.4) | dusuk  | kayip 0.1453->0.0894->0.0794 (yakinsadi) | sd_or 1.90 | RMSE 0.006123 | 7.8s
+  h=126 2025 | n=3952 (  31.4) | orta   | kayip 0.1249->0.0287->0.0198 (yakinsiyor) | sd_or 0.32 | RMSE 0.011749 | 14.4s
+  h=126 2026 | n=4202 (  33.3) | orta   | kayip 0.1216->0.0273->0.0192 (yakinsiyor) | sd_or 2.79 | RMSE 0.023669 | 15.6s
+
+=== YAKINSAMA IZLEME (early stopping olmadigi icin) ===
+Siniflandirma: son %20 epoch diliminde kaybin yuzde dususu. <%2 yakinsadi, <%10 yakinsiyor, ustu yetersiz egitilmis.
+convergence  yakinsadi  yakinsiyor  yetersiz_egitilmis
+horizon                                               
+5                    0          12                   3
+22                   2           8                   5
+66                   4          11                   0
+126                 11           4                   0
+
+Kademe bazinda:
+convergence  yakinsadi  yakinsiyor  yetersiz_egitilmis
+arch_tier                                             
+dusuk               15           3                   0
+orta                 2          16                   0
+yuksek               0          16                   8
+
+Egitim kaybi (ufuk ortalamasi):
+         baslangic   orta    son  kuyruk_dusus_pct
+horizon                                           
+5           0.4047 0.1869 0.1211            7.9052
+22          0.1250 0.0273 0.0200            7.9554
+66          0.1147 0.0445 0.0356            4.6047
+126         0.1306 0.0586 0.0532            0.5675
+
+YETERSIZ EGITILMIS 8/60 fold -- son dilimde kayip hala belirgin dusuyor:
+ horizon  test_year arch_tier  arch_epochs  tail_drop_pct
+       5       2015    yuksek           60          10.65
+       5       2022    yuksek           60          10.63
+       5       2024    yuksek           60          10.32
+      22       2018    yuksek           60          11.56
+      22       2022    yuksek           60          10.62
+      22       2023    yuksek           60          10.94
+      22       2024    yuksek           60          12.89
+      22       2025    yuksek           60          15.25
+
+=== DEJENERE TAHMIN KONTROLU ===
+std(tahmin)/std(gercek) < 0.1 ise model pratikte SABIT tahmin uretiyordur.
+Bu bir hata degildir ama sonucun yorumunu tamamen degistirir.
+                   fold  oran_ort  oran_min  oran_maks  dejenere
+horizon arch_tier                                               
+5       yuksek       15     1.157     0.474      2.981         0
+22      orta          6     0.923     0.696      1.274         0
+        yuksek        9     0.985     0.579      1.845         0
+66      dusuk         5     0.977     0.387      1.545         0
+        orta         10     1.359     0.326      3.915         0
+126     dusuk        13     1.476     0.273      3.617         0
+        orta          2     1.553     0.319      2.787         0
+
+Dejenere fold: 0/60
+
+=== BiLSTM METRIKLERI (fold ortalamasi) ===
+ horizon      model  n_folds  rmse_fold_mean  mae_fold_mean  r2_oos_fold_mean
+       5     bilstm       15        0.014227       0.010048         -0.370512
+       5 train_mean       15        0.013451       0.010027          0.000000
+       5   past_vol       15        0.013318       0.009538         -0.075719
+      22     bilstm       15        0.010512       0.008255         -0.249273
+      22 train_mean       15        0.011243       0.009022          0.000000
+      22   past_vol       15        0.009493       0.007228          0.072468
+      66     bilstm       14        0.011589       0.009492         -2.218463
+      66 train_mean       14        0.009239       0.007418          0.000000
+      66   past_vol       14        0.008913       0.007012         -0.107308
+     126     bilstm       14        0.011431       0.009179         -3.094267
+     126 train_mean       14        0.008916       0.007193          0.000000
+     126   past_vol       14        0.008508       0.006895         -0.186032
+
+=== TUM MODELLER (fold ortalamasi RMSE) ===
+horizon         5        22       66       126
+model                                         
+har_x_log  0.010335 0.007561 0.007504 0.008012
+har_x      0.010341 0.007669 0.007573 0.008059
+har        0.010834 0.008600 0.008100 0.008203
+har_log    0.010857 0.008678 0.008199 0.008275
+xgboost    0.010913 0.009080 0.008924 0.008627
+bilstm     0.014227 0.010512 0.011589 0.011431
+garch      0.011211 0.008970 0.009036 0.009436
+train_mean 0.013451 0.011243 0.009239 0.008916
+past_vol   0.013318 0.009493 0.008913 0.008508
+
+R2_oos:
+horizon       5      22     66     126
+model                                 
+har_x_log  +0.382 +0.443 +0.199 +0.052
+har_x      +0.373 +0.436 +0.204 +0.100
+har        +0.295 +0.276 +0.058 +0.061
+har_log    +0.291 +0.259 -0.030 -0.035
+xgboost    +0.283 +0.186 -0.199 -0.283
+bilstm     -0.371 -0.249 -2.218 -3.094
+garch      +0.240 +0.191 -0.235 -0.511
+train_mean +0.000 +0.000 +0.000 +0.000
+past_vol   -0.076 +0.072 -0.107 -0.186
+
+HIPOTEZ TESTI: dogrusal olmayan modeller HAR-X'e gore (RMSE %, negatif = dogrusal olmayan daha iyi)
+ horizon  XGBoost_vs_HAR_X  BiLSTM_vs_HAR_X  BiLSTM_vs_XGBoost
+       5             +5.53           +37.58             +30.37
+      22            +18.39           +37.07             +15.77
+      66            +17.84           +53.03             +29.86
+     126             +7.05           +41.83             +32.50
+
+Yazildi: bilstm_predictions_all.csv, bilstm_metrics_all.csv, bilstm_aggregate_all.csv, bilstm_folds_all.csv
+Yazildi: all_models_comparison.csv
+Rapor  : bilstm_summary_all.json
+Sure   : 26.8 dakika

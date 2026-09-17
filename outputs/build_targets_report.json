@@ -1,0 +1,54 @@
+{
+  "row_count": 4641,
+  "date_min": "2008-01-02",
+  "date_max": "2026-09-01",
+  "horizons": {
+    "5": {
+      "valid_count": 4636,
+      "expected_count": 4636,
+      "matches_expected": true
+    },
+    "22": {
+      "valid_count": 4619,
+      "expected_count": 4619,
+      "matches_expected": true
+    },
+    "66": {
+      "valid_count": 4575,
+      "expected_count": 4575,
+      "matches_expected": true
+    },
+    "126": {
+      "valid_count": 4515,
+      "expected_count": 4515,
+      "matches_expected": true
+    }
+  },
+  "distribution": {
+    "5": {
+      "min": 0.0011196584758676573,
+      "median": 0.016460345270501064,
+      "max": 0.13953052725282714,
+      "n_negative": 0
+    },
+    "22": {
+      "min": 0.005037570489586561,
+      "median": 0.018189207785515877,
+      "max": 0.10335543697772094,
+      "n_negative": 0
+    },
+    "66": {
+      "min": 0.007245102853823196,
+      "median": 0.019908506295737257,
+      "max": 0.08031559768469416,
+      "n_negative": 0
+    },
+    "126": {
+      "min": 0.007905742695841572,
+      "median": 0.01991207364336913,
+      "max": 0.060165411122723535,
+      "n_negative": 0
+    }
+  },
+  "all_checks_passed": true
+}

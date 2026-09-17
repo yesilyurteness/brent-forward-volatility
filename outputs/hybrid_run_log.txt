@@ -1,0 +1,97 @@
+Tahmin dosyalari hizalandi: 14449 satir, y_true uc kaynakta da birebir ayni.
+
+--- h=5 ---
+
+--- h=22 ---
+
+--- h=66 ---
+
+--- h=126 ---
+
+=== ANA SORU: hibritler HAR-X standalone'u gecti mi? ===
+vs_har_x_pct negatif = hibrit daha iyi. Referans: HAR-X (seviyelerde OLS).
+horizon          5      22     66     126
+model                                    
+h1_xgb_bilstm +12.28 +22.43 +30.59 +20.94
+h2_harx_xgb    -0.01  +4.35  +4.33  +0.67
+h3_harx_resid  +8.21 +14.98 +23.24  +5.96
+
+Bilesenlerin ve tum modellerin ayni sutunu:
+horizon          5      22     66     126
+model                                    
+har_x          +0.00  +0.00  +0.00  +0.00
+har_x_log      -0.06  -1.40  -0.92  -0.58
+har            +4.77 +12.13  +6.95  +1.79
+xgboost        +5.53 +18.39 +17.84  +7.05
+bilstm        +37.58 +37.07 +53.03 +41.83
+train_mean    +30.13 +46.54 +22.34 +11.24
+past_vol      +28.79 +23.78 +17.69  +5.57
+h1_xgb_bilstm +12.28 +22.43 +30.59 +20.94
+h2_harx_xgb    -0.01  +4.35  +4.33  +0.67
+h3_harx_resid  +8.21 +14.98 +23.24  +5.96
+
+=== RMSE (fold ortalamasi) ===
+horizon            5        22       66       126
+model                                            
+har_x         0.010341 0.007669 0.007573 0.008059
+har_x_log     0.010335 0.007561 0.007504 0.008012
+har           0.010834 0.008600 0.008100 0.008203
+xgboost       0.010913 0.009080 0.008924 0.008627
+bilstm        0.014227 0.010512 0.011589 0.011431
+train_mean    0.013456 0.011238 0.009265 0.008965
+past_vol      0.013318 0.009493 0.008913 0.008508
+h1_xgb_bilstm 0.011611 0.009390 0.009890 0.009747
+h2_harx_xgb   0.010340 0.008002 0.007901 0.008113
+h3_harx_resid 0.011190 0.008818 0.009333 0.008539
+
+R2_oos:
+horizon          5      22     66     126
+model                                    
+har_x         +0.373 +0.437 +0.205 +0.079
+har_x_log     +0.383 +0.443 +0.200 +0.028
+har           +0.295 +0.277 +0.061 +0.052
+xgboost       +0.283 +0.186 -0.199 -0.283
+bilstm        -0.368 -0.249 -2.232 -3.127
+train_mean    +0.000 +0.000 +0.000 +0.000
+past_vol      -0.075 +0.072 -0.105 -0.190
+h1_xgb_bilstm +0.156 +0.107 -0.771 -1.104
+h2_harx_xgb   +0.361 +0.373 +0.113 -0.030
+h3_harx_resid +0.247 +0.212 -0.388 -0.210
+
+=== TANI 1: ARTIK ASAMASI BILGI CIKARIYOR MU? (H3) ===
+R2_artik = 1 - SSE(e - e_hat)/SSE(e). Taban: 'artik tahmin etmemek'.
+ORNEKLEME DISI deger <= 0 ise artik asamasi hicbir sey cikarmiyor demektir
+ve hibrit yalnizca zarar verebilir.
+         fold  R2_ornekleme_ici  R2_ornekleme_disi  disi_medyan  disi_pozitif_fold
+horizon                                                                           
+5          15            0.8631            -0.2397      -0.1656                  3
+22         15            0.8725            -0.5731      -0.3649                  3
+66         14            0.6978            -1.4598      -0.3342                  4
+126        14            0.5788            -0.2704       0.0376                  8
+
+Artik standart sapmasi (train vs test) -- ornekleme-ici sapmanin olcusu:
+         train_std  test_std     oran
+horizon                              
+5         0.009675  0.010116 0.956425
+22        0.007037  0.007271 0.967907
+66        0.007537  0.006886 1.094685
+126       0.007741  0.006399 1.209727
+
+Tabana takilan test gozlemi: 312 / 14449
+
+=== TANI 2: BILESEN HATALARININ KORELASYONU ===
+Basit ortalama, hatalar mukemmel korele DEGILSE kazandirir. Korelasyon
+1'e yakinsa ortalama yalnizca daha kotu bileseni tasir.
+       hibrit  horizon bilesen_A bilesen_B  hata_korelasyonu  rmse_A  rmse_B
+h1_xgb_bilstm        5   xgboost    bilstm            0.6903  0.0119  0.0151
+h1_xgb_bilstm       22   xgboost    bilstm            0.8300  0.0102  0.0122
+h1_xgb_bilstm       66   xgboost    bilstm            0.7634  0.0109  0.0165
+h1_xgb_bilstm      126   xgboost    bilstm            0.7761  0.0099  0.0143
+  h2_harx_xgb        5     har_x   xgboost            0.8746  0.0116  0.0119
+  h2_harx_xgb       22     har_x   xgboost            0.8004  0.0093  0.0102
+  h2_harx_xgb       66     har_x   xgboost            0.8136  0.0099  0.0109
+  h2_harx_xgb      126     har_x   xgboost            0.8707  0.0098  0.0099
+
+Yazildi: hybrid_predictions_all.csv, hybrid_metrics_all.csv, hybrid_aggregate_all.csv, hybrid_folds_all.csv, hybrid_error_correlation.csv
+Rapor  : hybrid_summary_all.json
+Sure   : 30.3 saniye

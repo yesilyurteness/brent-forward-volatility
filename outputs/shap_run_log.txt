@@ -1,0 +1,157 @@
+<site-packages>\numpy\lib\_function_base_impl.py:3036: RuntimeWarning: invalid value encountered in divide
+  c /= stddev[:, None]
+<site-packages>\numpy\lib\_function_base_impl.py:3037: RuntimeWarning: invalid value encountered in divide
+  c /= stddev[None, :]
+<site-packages>\numpy\lib\_function_base_impl.py:3036: RuntimeWarning: invalid value encountered in divide
+  c /= stddev[:, None]
+<site-packages>\numpy\lib\_function_base_impl.py:3037: RuntimeWarning: invalid value encountered in divide
+  c /= stddev[None, :]
+<site-packages>\numpy\lib\_function_base_impl.py:3036: RuntimeWarning: invalid value encountered in divide
+  c /= stddev[:, None]
+<site-packages>\numpy\lib\_function_base_impl.py:3037: RuntimeWarning: invalid value encountered in divide
+  c /= stddev[None, :]
+=== SHAP ANALIZI: XGBoost ile HAR-X ayni degiskenleri mi kullaniyor? ===
+TreeSHAP, XGBoost yerlesik pred_contribs (shap paketi gerekmez).
+65 ozellik, 6 grup, 5 ortak regresor.
+
+--- h=5 ---
+
+--- h=22 ---
+
+--- h=66 ---
+
+--- h=126 ---
+
+=== En onemli 10 ozellik (ufuk basina, fold ortalamasi) ===
+h=5: vol5_vol60(14.5%), vol_ratio(9.7%), brent_vol5(8.5%), brent_vol60(4.8%), brent_vol20(4.5%), vol20_vol126(2.8%), ovx_mr60(2.8%), ovx_z60(2.6%), ovx_ema20(2.5%), brent_vol126(2.5%)
+h=22: brent_vol20(18.7%), vol20_vol126(11.0%), brent_vol60(5.8%), brent_vol126(5.0%), brent_ema20(4.3%), ovx_z60(4.1%), month(4.1%), ovx_ema20(4.0%), gprd_ema20(3.4%), ovx_mr60(3.2%)
+h=66: brent_vol60(13.9%), brent_vol126(13.8%), ovx_z60(12.1%), ovx_mr60(9.4%), brent_ema20(8.6%), gprd_ema20(5.6%), month(5.0%), ovx_ema20(4.7%), brent_ema5(3.9%), brent_vol20(3.3%)
+h=126: brent_vol126(21.3%), brent_ema20(15.1%), ovx_z60(12.1%), ovx_mr60(8.3%), vol20_vol126(5.6%), gprd_threat_ema20(5.3%), brent_ema10(4.8%), ovx_ema20(3.5%), gprd_ema20(3.1%), brent_vol60(2.9%)
+
+=== GRUP PAYLARI (%) -- asil karsilastirma ===
+XGBoost (toplam |SHAP| payi):
+horizon      5    22   66   126
+grup                           
+brent_fiyat 11.3 15.6 18.5 26.1
+brent_vol   47.3 44.1 34.2 30.8
+etkilesim    2.1  1.4  0.8  1.6
+gpr         19.5 16.5 11.3  9.9
+ovx         18.0 18.3 30.2 29.8
+takvim       1.7  4.1  5.0  1.8
+
+HAR-X (toplam |std beta| payi, yalnizca 3 grup):
+horizon    5    22   66   126
+grup                         
+brent_vol 19.9 18.8 14.4 19.6
+gpr        8.0  8.5 19.5 21.2
+ovx       72.2 72.8 66.1 59.1
+
+(3) XGBoost'un HAR-X DISINDAKI gruplara verdigi toplam agirlik (%):
+horizon
+5     15.1
+22    21.1
+66    24.3
+126   29.5
+Bu pay buyukse XGBoost farkli yerlere bakiyor demektir.
+
+=== SPEARMAN SIRA KORELASYONLARI ===
+UYARI: 3 grup uzerinde Spearman yalnizca -1/-0.5/+0.5/+1 alabilir ve
+p-degeri en iyi durumda 0.33'tur; anlamlilik MATEMATIKSEL OLARAK IMKANSIZ.
+ horizon  grup_rho  grup_p  ortak_regresor_rho  ortak_regresor_p
+       5    -0.500   0.667              -0.200             0.747
+      22     0.500   0.667               0.500             0.391
+      66    -0.500   0.667              -0.600             0.285
+     126    -0.500   0.667               0.500             0.391
+
+=== ISARET UYUMU (ortak 5 regresor) ===
+XGBoost yonu = corr(ozellik degeri, kendi SHAP degeri).
+HAR-X yonu = standartlastirilmis beta isareti.
+
+(a) KULLANILMAYAN OZELLIK: SHAP ozdes sifir -> yon tanimsiz. Bu 'zit yon'
+    DEGILDIR; uyum oranindan dislanir.
+         sum  size  pct
+horizon                
+5          0    75  0.0
+22         2    75  2.7
+66        31    70 44.3
+126       47    70 67.1
+
+(b) ORAN-HEDEFI KARISTIRMASI: brent_vol5/brent_vol20 paydadaki past_vol ile
+    mekanik ilintilidir (h=5'te brent_vol5 paydanin KENDISI, kor.=1.000).
+    Bu iki ozellikte karsilastirma GECERSIZDIR.
+
+Regresor bazinda (yalnizca kullanilan fold'lar):
+        regresor  kullanilan  uyumlu  xgb_kor_ort  harx_beta_ort  uyum_pct  gecerli
+     brent_vol20          56       8       -0.609          0.105    14.286    False
+      brent_vol5          44      22       -0.713          0.012    50.000    False
+       gprd_lag1          34      16       -0.001          0.021    47.059     True
+gprd_threat_lag1          30      15        0.166         -0.026    50.000     True
+        ovx_lag1          46      38        0.373          0.581    82.609     True
+
+GECERLI KARSILASTIRMA: yalnizca dissal regresorler (ovx_lag1, gprd_lag1, gprd_threat_lag1)
+         karsilastirma  uyumlu  uyum_pct
+horizon                                 
+5                   45      24      53.3
+22                  43      31      72.1
+66                  15       9      60.0
+126                  7       5      71.4
+TOPLAM (dissal): 69/110 (%62.7)
+
+=== FOLD'LAR ARASI KARARLILIK ===
+UYARI: genisleyen pencerede ardisik fold'larin EGITIM VERISI buyuk olcude
+ORTUSUR (fold k'nin train seti fold k+1'inkinin alt kumesidir). Bu yuzden
+yuksek ardisik Spearman korelasyonu KISMEN MEKANIKTIR ve bagimsiz bir
+kararlilik kaniti SAYILMAZ. En durust olcut, ortusmenin en az oldugu
+ILK-SON fold ciftidir; mesafeye gore korelasyon dususu de asagida verilir.
+
+ horizon  n_fold  ardisik_rho_ort  ardisik_rho_min  ardisik_ortusme_pct  ilk_son_rho  ilk_son_ortusme_pct  havuza_rho_ort
+       5      15            0.858            0.772               89.081        0.773               19.392           0.870
+      22      15            0.866            0.788               88.982        0.785               19.075           0.895
+      66      14            0.863            0.670               88.296        0.686               19.375           0.861
+     126      14            0.845            0.657               87.883        0.529               18.157           0.802
+
+EN DURUST OLCUT -- ilk fold ile son fold (ortusme en az):
+  h=  5: rho = +0.773 (egitim verisi ortusmesi %19.4) | ardisik rho = +0.858 (ortusme %89.1)
+  h= 22: rho = +0.785 (egitim verisi ortusmesi %19.1) | ardisik rho = +0.866 (ortusme %89.0)
+  h= 66: rho = +0.686 (egitim verisi ortusmesi %19.4) | ardisik rho = +0.863 (ortusme %88.3)
+  h=126: rho = +0.529 (egitim verisi ortusmesi %18.2) | ardisik rho = +0.845 (ortusme %87.9)
+
+Fold mesafesine gore korelasyon dususu ve egitim verisi ortusmesi:
+horizon         5     22    66    126
+fold_mesafesi                        
+1             0.858 0.866 0.863 0.845
+2             0.827 0.855 0.831 0.827
+3             0.820 0.827 0.807 0.814
+4             0.802 0.821 0.802 0.775
+5             0.772 0.790 0.766 0.775
+6             0.751 0.776 0.765 0.771
+7             0.743 0.755 0.746 0.761
+8             0.724 0.766 0.714 0.740
+9             0.691 0.762 0.717 0.726
+10            0.715 0.743 0.702 0.712
+11            0.707 0.757 0.699 0.741
+12            0.726 0.772 0.663 0.644
+13            0.697 0.752 0.686 0.529
+14            0.773 0.785   NaN   NaN
+
+Ayni mesafelerde ortalama egitim verisi ortusmesi (%):
+horizon        5    22   66   126
+fold_mesafesi                    
+1             89.1 89.0 88.3 87.9
+2             80.0 79.8 78.6 78.0
+3             72.1 71.9 70.3 69.6
+4             65.1 64.9 63.1 62.2
+5             58.8 58.6 56.5 55.5
+6             53.1 52.8 50.6 49.5
+7             47.8 47.6 45.1 44.1
+8             43.0 42.7 40.1 39.0
+9             38.4 38.1 35.4 34.3
+10            34.1 33.8 31.0 29.8
+11            30.1 29.8 26.9 25.7
+12            26.3 26.0 23.0 21.8
+13            22.8 22.5 19.4 18.2
+14            19.4 19.1  NaN  NaN
+
+Yazildi: shap_feature_importance.csv, shap_group_importance.csv, harx_standardized_betas.csv, shap_stability.csv, shap_sign_agreement.csv
+Rapor  : shap_summary.json
+Sure   : 27.4 saniye

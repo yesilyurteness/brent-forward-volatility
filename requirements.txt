@@ -1,0 +1,32 @@
+# Brent volatility forecasting -- pinned working environment
+# Python 3.14.7 (Windows). Only the packages actually imported under scripts/
+# are listed, plus two mandatory transitive dependencies.
+#
+#   python -m venv .venv
+#   .venv\Scripts\activate          # Windows
+#   source .venv/bin/activate       # Linux / macOS
+#   pip install -r requirements.txt
+
+# --- Data handling ----------------------------------------------------------
+numpy==2.5.0
+pandas==3.0.3
+openpyxl==3.1.5          # pandas.read_excel engine (data/veriseti.xlsx)
+
+# --- Modelling --------------------------------------------------------------
+scikit-learn==1.9.0      # MinMaxScaler, metrics
+xgboost==3.3.0           # primary tree model + TreeSHAP (pred_contribs=True)
+torch==2.14.0            # Attention BiLSTM (CPU is sufficient)
+arch==8.0.0              # GARCH(1,1) benchmark
+optuna==4.9.0            # robustness analysis only (04_optuna_walkforward.py)
+
+# --- Statistics -------------------------------------------------------------
+scipy==1.18.0            # Diebold-Mariano, sign test, power analysis
+statsmodels==0.14.6      # arch dependency (not imported directly)
+
+# NOTE: the `shap` package is NOT required. SHAP values are computed exactly
+# via XGBoost's built-in pred_contribs=True option (see
+# scripts/10_shap_analysis.py).
+#
+# NOTE: torch is split into CPU/CUDA variants on the official PyPI index. This
+# study was run with 2.14.0+cpu; to install the CPU wheel explicitly:
+#   pip install torch==2.14.0 --index-url https://download.pytorch.org/whl/cpu

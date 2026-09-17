@@ -1,0 +1,179 @@
+=== DIEBOLD-MARIANO TESTLERI ===
+Kayip: karesel hata. Isaret: NEGATIF DM -> BIRINCI model daha iyi.
+HAC: Newey-West/Bartlett, L = h-1 (onceden ilan edilmis).
+Havuzlama: fold'lar arasinda, takvim olarak kesintisiz seri.
+h=66 ve h=126'da 2026 fold'u ana metrikten haric oldugu icin DM'den de cikarildi.
+
+=== BIRINCIL (DOGRULAYICI) AILE: 2 karsilastirma x 4 ufuk = 8 test ===
+(har_x vs xgboost) ve (har vs har_x). Bu iki karsilastirma calismanin
+Asama 5-6'da ilan edilmis iki ana iddiasina karsilik gelir; p-degerlerine
+bakilarak secilmemistir. Ancak aile tanimi testlerden SONRA
+resmilestirilmistir -- bu bir on-kayit degildir.
+fark_pct negatif = model1 daha iyi. Holm = FWER, BH = FDR.
+ horizon model1  model2  rmse_orani  fark_pct  DM_HLN  p_HLN  p_HLN_holm  p_HLN_bh  isaret_kazanan  isaret_fold  p_isaret  p_isaret_holm  p_isaret_bh
+       5    har   har_x      1.0149    1.4864  0.3565 0.7215      1.0000    0.8871               3           15    0.0352         0.2109       0.0938
+      22    har   har_x      1.0481    4.8059  0.6553 0.5123      1.0000    0.8871               2           15    0.0074         0.0591       0.0295
+      66    har   har_x      0.9872   -1.2751 -0.2018 0.8401      1.0000    0.8871               4           14    0.1796         0.7183       0.2394
+     126    har   har_x      0.9748   -2.5240 -0.5306 0.5958      1.0000    0.8871               5           14    0.4240         0.7183       0.4240
+       5  har_x xgboost      0.9748   -2.5212 -0.6040 0.5459      1.0000    0.8871              10           15    0.3018         0.7183       0.3449
+      22  har_x xgboost      0.9054   -9.4619 -1.3838 0.1665      1.0000    0.6660              13           15    0.0074         0.0591       0.0295
+      66  har_x xgboost      0.9085   -9.1531 -1.4684 0.1421      1.0000    0.6660              11           14    0.0574         0.2869       0.1147
+     126  har_x xgboost      0.9902   -0.9804 -0.1420 0.8871      1.0000    0.8871              10           14    0.1796         0.7183       0.2394
+
+  DM, Holm (FWER): 0/8 test %5'te ayakta
+  DM, BH (FDR): 0/8 test %5'te ayakta
+  Isaret, Holm (FWER): 0/8 test %5'te ayakta
+  Isaret, BH (FDR): 2/8 test %5'te ayakta
+
+=== IKINCIL / KESIFSEL AILE: 6 karsilastirma x 4 ufuk = 24 test ===
+Dogrulayici degildir; hipotez uretmek icin okunur.
+ horizon  model1    model2  rmse_orani  fark_pct  DM_HLN  p_HLN  p_HLN_holm  p_HLN_bh  isaret_kazanan  isaret_fold  p_isaret  p_isaret_holm  p_isaret_bh
+       5     har  past_vol      0.8141  -18.5927 -6.1375 0.0000      0.0000    0.0000              15           15    0.0001         0.0015       0.0007
+       5   har_x    bilstm      0.7683  -23.1734 -5.6187 0.0000      0.0000    0.0000              14           15    0.0010         0.0215       0.0029
+       5   har_x     garch      0.9487   -5.1321 -1.3367 0.1814      1.0000    0.2721              14           15    0.0010         0.0215       0.0029
+       5   har_x har_x_log      0.9777   -2.2264 -1.2477 0.2122      1.0000    0.2940               6           15    0.6072         1.0000       0.7670
+       5   har_x  past_vol      0.8021  -19.7851 -6.6586 0.0000      0.0000    0.0000              15           15    0.0001         0.0015       0.0007
+       5 xgboost  past_vol      0.8229  -17.7104 -5.6540 0.0000      0.0000    0.0000              14           15    0.0010         0.0215       0.0029
+      22     har  past_vol      0.8948  -10.5228 -2.3863 0.0171      0.3073    0.0585              12           15    0.0352         0.5273       0.0844
+      22   har_x    bilstm      0.7622  -23.7784 -2.8183 0.0049      0.0971    0.0233              14           15    0.0010         0.0215       0.0029
+      22   har_x     garch      0.9031   -9.6905 -1.7275 0.0842      1.0000    0.2020              14           15    0.0010         0.0215       0.0029
+      22   har_x har_x_log      1.0116    1.1608  1.4593 0.1446      1.0000    0.2669               6           15    0.6072         1.0000       0.7670
+      22   har_x  past_vol      0.8537  -14.6258 -2.6271 0.0086      0.1643    0.0346              14           15    0.0010         0.0215       0.0029
+      22 xgboost  past_vol      0.9430   -5.7035 -1.2254 0.2205      1.0000    0.2940               9           15    0.6072         1.0000       0.7670
+      66     har  past_vol      0.8201  -17.9925 -1.4129 0.1578      1.0000    0.2705               9           14    0.4240         1.0000       0.6359
+      66   har_x    bilstm      0.6005  -39.9483 -1.8137 0.0698      1.0000    0.1862              10           14    0.1796         1.0000       0.3078
+      66   har_x     garch      0.8906  -10.9381 -2.2599 0.0239      0.4061    0.0717              13           14    0.0018         0.0293       0.0049
+      66   har_x har_x_log      1.0234    2.3441  1.0003 0.3172      1.0000    0.4007               6           14    0.7905         1.0000       0.9035
+      66   har_x  past_vol      0.8307  -16.9333 -1.6322 0.1027      1.0000    0.2241              11           14    0.0574         0.8032       0.1252
+      66 xgboost  past_vol      0.9144   -8.5641 -0.7979 0.4250      1.0000    0.4250               7           14    1.0000         1.0000       1.0000
+     126     har  past_vol      0.8653  -13.4742 -0.8920 0.3724      1.0000    0.4250               7           14    1.0000         1.0000       1.0000
+     126   har_x    bilstm      0.6876  -31.2394 -1.3707 0.1706      1.0000    0.2721              10           14    0.1796         1.0000       0.3078
+     126   har_x     garch      0.8800  -11.9968 -1.5078 0.1317      1.0000    0.2634              10           14    0.1796         1.0000       0.3078
+     126   har_x har_x_log      1.0287    2.8749  0.8705 0.3841      1.0000    0.4250               8           14    0.7905         1.0000       0.9035
+     126   har_x  past_vol      0.8877  -11.2338 -0.8236 0.4102      1.0000    0.4250               7           14    1.0000         1.0000       1.0000
+     126 xgboost  past_vol      0.8965  -10.3548 -0.8370 0.4027      1.0000    0.4250               5           14    0.4240         1.0000       0.6359
+
+  DM, Holm (FWER): 4/24 test %5'te ayakta
+  DM, BH (FDR): 6/24 test %5'te ayakta
+  Isaret, Holm (FWER): 9/24 test %5'te ayakta
+  Isaret, BH (FDR): 9/24 test %5'te ayakta
+
+Ikincil ailede BH ile ayakta kalanlar (DM):
+ horizon  model1   model2  fark_pct  p_HLN  p_HLN_bh  p_HLN_holm
+       5     har past_vol  -18.5927 0.0000    0.0000      0.0000
+       5   har_x   bilstm  -23.1734 0.0000    0.0000      0.0000
+       5   har_x past_vol  -19.7851 0.0000    0.0000      0.0000
+       5 xgboost past_vol  -17.7104 0.0000    0.0000      0.0000
+      22   har_x   bilstm  -23.7784 0.0049    0.0233      0.0971
+      22   har_x past_vol  -14.6258 0.0086    0.0346      0.1643
+
+Ikincil ailede BH ile ayakta kalanlar (isaret):
+ horizon  model1   model2  isaret_kazanan  isaret_fold  p_isaret  p_isaret_bh  p_isaret_holm
+       5     har past_vol              15           15    0.0001       0.0007         0.0015
+       5   har_x   bilstm              14           15    0.0010       0.0029         0.0215
+       5   har_x    garch              14           15    0.0010       0.0029         0.0215
+       5   har_x past_vol              15           15    0.0001       0.0007         0.0015
+       5 xgboost past_vol              14           15    0.0010       0.0029         0.0215
+      22   har_x   bilstm              14           15    0.0010       0.0029         0.0215
+      22   har_x    garch              14           15    0.0010       0.0029         0.0215
+      22   har_x past_vol              14           15    0.0010       0.0029         0.0215
+      66   har_x    garch              13           14    0.0018       0.0049         0.0293
+
+=== HAC DUZELTMESININ ETKISI ===
+varyans_sisme = HAC varyansi / bagimsizlik varsayimli varyans.
+Duzeltmesiz test standart hatayi sqrt(sisme) kati kucuk tahmin eder.
+ horizon  model1    model2  varyans_sisme  DM_HACsiz  p_HACsiz  DM_ham  p_ham  DM_HLN  p_HLN
+       5   har_x   xgboost         2.3728    -0.9315    0.3516 -0.6047 0.5454 -0.6040 0.5459
+       5   har_x  past_vol         1.7156    -8.7322    0.0000 -6.6668 0.0000 -6.6586 0.0000
+       5   har_x     garch         2.7351    -2.2134    0.0269 -1.3383 0.1808 -1.3367 0.1814
+       5 xgboost  past_vol         2.7028    -9.3066    0.0000 -5.6609 0.0000 -5.6540 0.0000
+       5   har_x    bilstm         2.9437    -9.6520    0.0000 -5.6256 0.0000 -5.6187 0.0000
+       5     har     har_x         2.4208     0.5553    0.5787  0.3569 0.7212  0.3565 0.7215
+       5     har  past_vol         2.7690   -10.2255    0.0000 -6.1450 0.0000 -6.1375 0.0000
+       5   har_x har_x_log         2.5019    -1.9760    0.0482 -1.2492 0.2116 -1.2477 0.2122
+      22   har_x   xgboost         3.9611    -2.7705    0.0056 -1.3920 0.1639 -1.3838 0.1665
+      22   har_x  past_vol         3.3940    -4.8686    0.0000 -2.6427 0.0082 -2.6271 0.0086
+      22   har_x     garch         3.4168    -3.2122    0.0013 -1.7378 0.0823 -1.7275 0.0842
+      22 xgboost  past_vol        12.1241    -4.2921    0.0000 -1.2327 0.2177 -1.2254 0.2205
+      22   har_x    bilstm         7.0227    -7.5129    0.0000 -2.8350 0.0046 -2.8183 0.0049
+      22     har     har_x         3.8312     1.2904    0.1969  0.6592 0.5097  0.6553 0.5123
+      22     har  past_vol        12.7908    -8.5850    0.0000 -2.4005 0.0164 -2.3863 0.0171
+      22   har_x har_x_log         5.1555     3.3330    0.0009  1.4679 0.1421  1.4593 0.1446
+      66   har_x   xgboost         5.4671    -3.4988    0.0005 -1.4964 0.1346 -1.4684 0.1421
+      66   har_x  past_vol        12.9664    -5.9896    0.0000 -1.6634 0.0962 -1.6322 0.1027
+      66   har_x     garch         4.7647    -5.0271    0.0000 -2.3030 0.0213 -2.2599 0.0239
+      66 xgboost  past_vol        37.2158    -4.9601    0.0000 -0.8131 0.4162 -0.7979 0.4250
+      66   har_x    bilstm        38.8001   -11.5131    0.0000 -1.8483 0.0646 -1.8137 0.0698
+      66     har     har_x         4.8960    -0.4550    0.6491 -0.2056 0.8371 -0.2018 0.8401
+      66     har  past_vol        39.6352    -9.0646    0.0000 -1.4398 0.1499 -1.4129 0.1578
+      66   har_x har_x_log         5.0590     2.2929    0.0219  1.0194 0.3080  1.0003 0.3172
+     126   har_x   xgboost        12.6681    -0.5241    0.6002 -0.1473 0.8829 -0.1420 0.8871
+     126   har_x  past_vol        33.6160    -4.9527    0.0000 -0.8542 0.3930 -0.8236 0.4102
+     126   har_x     garch        22.8015    -7.4676    0.0000 -1.5639 0.1178 -1.5078 0.1317
+     126 xgboost  past_vol        74.4916    -7.4927    0.0000 -0.8681 0.3853 -0.8370 0.4027
+     126   har_x    bilstm        70.4756   -11.9349    0.0000 -1.4217 0.1551 -1.3707 0.1706
+     126     har     har_x         6.7705    -1.4319    0.1522 -0.5503 0.5821 -0.5306 0.5958
+     126     har  past_vol        70.0474    -7.7433    0.0000 -0.9252 0.3549 -0.8920 0.3724
+     126   har_x har_x_log         8.9094     2.6948    0.0070  0.9028 0.3666  0.8705 0.3841
+
+=== TANI: kayip farkinin ACF'si (HAR-X vs XGBoost cifti) ===
+L = h-1 kuralinin gecerliligi. h-1 ve otesinde ACF sifira inmiyorsa,
+duzeltme HALA YETERSIZ demektir (optimal olmayan tahminlerde beklenir).
+ horizon             cift    n  lag  acf_1  acf_2   acf_4   acf_5   acf_8  acf_ort_h_2h  varyans_sisme  acf_10  acf_21  acf_22  acf_42  acf_32  acf_65  acf_66  acf_130  acf_62  acf_125  acf_126  acf_250
+       5 har_x vs xgboost 3662    4 0.6145 0.2693 -0.0207 -0.0899 -0.0043       -0.0160         2.3728     NaN     NaN     NaN     NaN     NaN     NaN     NaN      NaN     NaN      NaN      NaN      NaN
+      22 har_x vs xgboost 3645   21 0.6771    NaN     NaN     NaN     NaN       -0.0095         3.9611 -0.0254 -0.0684 -0.0350  0.0124     NaN     NaN     NaN      NaN     NaN      NaN      NaN      NaN
+      66 har_x vs xgboost 3500   65 0.7128    NaN     NaN     NaN     NaN        0.0171         5.4671     NaN     NaN     NaN     NaN -0.1292 -0.0138 -0.0088   0.0130     NaN      NaN      NaN      NaN
+     126 har_x vs xgboost 3500  125 0.7296    NaN     NaN     NaN     NaN       -0.0117        12.6681     NaN     NaN     NaN     NaN     NaN     NaN     NaN      NaN  0.0264   0.0059   0.0042   0.0121
+
+=== IKI TESTIN UYUMU ===
+ horizon  model1    model2 dm_yon isaret_yon  yon_uyumu  p_HLN  p_isaret  ikisi_de_anlamli
+       5   har_x   xgboost model1     model1       True 0.5459    0.3018             False
+       5   har_x  past_vol model1     model1       True 0.0000    0.0001              True
+       5   har_x     garch model1     model1       True 0.1814    0.0010             False
+       5 xgboost  past_vol model1     model1       True 0.0000    0.0010              True
+       5   har_x    bilstm model1     model1       True 0.0000    0.0010              True
+       5     har     har_x model2     model2       True 0.7215    0.0352             False
+       5     har  past_vol model1     model1       True 0.0000    0.0001              True
+       5   har_x har_x_log model1     model2      False 0.2122    0.6072             False
+      22   har_x   xgboost model1     model1       True 0.1665    0.0074             False
+      22   har_x  past_vol model1     model1       True 0.0086    0.0010              True
+      22   har_x     garch model1     model1       True 0.0842    0.0010             False
+      22 xgboost  past_vol model1     model1       True 0.2205    0.6072             False
+      22   har_x    bilstm model1     model1       True 0.0049    0.0010              True
+      22     har     har_x model2     model2       True 0.5123    0.0074             False
+      22     har  past_vol model1     model1       True 0.0171    0.0352              True
+      22   har_x har_x_log model2     model2       True 0.1446    0.6072             False
+      66   har_x   xgboost model1     model1       True 0.1421    0.0574             False
+      66   har_x  past_vol model1     model1       True 0.1027    0.0574             False
+      66   har_x     garch model1     model1       True 0.0239    0.0018              True
+      66 xgboost  past_vol model1     model2      False 0.4250    1.0000             False
+      66   har_x    bilstm model1     model1       True 0.0698    0.1796             False
+      66     har     har_x model1     model2      False 0.8401    0.1796             False
+      66     har  past_vol model1     model1       True 0.1578    0.4240             False
+      66   har_x har_x_log model2     model2       True 0.3172    0.7905             False
+     126   har_x   xgboost model1     model1       True 0.8871    0.1796             False
+     126   har_x  past_vol model1     model2      False 0.4102    1.0000             False
+     126   har_x     garch model1     model1       True 0.1317    0.1796             False
+     126 xgboost  past_vol model1     model2      False 0.4027    0.4240             False
+     126   har_x    bilstm model1     model1       True 0.1706    0.1796             False
+     126     har     har_x model1     model2      False 0.5958    0.4240             False
+     126     har  past_vol model1     model2      False 0.3724    1.0000             False
+     126   har_x har_x_log model2     model1      False 0.3841    0.7905             False
+
+Yon uyumu: 24/32 test
+Iki testin de %5'te anlamli oldugu: 8/32 test
+
+YON AYRISMASI olan testler (bilinmesi gerekir):
+ horizon  model1    model2   fark_pct    DM_HLN  isaret_kazanan  isaret_fold
+       5   har_x har_x_log  -2.226445 -1.247707               6           15
+      66 xgboost  past_vol  -8.564100 -0.797852               7           14
+      66     har     har_x  -1.275113 -0.201786               4           14
+     126   har_x  past_vol -11.233762 -0.823581               7           14
+     126 xgboost  past_vol -10.354848 -0.836999               5           14
+     126     har     har_x  -2.524010 -0.530563               5           14
+     126     har  past_vol -13.474230 -0.892017               7           14
+     126   har_x har_x_log   2.874914  0.870456               8           14
+
+Yazildi: dm_test_results.csv, dm_diagnostics.csv
+Rapor  : dm_summary.json
+Sure   : 0.2 saniye

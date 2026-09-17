@@ -1,0 +1,44 @@
+# --- Raw data ---------------------------------------------------------------
+# The Brent and OVX series were downloaded from Yahoo Finance, whose terms of
+# use do not permit redistribution of the data. Instructions for rebuilding the
+# dataset are in data/README.md.
+data/*.xlsx
+data/*.xls
+data/*.csv
+
+# --- Python environment -----------------------------------------------------
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.Python
+
+# --- Notebooks --------------------------------------------------------------
+.ipynb_checkpoints/
+
+# --- Model weights and serialized objects -----------------------------------
+# Large binary files; everything is reproducible from SEED = 42.
+*.pt
+*.pth
+*.pkl
+*.joblib
+*.h5
+*.onnx
+
+# --- Large output files -----------------------------------------------------
+# The metric JSON/CSV files under outputs/ and experiment_log.md are included
+# in the repository DELIBERATELY. If an output larger than 50 MB is ever
+# produced, it must be added below by name (no such file exists at present;
+# the largest file is outputs/features.csv at about 4.7 MB).
+
+# --- Operating system / editors ---------------------------------------------
+Thumbs.db
+ehthumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/

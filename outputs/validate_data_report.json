@@ -1,0 +1,72 @@
+{
+  "columns_match": true,
+  "columns_found": [
+    "Date",
+    "Brent_Petrol",
+    "OVX",
+    "GPRD",
+    "GPRD_THREAT"
+  ],
+  "row_count": 4641,
+  "row_count_match": true,
+  "date_monotonic_increasing": true,
+  "date_duplicates": 0,
+  "date_min": "2008-01-02",
+  "date_max": "2026-09-01",
+  "nan_counts": {
+    "Date": 0,
+    "Brent_Petrol": 0,
+    "OVX": 0,
+    "GPRD": 0,
+    "GPRD_THREAT": 0
+  },
+  "any_new_nan": false,
+  "ovx_record_check": {
+    "date": "2020-04-21",
+    "expected_value": 325.15,
+    "actual_value": 325.1499938964844,
+    "matches": true
+  },
+  "ovx_global_max": {
+    "date": "2020-04-21",
+    "value": 325.1499938964844
+  },
+  "max_gap_days": 17,
+  "long_gaps_over_10_days": [
+    {
+      "gap_start": "2009-04-14",
+      "gap_end": "2009-05-01",
+      "gap_days": 17.0
+    }
+  ],
+  "horizon_summary": [
+    {
+      "ufuk": "1 hafta",
+      "h": 5,
+      "toplam_satir": 4641,
+      "gecerli_hedef_sayisi": 4636,
+      "hedefsiz_son_satir": 5
+    },
+    {
+      "ufuk": "1 ay",
+      "h": 22,
+      "toplam_satir": 4641,
+      "gecerli_hedef_sayisi": 4619,
+      "hedefsiz_son_satir": 22
+    },
+    {
+      "ufuk": "3 ay",
+      "h": 66,
+      "toplam_satir": 4641,
+      "gecerli_hedef_sayisi": 4575,
+      "hedefsiz_son_satir": 66
+    },
+    {
+      "ufuk": "6 ay",
+      "h": 126,
+      "toplam_satir": 4641,
+      "gecerli_hedef_sayisi": 4515,
+      "hedefsiz_son_satir": 126
+    }
+  ]
+}
