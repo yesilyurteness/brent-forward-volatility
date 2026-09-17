@@ -1,5 +1,7 @@
 # Brent Crude Oil Volatility Forecasting
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22815170.svg)](https://doi.org/10.5281/zenodo.22815170)
+
 Forecasting the **forward realized volatility** of Brent crude oil using the OVX implied
 volatility index and daily geopolitical risk indices. Four forecast horizons (1 week,
 1 month, 3 months, 6 months), expanding-window walk-forward validation, and comparison
