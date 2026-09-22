@@ -1,0 +1,82 @@
+{
+  "n_returns": 4640,
+  "calendar_gap_buckets": {
+    "1": 3600,
+    "2-3": 898,
+    ">=4": 142
+  },
+  "n_rows_with_missing_weekdays": 209,
+  "n_missing_weekdays": 229,
+  "n_rows_explained_by_nyse_holidays": 169,
+  "n_rows_uk_only_holiday": 0,
+  "n_real_gap_rows": 40,
+  "n_skipped_trading_days": 55,
+  "real_gap_years": [
+    2008,
+    2009,
+    2010,
+    2011,
+    2012,
+    2013,
+    2014,
+    2016
+  ],
+  "largest_gap": {
+    "prev_date": "2009-04-14",
+    "date": "2009-05-01",
+    "calendar_days": 17
+  },
+  "nyse_holidays_present_in_data": [],
+  "uk_only_bank_holidays_on_trading_days": 86,
+  "uk_only_bank_holidays_present_in_data": 86,
+  "target_exposure": [
+    {
+      "horizon": 5,
+      "n_valid_targets_full": 4636,
+      "n_affected_full": 198,
+      "pct_affected_full": 4.270923209663503,
+      "n_test_targets": 3662,
+      "n_affected_test": 80,
+      "pct_affected_test": 2.184598580010923,
+      "n_affected_2017plus": 0,
+      "n_window_with_calendar_gap_ge4_full": 699,
+      "pct_window_with_calendar_gap_ge4_full": 15.07765314926661
+    },
+    {
+      "horizon": 22,
+      "n_valid_targets_full": 4619,
+      "n_affected_full": 734,
+      "pct_affected_full": 15.890885473046113,
+      "n_test_targets": 3645,
+      "n_affected_test": 328,
+      "pct_affected_test": 8.998628257887518,
+      "n_affected_2017plus": 0,
+      "n_window_with_calendar_gap_ge4_full": 2655,
+      "pct_window_with_calendar_gap_ge4_full": 57.479974020350724
+    },
+    {
+      "horizon": 66,
+      "n_valid_targets_full": 4575,
+      "n_affected_full": 1182,
+      "pct_affected_full": 25.83606557377049,
+      "n_test_targets": 3500,
+      "n_affected_test": 494,
+      "pct_affected_test": 14.114285714285714,
+      "n_affected_2017plus": 0,
+      "n_window_with_calendar_gap_ge4_full": 4303,
+      "pct_window_with_calendar_gap_ge4_full": 94.05464480874316
+    },
+    {
+      "horizon": 126,
+      "n_valid_targets_full": 4515,
+      "n_affected_full": 1482,
+      "pct_affected_full": 32.82392026578073,
+      "n_test_targets": 3500,
+      "n_affected_test": 614,
+      "pct_affected_test": 17.542857142857144,
+      "n_affected_2017plus": 0,
+      "n_window_with_calendar_gap_ge4_full": 4515,
+      "pct_window_with_calendar_gap_ge4_full": 100.0
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "gapfree_start_year": 2017,
+  "gap_period_years": [
+    2012,
+    2016
+  ],
+  "note": "re-aggregation of existing per-fold OOS metrics; no refit",
+  "horizons": {
+    "5": {
+      "spearman_rmse_full_vs_2017plus": 0.9545454545454546,
+      "spearman_rmse_full_vs_2012_2016": 0.9636363636363637,
+      "top3_rmse_full": [
+        "har_ovx",
+        "har_x_log",
+        "har_x"
+      ],
+      "top3_rmse_2017plus": [
+        "har_ovx",
+        "har_x",
+        "har_x_log"
+      ],
+      "n_models_rank_changed_rmse": 7,
+      "spearman_mae_full_vs_2017plus": 0.9636363636363637,
+      "spearman_mae_full_vs_2012_2016": 0.9454545454545454,
+      "top3_mae_full": [
+        "har_ovx",
+        "har_x_log",
+        "har_x"
+      ],
+      "top3_mae_2017plus": [
+        "har_ovx",
+        "har_x_log",
+        "har_x"
+      ],
+      "n_models_rank_changed_mae": 5,
+      "n_folds_2017plus": 10
+    },
+    "22": {
+      "spearman_rmse_full_vs_2017plus": 0.9818181818181818,
+      "spearman_rmse_full_vs_2012_2016": 0.7363636363636363,
+      "top3_rmse_full": [
+        "har_x_log",
+        "har_ovx",
+        "har_x"
+      ],
+      "top3_rmse_2017plus": [
+        "har_x_log",
+        "har_ovx",
+        "har_x"
+      ],
+      "n_models_rank_changed_rmse": 4,
+      "spearman_mae_full_vs_2017plus": 0.990909090909091,
+      "spearman_mae_full_vs_2012_2016": 0.6727272727272727,
+      "top3_mae_full": [
+        "har_x_log",
+        "har_ovx",
+        "har_x"
+      ],
+      "top3_mae_2017plus": [
+        "har_x_log",
+        "har_ovx",
+        "har_x"
+      ],
+      "n_models_rank_changed_mae": 2,
+      "n_folds_2017plus": 10
+    },
+    "66": {
+      "spearman_rmse_full_vs_2017plus": 0.8363636363636365,
+      "spearman_rmse_full_vs_2012_2016": 0.5090909090909091,
+      "top3_rmse_full": [
+        "har_ovx",
+        "har_x_log",
+        "har_x"
+      ],
+      "top3_rmse_2017plus": [
+        "har_ovx",
+        "har_x_log",
+        "har_x"
+      ],
+      "n_models_rank_changed_rmse": 6,
+      "spearman_mae_full_vs_2017plus": 0.8727272727272729,
+      "spearman_mae_full_vs_2012_2016": 0.5727272727272729,
+      "top3_mae_full": [
+        "har_ovx",
+        "har_x",
+        "har_x_log"
+      ],
+      "top3_mae_2017plus": [
+        "har_ovx",
+        "har_x",
+        "har_x_log"
+      ],
+      "n_models_rank_changed_mae": 5,
+      "n_folds_2017plus": 9
+    },
+    "126": {
+      "spearman_rmse_full_vs_2017plus": 0.6727272727272727,
+      "spearman_rmse_full_vs_2012_2016": 0.790909090909091,
+      "top3_rmse_full": [
+        "har_ovx",
+        "har_x_log",
+        "har_x"
+      ],
+      "top3_rmse_2017plus": [
+        "train_mean",
+        "har",
+        "har_ovx"
+      ],
+      "n_models_rank_changed_rmse": 7,
+      "spearman_mae_full_vs_2017plus": 0.7000000000000001,
+      "spearman_mae_full_vs_2012_2016": 0.6545454545454547,
+      "top3_mae_full": [
+        "har_ovx",
+        "har_x",
+        "har_x_log"
+      ],
+      "top3_mae_2017plus": [
+        "har",
+        "train_mean",
+        "har_ovx"
+      ],
+      "n_models_rank_changed_mae": 6,
+      "n_folds_2017plus": 9
+    }
+  }
+}

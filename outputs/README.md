@@ -22,6 +22,9 @@ the runs that produced them. This dictionary translates every non-English name i
 Categorical values are also in Turkish and are listed with their meanings in the
 [Categorical values](#categorical-values) section.
 
+The files added in v1.1.0 (Stages 11-14 below) were generated with English column names
+from the start; their console output is still in Turkish.
+
 ---
 
 ## File naming conventions
@@ -597,6 +600,214 @@ Console transcript, in Turkish.
 
 ---
 
+## Stage 11: exogenous-variable ablation
+
+Produced by `11_ablation_exogenous.py`. Four nested OLS-in-levels HAR specifications that
+differ only in their exogenous regressors: `har` (none), `har_ovx` (+ `ovx_lag1`),
+`har_gpr` (+ `gprd_lag1`, `gprd_threat_lag1`) and `har_x` (all three). Folds, embargo,
+NaN masks, the train-only prediction floor and the metrics are copied from
+`05_benchmarks.py`; the script asserts that its `har` and `har_x` reproduce
+`bench_aggregate_all.csv` exactly. Every variant is fit on the same training rows and
+evaluated on the same test rows (both asserted).
+
+### `ablation_exogenous.csv`
+Fold-average metrics per horizon and variant, over the folds that enter the main mean.
+
+| Column | Meaning |
+| --- | --- |
+| `variant` | Specification (see [Model names](#model-names)) |
+| `variant_label` | Human-readable label, e.g. `HAR + OVX` |
+
+The remaining columns are the shared aggregate columns.
+
+### `ablation_exogenous_folds.csv`
+One row per horizon × fold × variant, all 15 folds including the 2026 fold at h=66 and
+h=126 (`include_in_main=False` there).
+
+| Column | Meaning |
+| --- | --- |
+| `n_clipped` | Test predictions raised to the train-only floor (the training minimum of the target) |
+
+The remaining columns are shared columns.
+
+### `ablation_exogenous_predictions.csv`
+Out-of-sample predictions of all four variants, long format.
+
+| Column | Meaning |
+| --- | --- |
+| `variant` | Specification |
+| `pred` | That variant's prediction, after the train-only floor |
+
+### `ablation_exogenous_coefficients.csv`
+OLS coefficients per horizon × fold × variant, in raw (unstandardized) units. A regressor
+not in the variant is empty.
+
+| Column | Meaning |
+| --- | --- |
+| `beta_const` | Intercept |
+| `beta_<regressor>` | Coefficient of `har_daily`, `brent_vol5`, `brent_vol20`, `ovx_lag1`, `gprd_lag1`, `gprd_threat_lag1` |
+
+Standardized versions of the `har_x` coefficients are in `harx_standardized_betas.csv`.
+
+### `ablation_exogenous_sign_test.csv`
+Is the GPR block's damage systematic across folds? `har_ovx` against `har_x`, per horizon
+and metric, over the folds that enter the main mean.
+
+| Column | Meaning |
+| --- | --- |
+| `metric` | `rmse` or `mae` |
+| `ties` | Folds with identical error |
+| `wins_har_ovx` | Folds where HAR + OVX has the lower error, i.e. adding GPR hurt |
+| `wins_har_x` | Folds where HAR-X has the lower error, i.e. adding GPR helped |
+| `p_two_sided` | Two-sided exact binomial p-value against p = 0.5, ties excluded |
+| `mean_delta`, `median_delta` | Mean and median of (HAR-X error − HAR + OVX error); positive means GPR hurt |
+| `max_single_fold_delta` | The largest single-fold delta |
+| `year_of_max_delta` | The test year in which it occurs |
+| `mean_delta_excl_worst` | Mean delta with that fold removed, a check that one fold does not drive the result |
+
+### `ablation_exogenous_fold_deltas.csv`
+Per-fold RMSE of the two variants and their difference.
+
+| Column | Meaning |
+| --- | --- |
+| `rmse_har_ovx`, `rmse_har_x` | Fold RMSE of each variant |
+| `delta_rmse_harx_minus_harovx` | Their difference; positive means adding GPR hurt in that fold |
+| `winner` | `har_ovx`, `har_x` or `tie` |
+
+### `ablation_exogenous_summary.json`
+Variant definitions, the aggregate table and the sign-test table.
+
+---
+
+## Stage 12: gap-free 2017+ robustness check
+
+### `robustness_gapfree_2017plus.csv` — `12_robustness_gapfree.py`
+The main model comparison re-aggregated over three sets of test years: all folds (`full`,
+identical to `all_models_comparison.csv`, asserted), the gap-free folds 2017-2026
+(`2017plus`) and the gap-affected folds 2012-2016 (`2012_2016`). No model is refit; the
+per-fold metrics come from the committed outputs of scripts 03, 05, 06, 07 and 11. The
+partial-year rule still applies, so `2017plus` has 10 folds at h=5 and h=22 and 9 at h=66
+and h=126. One row per horizon × model.
+
+| Column | Meaning |
+| --- | --- |
+| `n_folds_<set>` | Folds entering the average for that set of test years |
+| `first_year_<set>`, `last_year_<set>` | First and last test year in the set |
+| `rmse_fold_mean_<set>`, `mae_fold_mean_<set>`, `r2_oos_fold_mean_<set>` | Fold averages over that set |
+| `rank_rmse_<set>`, `rank_mae_<set>` | Rank among the 11 models at that horizon (1 = lowest error) |
+| `rank_rmse_change`, `rank_mae_change` | Rank in `2017plus` minus rank in `full`; positive means the model dropped |
+
+`<set>` is one of `full`, `2017plus`, `2012_2016`.
+
+### `robustness_gapfree_2017plus_summary.json` — `12_robustness_gapfree.py`
+Per horizon: Spearman correlation of the full-sample ranking with the 2017+ and with the
+2012-2016 ranking, for RMSE and MAE; the top three models in the full sample and in 2017+;
+the number of models whose rank changed.
+
+---
+
+## Stage 13: direct gap-target test
+
+Produced by `13_gap_target_test.py`. Each real-gap return (see Stage 14) that spans 1 + k
+trading days is rescaled to r / sqrt(1 + k), the target is rebuilt from the corrected
+returns, and every model's committed predictions are re-scored against the corrected
+target **with the predictions held fixed.** Only the evaluation target changes; no model
+is refit. The number of changed test targets is asserted to equal `n_affected_test` in
+`date_gap_target_exposure.csv` (recomputed with Stage 14's own functions), and the unmodified fold means are asserted to reproduce
+`all_models_comparison.csv` and `ablation_exogenous.csv`.
+
+### `gap_target_test.csv`
+One row per horizon × model, 12 models (the main table plus `har_ovx` and `har_gpr`).
+
+| Column | Meaning |
+| --- | --- |
+| `rmse_original`, `mae_original` | Fold-average error against the published target |
+| `rmse_corrected`, `mae_corrected` | Fold-average error against the gap-corrected target |
+| `rmse_change_pct`, `mae_change_pct` | Corrected relative to original, in percent |
+| `rank_rmse_original`, `rank_rmse_corrected` | Rank by RMSE under each target |
+| `rank_mae_original`, `rank_mae_corrected` | Rank by MAE under each target |
+
+### `gap_target_test_folds.csv`
+The same per horizon × model × test year, plus `n_targets_changed`, the number of test
+targets in that fold whose value the correction changed.
+
+### `gap_target_test_summary.json`
+Per horizon: changed test targets, the mean and minimum relative target change, the range
+of the RMSE change across models, and the number of RMSE and MAE rank changes with the
+models involved.
+
+---
+
+## Stage 14: date-gap diagnostics
+
+Produced by `14_date_gap_diagnostics.py`. The dataset is the inner join of four series, so
+a return between consecutive rows can span more than one trading day. "Normal" non-trading
+days are weekends and NYSE holidays (including the special closures of 2012, 2018 and
+2025). England & Wales bank holidays are checked too: all 86 that fall on NYSE trading
+days are present in the data, so the merged series follows the US calendar. A **real
+gap** is a return whose span contains at least one weekday that is neither.
+
+**Two different counts of affected targets.** A target is affected when its h-day window
+contains a real-gap return. `*_full` counts every valid target from 2008 to 2026, the
+2008-2011 warm-up included; `*_test` counts only the targets that enter the main
+out-of-sample evaluation (test years 2012-2026, the 2026 fold excluded at h=66 and h=126).
+The test count is the one that bears on the reported results, and the one
+`13_gap_target_test.py` reproduces. At h=5 these are 198 of 4636 and 80 of 3662.
+
+### `date_gap_distribution.csv`
+
+| Column | Meaning |
+| --- | --- |
+| `bucket` | `1`, `2-3` (weekend-normal) or `>=4` calendar days |
+| `calendar_gap_days` | Calendar days between consecutive rows |
+| `n_rows` | Number of returns with that gap |
+| `pct_of_returns` | Share of all 4640 returns |
+
+### `date_gap_rows.csv`
+Every return whose span contains at least one weekday (209 rows).
+
+| Column | Meaning |
+| --- | --- |
+| `row` | Row index of the return's end date in `veriseti.xlsx` (0-based) |
+| `prev_date`, `date` | Start and end date of the return |
+| `year` | Year of `date` |
+| `calendar_gap_days` | Calendar days spanned |
+| `n_missing_weekdays` | Weekdays skipped between the two rows |
+| `n_nyse_holidays` | Of those, NYSE holidays |
+| `n_uk_only_holidays` | Of those, UK bank holidays on NYSE trading days |
+| `n_unexplained_weekdays` | Of those, neither: skipped trading days |
+| `unexplained_dates` | The skipped trading days, `;`-separated |
+| `real_gap` | True when `n_unexplained_weekdays` > 0 |
+| `category` | See [Categorical values](#categorical-values) |
+
+### `date_gap_by_year.csv`
+
+| Column | Meaning |
+| --- | --- |
+| `year` | Calendar year |
+| `n_returns` | Returns ending in that year |
+| `n_real_gap_rows` | Real-gap returns |
+| `n_skipped_trading_days` | Trading days skipped |
+| `n_calendar_gap_ge4` | Returns spanning 4 or more calendar days for any reason, holidays included |
+
+### `date_gap_target_exposure.csv`
+One row per horizon.
+
+| Column | Meaning |
+| --- | --- |
+| `n_valid_targets_full` | Valid targets, full sample |
+| `n_affected_full`, `pct_affected_full` | Of those, targets whose window contains a real gap |
+| `n_test_targets` | Targets in the main out-of-sample evaluation |
+| `n_affected_test`, `pct_affected_test` | Of those, targets whose window contains a real gap |
+| `n_affected_2017plus` | Affected targets dated 2017 or later; 0 at every horizon (asserted) |
+| `n_window_with_calendar_gap_ge4_full`, `pct_window_with_calendar_gap_ge4_full` | Targets whose window contains any return spanning 4+ calendar days, holidays included. Informational: multi-day returns over weekends and holidays are standard and not a defect |
+
+### `date_gap_diagnostics_summary.json`
+Headline counts, the years with real gaps, the largest gap, the holiday-calendar checks and
+the exposure table.
+
+---
+
 ## Experiment log
 
 ### `experiment_log.md` — maintained across stages
@@ -639,6 +850,9 @@ Limitations section. The text is in Turkish.
 | `gpr` | `grup` | Feature group: geopolitical risk and its derivatives |
 | `etkilesim` | `grup` | Feature group: interaction terms |
 | `takvim` | `grup` | Feature group: calendar features |
+| `nyse_holiday` | `category` | The skipped weekdays are all NYSE holidays; a normal multi-day return |
+| `uk_only_holiday` | `category` | A skipped weekday is a UK bank holiday on which NYSE traded. Defined, but does not occur |
+| `unexplained` | `category` | At least one skipped weekday is neither: a real gap |
 
 ## Model names
 
@@ -646,8 +860,10 @@ Limitations section. The text is in Turkish.
 | --- | --- |
 | `har` | HAR, classic Corsi specification, OLS in levels. Primary HAR |
 | `har_log` | HAR in canonical log-log form, secondary |
-| `har_x` | HAR plus OVX and GPR exogenous regressors, OLS in levels. Primary HAR-X, and the best model at all four horizons |
-| `har_x_log` | HAR-X in log-log form, secondary |
+| `har_x` | HAR plus OVX and GPR exogenous regressors (`ovx_lag1`, `gprd_lag1`, `gprd_threat_lag1`), OLS in levels. Primary HAR-X |
+| `har_ovx` | HAR plus `ovx_lag1` only, OLS in levels. From the exogenous ablation; the lowest fold-average RMSE at h=5, h=66 and h=126 |
+| `har_gpr` | HAR plus `gprd_lag1` and `gprd_threat_lag1` only, OLS in levels. From the exogenous ablation |
+| `har_x_log` | HAR-X in log-log form, secondary. The lowest fold-average RMSE at h=22 |
 | `garch` | GARCH(1,1) with constant mean and Student-t errors, fit on training data only |
 | `xgboost` | XGBoost under the primary specification, the tiered capacity rule |
 | `bilstm` | Attention BiLSTM |

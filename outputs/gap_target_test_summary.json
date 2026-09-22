@@ -1,0 +1,56 @@
+{
+  "correction": "gap return r -> r / sqrt(1 + k), k = skipped trading days",
+  "predictions": "held fixed; no refit",
+  "horizons": {
+    "5": {
+      "n_test_targets_changed": 80,
+      "n_test_targets": 3662,
+      "target_change_pct_mean": -13.045808945713876,
+      "target_change_pct_min": -48.29360299353211,
+      "rmse_change_pct_min": -0.1516229443021322,
+      "rmse_change_pct_max": 0.15538352655861676,
+      "n_rmse_rank_changes": 0,
+      "n_mae_rank_changes": 2,
+      "mae_rank_swaps": [
+        "train_mean",
+        "bilstm"
+      ]
+    },
+    "22": {
+      "n_test_targets_changed": 328,
+      "n_test_targets": 3645,
+      "target_change_pct_mean": -3.2513305517394695,
+      "target_change_pct_min": -16.563113731181357,
+      "rmse_change_pct_min": -0.10442897931534079,
+      "rmse_change_pct_max": 0.2559449635573863,
+      "n_rmse_rank_changes": 0,
+      "n_mae_rank_changes": 0,
+      "mae_rank_swaps": []
+    },
+    "66": {
+      "n_test_targets_changed": 494,
+      "n_test_targets": 3500,
+      "target_change_pct_mean": -2.3239914999811453,
+      "target_change_pct_min": -9.57527436908956,
+      "rmse_change_pct_min": 0.20369692238224602,
+      "rmse_change_pct_max": 0.42197309473164246,
+      "n_rmse_rank_changes": 0,
+      "n_mae_rank_changes": 2,
+      "mae_rank_swaps": [
+        "past_vol",
+        "xgboost"
+      ]
+    },
+    "126": {
+      "n_test_targets_changed": 614,
+      "n_test_targets": 3500,
+      "target_change_pct_mean": -1.9590521596274693,
+      "target_change_pct_min": -6.959475841660689,
+      "rmse_change_pct_min": 0.20082769123583866,
+      "rmse_change_pct_max": 0.48824353370016116,
+      "n_rmse_rank_changes": 0,
+      "n_mae_rank_changes": 0,
+      "mae_rank_swaps": []
+    }
+  }
+}

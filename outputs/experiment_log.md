@@ -1094,3 +1094,180 @@ Bu, diğer bulgularla tutarlı: h=126'da etkin bağımsız gözlem sayısı ~28,
 oynuyor. **Uzun ufuklarda SHAP yorumu kırılgandır ve makalede öyle nitelenmelidir.**
 
 Çıktı: `shap_stability_by_distance.csv`.
+
+
+---
+
+# Aşama 10: Dışsal Değişken Ablasyonu (OVX ve GPR ayrı ayrı)
+
+`scripts/11_ablation_exogenous.py`. **Ne arandı:** Harici bir inceleme, HAR-X'teki GPR
+bloğunun katkı sağlamadığını, hatta zarar verdiğini öne sürdü. İddia kendi hattımızda,
+aynı fold yapısı, embargo, NaN maskesi, train-only taban ve metriklerle yeniden üretildi.
+Dört iç içe OLS (seviye) spesifikasyonu: HAR, HAR + OVX, HAR + GPR, HAR-X (HAR + OVX +
+GPR). Script, `har` ve `har_x`'in `bench_aggregate_all.csv` ile birebir aynı çıktığını ve
+tüm varyantların aynı train/test satırlarını gördüğünü assert ile doğruluyor.
+
+## Fold ortalaması RMSE
+
+| varyant | h=5 | h=22 | h=66 | h=126 |
+| --- | --- | --- | --- | --- |
+| HAR | 0.010834 | 0.008600 | 0.008100 | 0.008203 |
+| HAR + OVX | **0.010298** | **0.007603** | **0.007469** | **0.008003** |
+| HAR + GPR | 0.010882 | 0.008668 | 0.008198 | 0.008262 |
+| HAR-X | 0.010341 | 0.007669 | 0.007573 | 0.008059 |
+
+(Bu dört varyant içinde en iyisi kalın. h=22'de HAR-X log-log, 0.007561 ile HAR + OVX'in
+de önünde.)
+
+## Ne bulundu
+
+- **OVX'in katkısı:** HAR'a göre RMSE %4.9, %11.6, %7.8, %2.4 düşüyor. HAR + OVX, HAR'ı
+  13/15, 14/15, 12/14, 10/14 fold'da geçiyor.
+- **GPR'nin katkısı negatif:** Tek başına HAR'a eklendiğinde %0.4, %0.8, %1.2, %0.7;
+  OVX'in üstüne eklendiğinde %0.4, %0.9, %1.4, %0.7 kötüleştiriyor. Yön dört ufukta da
+  aynı.
+- **Fold düzeyinde anlamlı değil:** HAR + OVX, HAR-X'i 9/15, 11/15, 9/14, 9/14 fold'da
+  geçiyor; kesin işaret testi p = 0.61, 0.12, 0.42, 0.42. En kötü fold (h=5, 22, 66'da
+  2024; h=126'da 2017) çıkarıldığında ortalama fark her ufukta hâlâ pozitif, yani sonuç
+  tek bir fold'dan gelmiyor.
+- **Katsayılar:** Standartlaştırılmış GPR katsayılarının fold ortalaması −0.06 ile +0.08
+  arasında; OVX'inki 0.49–0.65. İki GPR bileşeni ters işaret alıyor (GPRD çoğunlukla
+  pozitif, GPRD_THREAT çoğunlukla negatif) ve birbirini kısmen götürüyor. Uzun ufukta
+  işaret kararsız: h=126'da GPRD 9/14, GPRD_THREAT 5/14 fold'da pozitif. h=5'te ise işaret
+  büyük ölçüde sabit (13/15 ve 4/15 pozitif); "her ufukta savruluyor" demek doğru olmaz.
+
+## Yoruma etkisi
+
+v1.0.0 README'deki "OVX ve GPR katkı sağlıyor" ifadesi **yanlıştı** ve v1.1.0'da
+düzeltildi. Doğru ifade: dışsal kazancın tamamı OVX'ten geliyor; GPR küçük ama yönü
+tutarlı biçimde zarar veriyor ve bu zarar fold düzeyinde anlamlı değil. GPR günlük endeksi
+haftalık güncellemelerle yayımlanıyor; `gprd_lag1` dünkü değerin tahmin anında bilindiğini
+varsayıyor, bu da GPR lehine bir varsayım. Bu varsayıma rağmen katkı yok, dolayısıyla
+bulgu muhafazakâr.
+
+HAR-X ana karşılaştırmada ablasyondan önce belirlendiği haliyle kalıyor; sonradan daha iyi
+çıkan HAR + OVX ile **değiştirilmedi** (CLAUDE.md Kural 5, cherry-picking yasağı). HAR +
+OVX ve HAR + GPR ayrı satırlar olarak raporlanıyor.
+
+Çıktılar: `ablation_exogenous*.csv`, `ablation_exogenous_summary.json`. Tahminler
+sonradan `ablation_exogenous_predictions.csv` olarak eklendi (Aşama 13 için); mevcut
+çıktılar yeniden çalıştırmada bayt düzeyinde aynı kaldı.
+
+---
+
+# Aşama 11: Tarih Boşluğu Tanısı
+
+`scripts/14_date_gap_diagnostics.py`. **Ne arandı:** Veri dört serinin ortak tarihlerinde
+birleştirildiği için, bir seride eksik olan gün tüm satırı düşürüyor. Bu durumda ardışık
+satırlardan hesaplanan "günlük" getiri birden fazla işlem gününü kapsayabilir.
+
+## Ne bulundu
+
+- 4640 getirinin 3600'ünde (%77.6) ardışık satırlar arasındaki fark 1 takvim günü,
+  898'inde (%19.4) 2-3 gün, 142'sinde (%3.1) 4 gün veya daha fazla.
+- 209 satırda en az bir hafta içi gün atlanmış. Bunların 169'u tamamen NYSE tatilleriyle
+  açıklanıyor. İşlem günlerine denk gelen 86 İngiltere tatilinin tamamı veride mevcut,
+  yani birleşik seri ABD takvimini izliyor.
+- **Gerçek boşluk: 40 satır, 55 atlanmış işlem günü.** Hepsi 2008–2016 arasında; 2017'den
+  sonra hiç yok. En büyüğü Nisan 2009'daki 17 günlük boşluk. 2008–2013'teki tek günlük
+  boşluklar çoğunlukla ayın 13–19'una denk geliyor; bu, vade devri günleriyle uyumlu ama
+  doğrulanmadı. Hangi serinin eksik olduğu birleşik dosyadan ayırt edilemiyor.
+
+## İki sayım: tutarsızlık değil, farklı payda
+
+Hedef penceresinde gerçek boşluk bulunan gözlem sayısı iki farklı kümede sayıldı:
+
+| ufuk | tam örneklem (2008–2026) | test fold'ları (2012–2026) |
+| --- | --- | --- |
+| 5 | 198 / 4636 (%4.3) | 80 / 3662 (%2.2) |
+| 22 | 734 / 4619 (%15.9) | 328 / 3645 (%9.0) |
+| 66 | 1182 / 4575 (%25.8) | 494 / 3500 (%14.1) |
+| 126 | 1482 / 4515 (%32.8) | 614 / 3500 (%17.5) |
+
+Önceki ad hoc tanıda h=5 için "198", doğrudan testte "80" rakamı geçmişti. İkisi de
+doğru, ama farklı şeyleri sayıyorlar. 198, yalnızca eğitimde kullanılan 2008–2011 ısınma
+dönemini de içeren tam örneklem sayımı. 80 ise ana örneklem dışı değerlendirmeye giren
+test hedeflerinin sayımı. **Sonuçları etkileyen sayı test sayımıdır; README'de o
+kullanılıyor.** Test sayımı iki script'te bağımsız olarak hesaplanıyor ve Aşama 13'te
+assert ile eşleştiriliyor.
+
+## Yoruma etkisi
+
+Boşluklar sızıntı riski oluşturmuyor; tüm hesaplar satır sırasına dayalı ve geleceğe
+bakmıyor. Sorun ölçüm tutarlılığıyla ilgili. Etkisi Aşama 12 ve 13'te ölçüldü.
+
+Çıktılar: `date_gap_distribution.csv`, `date_gap_rows.csv`, `date_gap_by_year.csv`,
+`date_gap_target_exposure.csv`, `date_gap_diagnostics_summary.json`.
+
+---
+
+# Aşama 12: Boşluksuz Alt Örneklem Sağlamlık Kontrolü (2017–2026)
+
+`scripts/12_robustness_gapfree.py`. **Ne arandı:** Ana karşılaştırma, hiç tarih boşluğu
+içermeyen 2017–2026 fold'larıyla tekrarlandı. Model yeniden eğitilmedi; mevcut fold
+metrikleri yeniden ortalandı. Tam örneklem ana tabloyu birebir üretiyor (assert). Alt
+örneklem test sonucuna bakılarak değil, Aşama 11'deki tanıyla önsel olarak belirlendi.
+
+## Ne bulundu
+
+| ufuk | fold (tam → 2017+) | Spearman RMSE sırası | Spearman MAE sırası |
+| --- | --- | --- | --- |
+| 5 | 15 → 10 | 0.955 | 0.964 |
+| 22 | 15 → 10 | 0.982 | 0.991 |
+| 66 | 14 → 9 | 0.836 | 0.873 |
+| 126 | 14 → 9 | 0.673 | 0.700 |
+
+h=5 ve h=22'de sıralama korunuyor. h=66'da ilk üç model aynı kalıyor, ama train-mean 9.
+sıradan 4. sıraya çıkıyor. h=126'da train-mean 8. sıradan 1. sıraya çıkıyor ve bu dönemde
+tüm modellerin R²_oos'u negatif; ilk beş model arasındaki fark yaklaşık %3.
+
+**Ama bu değişim boşluklardan değil, dönemden kaynaklanıyor.** 2012–2016 sıralaması da tam
+örneklemden farklı; train-mean orada h=66 ve h=126'da 11. sırada. Boşluk kaynaklı bir
+bozulma tüm modellerin hedefini aynı biçimde kaydırırdı. Burada ise tek bir modelin
+(sabit tahmin) göreli başarısı dönemler arasında büyük ölçüde değişiyor, yani iki dönemin
+oynaklık rejimi farklı. Bu kontrol tek başına boşluk etkisini dönem etkisinden
+ayıramıyor; bu yüzden Aşama 13 yapıldı.
+
+## Yoruma etkisi
+
+"Sıralama değişmiyorsa boşluklar etkisiz" argümanı bu kontrolle kurulamaz; uzun ufukta
+sıralama değişiyor. Değişmeyen bulgu şu: 2017+ döneminde de HAR ailesi her ufukta XGBoost
+ve BiLSTM'in önünde. h=126, 2017+ bulgusu (hiçbir modelin train-mean'i geçememesi)
+Sınırlılıklar bölümünde yazılmalı.
+
+Çıktılar: `robustness_gapfree_2017plus.csv`, `robustness_gapfree_2017plus_summary.json`.
+
+---
+
+# Aşama 13: Doğrudan Hedef Düzeltme Testi
+
+`scripts/13_gap_target_test.py`. **Ne arandı:** Boşluk etkisini dönem etkisinden ayırmak.
+Her gerçek boşluk getirisi r, 1 + k işlem gününü kapsıyorsa, r / sqrt(1 + k) ile tek
+günlük eşdeğerine ölçeklendi (rastgele yürüyüş varsayımı: varyans zamanla doğrusal artar).
+Hedef, düzeltilmiş getirilerden aynı formülle yeniden kuruldu. Tüm modellerin yayımlanmış
+tahminleri **sabit tutularak** fold RMSE ve MAE yeniden hesaplandı. Yalnızca
+değerlendirme hedefi değişiyor; özellikler ve eğitim hedefleri düzeltilmedi, model
+yeniden eğitilmedi. HAR + OVX ve HAR + GPR dahil 12 model.
+
+## Ne bulundu
+
+| ufuk | değişen test hedefi | ort. hedef değişimi | RMSE değişimi | RMSE sıra değişimi | MAE sıra değişimi |
+| --- | --- | --- | --- | --- | --- |
+| 5 | 80 / 3662 | −%13.1 | −%0.15 … +%0.16 | 0 | 2 (train-mean ↔ BiLSTM) |
+| 22 | 328 / 3645 | −%3.3 | −%0.10 … +%0.26 | 0 | 0 |
+| 66 | 494 / 3500 | −%2.3 | +%0.20 … +%0.42 | 0 | 2 (XGBoost ↔ past-vol) |
+| 126 | 614 / 3500 | −%2.0 | +%0.20 … +%0.49 | 0 | 0 |
+
+Değişen hedef sayısı, Aşama 11'in test sayımıyla birebir aynı (assert). MAE'de yer
+değiştiren iki çift zaten neredeyse eşitti (fark %0.2 ve %0.06). Düzeltilmiş hedefle de
+HAR + OVX HAR-X'i, HAR da HAR + GPR'yi geçiyor; yani Aşama 10'un bulgusu da boşluklara
+duyarlı değil.
+
+## Yoruma etkisi
+
+**Tarih boşlukları raporlanan sonuçları değiştirmiyor.** Metrikleri en fazla %0.5
+kaydırıyor ve RMSE sıralaması hiçbir ufukta değişmiyor. Makalede birincil kanıt olarak
+bu test, ek sağlamlık analizi olarak Aşama 12 verilmeli. Sınırlılık: 2017+ fold'larının
+eğitim verisi de dahil, eğitim tarafındaki boşluklu getiriler düzeltilmedi.
+
+Çıktılar: `gap_target_test.csv`, `gap_target_test_folds.csv`, `gap_target_test_summary.json`.

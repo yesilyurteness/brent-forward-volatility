@@ -40,7 +40,12 @@ for both a human reader and the assistant.
 | `GPRD` | Caldara & Iacoviello (2022) | Daily geopolitical risk index, overall |
 | `GPRD_THREAT` | Caldara & Iacoviello (2022) | Daily geopolitical risk index, threat component |
 
-4641 rows, 02.01.2008 to 01.09.2026, daily trading-day frequency.
+4641 rows, 02.01.2008 to 01.09.2026, daily trading-day frequency (US trading calendar;
+40 returns between 2008 and 2016 skip one or more trading days, see
+[Date gaps in the merged series](#date-gaps-in-the-merged-series)).
+
+The daily GPR index is published in weekly updates, so in real time its latest value can
+be up to about a week old; see the note under [Main findings](#main-findings).
 
 **The OVX constraint:** the OVX index does not exist before **May 2007**. That is why the
 sample period begins in 2008; going further back would leave the main explanatory variable
@@ -115,6 +120,7 @@ number of independent observations drops to roughly 1 at h=66 and h=126. Therefo
 | XGBoost + Optuna | Robustness analysis, shrunk smearing | `04_optuna_walkforward.py` |
 | Attention BiLSTM | Primary model | `06_attention_bilstm.py` |
 | HAR / HAR-X | Econometric benchmark (HAR-X: with OVX and GPR exogenous regressors) | `05_benchmarks.py` |
+| HAR + OVX / HAR + GPR | Ablation of the exogenous block, one source at a time | `11_ablation_exogenous.py` |
 | GARCH(1,1) | Econometric benchmark, fit on training data only | `05_benchmarks.py` |
 | Hybrid combinations | XGB+BiLSTM, HAR-X+XGB, HAR-X residual modelling | `07_hybrid.py` |
 | Train-mean | Naive baseline (R²_oos = 0 by definition) | `05_benchmarks.py` |
@@ -129,25 +135,59 @@ trial.
 
 ---
 
-## Main finding
+## Main findings
 
-**The linear HAR-X model beats both machine learning models at all four horizons.** OVX
-and GPR information really is useful for forecasting volatility, but what uses that
-information best is a linear specification; the tree-based and neural network models
-extract nothing further.
+> **Correction in v1.1.0.** Version 1.0.0 of this README stated that OVX *and* GPR
+> information both contribute to the forecast. An ablation of the exogenous block
+> (`11_ablation_exogenous.py`) shows that this was wrong: the entire gain comes from OVX,
+> and adding GPR makes the forecast slightly worse at all four horizons. The findings
+> below replace that claim.
+
+1. **OVX carries the exogenous signal.** Adding OVX (`ovx_lag1`) to HAR lowers the
+   fold-average RMSE by 4.9% (h=5), 11.6% (h=22), 7.8% (h=66) and 2.4% (h=126). HAR + OVX
+   beats HAR in 13/15, 14/15, 12/14 and 10/14 folds.
+2. **GPR does not help; it slightly hurts.** Adding the two GPR regressors (`gprd_lag1`,
+   `gprd_threat_lag1`) worsens RMSE by 0.4–1.4%. This holds both when GPR is added to HAR
+   alone (+0.4%, +0.8%, +1.2%, +0.7%) and when it is added on top of OVX (+0.4%, +0.9%,
+   +1.4%, +0.7%). The direction is the same at every horizon, but the effect is small and
+   not statistically significant fold by fold. HAR + OVX beats HAR-X in 9/15, 11/15, 9/14
+   and 9/14 folds, with exact sign test p = 0.61, 0.12, 0.42 and 0.42. The GPR
+   coefficients are close to zero: fold-average standardized coefficients lie between
+   −0.06 and +0.08, against 0.49–0.65 for OVX. The two GPR components take opposite
+   signs, so they partly cancel: GPRD is mostly positive and GPRD_THREAT mostly negative.
+   At long horizons their signs are unstable across folds (at h=126, GPRD is positive in
+   9 of 14 folds and GPRD_THREAT in 5 of 14).
+3. **Non-linear models do not beat the HAR family at any horizon.** XGBoost, under both
+   the primary specification and the Optuna robustness specification, and the Attention
+   BiLSTM are worse than even plain HAR at every horizon. The hybrids that contain HAR-X
+   at best draw level with HAR-X (h=5: −0.006%) and never beat the best HAR-family model.
 
 Fold-average RMSE (in units of the standard deviation of daily log returns, lower is
-better):
+better; the best value at each horizon is in bold):
 
 | Model | h=5 | h=22 | h=66 | h=126 |
 | --- | --- | --- | --- | --- |
-| **HAR-X** | **0.010341** | **0.007669** | **0.007573** | **0.008059** |
+| HAR + OVX | **0.010298** | 0.007603 | **0.007469** | **0.008003** |
+| HAR-X, log-log | 0.010335 | **0.007561** | 0.007504 | 0.008012 |
+| HAR-X (HAR + OVX + GPR) | 0.010341 | 0.007669 | 0.007573 | 0.008059 |
 | HAR | 0.010834 | 0.008600 | 0.008100 | 0.008203 |
+| HAR + GPR | 0.010882 | 0.008668 | 0.008198 | 0.008262 |
 | XGBoost | 0.010913 | 0.009080 | 0.008924 | 0.008627 |
 | GARCH(1,1) | 0.011211 | 0.008970 | 0.009036 | 0.009436 |
 | Attention BiLSTM | 0.014227 | 0.010512 | 0.011589 | 0.011431 |
 | Past-volatility | 0.013318 | 0.009493 | 0.008913 | 0.008508 |
 | Train-mean | 0.013451 | 0.011243 | 0.009239 | 0.008916 |
+
+HAR + OVX and HAR + GPR come from the ablation (`outputs/ablation_exogenous.csv`); the
+other rows are from `outputs/all_models_comparison.csv`. HAR-X is kept in the main
+comparison as specified before the ablation was run, and is not replaced by the better
+HAR + OVX after the fact.
+
+**Real-time availability of GPR.** The daily GPR index is published in weekly updates.
+The GPR features use a one-day lag, which assumes that yesterday's value is known at
+forecast time; in real time the latest value can be up to about a week old. This
+assumption favours GPR, so it strengthens rather than weakens the finding that GPR adds
+nothing.
 
 Detail and interpretation:
 
@@ -178,6 +218,47 @@ Detail and interpretation:
 Every configuration tried, together with its result, is recorded chronologically in
 [outputs/experiment_log.md](outputs/experiment_log.md).
 
+### Date gaps in the merged series
+
+The dataset is the inner join of four series on their common dates, so a date missing from
+one series drops the whole row, and the return computed from consecutive rows then spans
+more than one trading day. `14_date_gap_diagnostics.py` measures this. Weekends and NYSE
+holidays are treated as normal. All UK-only bank holidays are present in the data, so the
+merged series follows the US calendar. After that, **40 returns skip a total of 55 trading
+days.** All of them fall between 2008 and 2016; from 2017 onwards there are none. The
+largest is a 17-day gap in April 2009.
+
+Targets whose h-day window contains at least one such return, counted over the targets in
+the main out-of-sample evaluation (test years 2012-2026; the 2026 fold is excluded at
+h=66 and h=126):
+
+| Horizon | h=5 | h=22 | h=66 | h=126 |
+| --- | --- | --- | --- | --- |
+| Affected test targets | 80 / 3662 (2.2%) | 328 / 3645 (9.0%) | 494 / 3500 (14.1%) | 614 / 3500 (17.5%) |
+
+The full-sample counts, which also include the 2008-2011 warm-up period that is used only
+for training, are in `outputs/date_gap_target_exposure.csv`.
+
+Two checks show that the gaps do not change the conclusions:
+
+- **Direct test** (`13_gap_target_test.py`). Each gap return is rescaled to its one-day
+  equivalent, r / sqrt(1 + k) for k skipped days, and the target is rebuilt from the
+  rescaled returns. Every model's published predictions are then re-scored against the
+  corrected target, with the predictions held fixed. The fold-average RMSE moves by at
+  most 0.5%, and **the RMSE ranking of the 12 models does not change at any horizon.** In
+  the MAE ranking, two pairs that were already near-tied swap places: train-mean and the
+  BiLSTM at h=5, and XGBoost and past-volatility at h=66. HAR + OVX beats HAR-X, and HAR
+  beats HAR + GPR, under the corrected target as well.
+- **Gap-free subsample** (`12_robustness_gapfree.py`). The comparison is repeated on the
+  2017-2026 folds only. The ranking is largely preserved at h=5 and h=22 (Spearman 0.96
+  and 0.98 against the full sample). At h=66 and h=126 it changes (0.84 and 0.67), mainly
+  because train-mean moves up. The 2012-2016 ranking differs from the full-sample ranking
+  as well, so this reflects a difference in volatility regime between the two periods, not
+  the gaps; the direct test above is what separates the two. In the gap-free subsample,
+  the HAR family stays ahead of XGBoost and the BiLSTM at every horizon. At h=126, no model
+  beats the train-mean baseline over 2017-2026: every model has a negative R²_oos, and the
+  top five differ by about 3%.
+
 ### Metric reporting
 
 RMSE and MAE are the main metrics; they are in the same unit as the target and do not
@@ -188,6 +269,16 @@ the calculation is correct. Standard R² (the sklearn definition) is a footnote 
 a basis for decisions: because its reference is the test slice's own mean it is an ex-post
 quantity, and in calm years the fold SST is so small that it takes large negative values.
 MAPE is not used, because volatility can take values near zero.
+
+---
+
+## Version history
+
+- **v1.1.0.** Corrects the main finding: the exogenous gain comes from OVX alone, and GPR
+  slightly worsens the forecast (exogenous ablation, script 11). Adds the date-gap
+  diagnostics (script 14), the direct gap-target test (script 13) and the gap-free 2017+
+  robustness check (script 12). No previously published number changes.
+- **v1.0.0.** Initial release of the leakage-free pipeline.
 
 ---
 
@@ -225,7 +316,15 @@ python scripts/07b_exploratory_vol_regime.py  # 7b. exploratory volatility regim
 python scripts/08_dm_test.py                  # 8. Diebold-Mariano tests
 python scripts/09_power_analysis.py           # 9. statistical power analysis
 python scripts/10_shap_analysis.py            # 10. TreeSHAP attribution analysis
+python scripts/11_ablation_exogenous.py       # 11. OVX / GPR ablation of the HAR family
+python scripts/12_robustness_gapfree.py       # 12. main comparison on the gap-free 2017+ folds
+python scripts/13_gap_target_test.py          # 13. direct test: gap-corrected target, fixed predictions
+python scripts/14_date_gap_diagnostics.py     # 14. date-gap diagnostics of the merged series
 ```
+
+Steps 11-14 take a few seconds each. Step 12 reads the outputs of steps 3, 5, 6, 7 and 11;
+step 13 reads the prediction files of steps 3, 5, 6, 7 and 11, and imports the gap
+classification from the step 14 script, so it does not need step 14's outputs.
 
 The later steps must not be run before data validation passes: steps 1 and 2 raise an
 error and stop if the row count is not 4641.
@@ -273,7 +372,7 @@ step trains one neural network per fold on CPU. The rest take on the order of mi
 |-- data/
 |   |-- README.md          data sources and reconstruction instructions
 |   +-- veriseti.xlsx      NOT in the repository, built locally
-|-- scripts/               12 independently runnable scripts
+|-- scripts/               16 independently runnable scripts
 +-- outputs/               metrics, predictions, JSON reports, experiment log
 ```
 
