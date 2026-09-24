@@ -136,7 +136,7 @@ def main():
         print("  {:26s} <- {}".format(VARIANT_LABEL[key], cols))
     print()
 
-    fold_rows, coef_rows, pred_rows = [], [], []
+    fold_rows, coef_rows, std_rows, pred_rows = [], [], [], []
 
     for fold_id, test_year in enumerate(test_years, start=1):
         train_idx_all = df.index[df["year"] < test_year]
@@ -205,6 +205,19 @@ def main():
                 for c, v in zip(["const"] + cols, b):
                     rec["beta_" + c] = float(v)
                 coef_rows.append(rec)
+                # Standardized coefficients: beta_j * sd(X_j) / sd(y), both sd's from THIS
+                # fold's training slice. The raw coefficients are not comparable across
+                # regressors (OVX is in the tens, GPRD in the hundreds), so a unit
+                # difference would otherwise be read as an effect difference. Same formula
+                # as harx_standardized_betas.csv (10_shap_analysis.py). The intercept has
+                # no standardized counterpart and is omitted.
+                X_tr_np = tr[cols].to_numpy("float64")
+                sd_y = float(tr[y_col].to_numpy("float64").std())
+                rec_std = {"horizon": h, "fold": fold_id, "test_year": test_year,
+                           "variant": key, "include_in_main": include_main}
+                for c, v, sd_x in zip(cols, b[1:], X_tr_np.std(axis=0)):
+                    rec_std["beta_" + c] = float(v * sd_x / sd_y)
+                std_rows.append(rec_std)
                 pred_rows.append(pd.DataFrame({
                     "horizon": h, "Date": te["Date"].values, "fold": fold_id,
                     "test_year": test_year, "include_in_main": include_main,
@@ -212,6 +225,9 @@ def main():
 
     folds = pd.DataFrame(fold_rows)
     coefs = pd.DataFrame(coef_rows)
+    coefs_std = pd.DataFrame(std_rows)[
+        ["horizon", "fold", "test_year", "variant", "include_in_main"]
+        + ["beta_" + c for c in HAR_COLS + OVX_EXTRA + GPR_EXTRA]]
     preds = pd.concat(pred_rows, ignore_index=True)
 
     # ===================================================================
@@ -310,6 +326,61 @@ def main():
     print(wide.to_string(float_format=lambda v: "{:+.2e}".format(v)))
 
     # ===================================================================
+    # Standardized-beta summary per horizon x variant x regressor.
+    # Fold count: every variant is ESTIMATED in 15 folds (test years 2012-2026) at every
+    # horizon, but at h=66 and h=126 only 14 of them enter the primary metric aggregation
+    # (the 2026 partial-year rule). Both fold sets are summarized and labelled:
+    #   fold_set="main"          -> the folds that enter the metric mean (15/15/14/14)
+    #   fold_set="all_estimated" -> all 15 estimated folds
+    # Cross-check: har_x must reproduce harx_standardized_betas.csv (10_shap_analysis.py).
+    ref_path = OUT_DIR / "harx_standardized_betas.csv"
+    if ref_path.exists():
+        ref = pd.read_csv(ref_path)
+        chk = coefs_std[coefs_std["variant"] == "har_x"].melt(
+            id_vars=["horizon", "fold"], value_vars=["beta_" + c for c in VARIANTS["har_x"]],
+            var_name="regresor", value_name="mine")
+        chk["regresor"] = chk["regresor"].str.replace("beta_", "", regex=False)
+        chk = chk.merge(ref, on=["horizon", "fold", "regresor"], validate="1:1")
+        assert len(chk) == len(ref)
+        assert np.allclose(chk["mine"], chk["std_beta"], rtol=1e-9, atol=1e-12), \
+            "standartlastirilmis har_x betalari harx_standardized_betas.csv ile uyusmuyor"
+        print("[OK] har_x standartlastirilmis betalari harx_standardized_betas.csv "
+              "ile ayni.\n")
+
+    long = coefs_std.melt(id_vars=["horizon", "fold", "test_year", "variant",
+                                   "include_in_main"],
+                          var_name="regressor", value_name="std_beta").dropna(
+        subset=["std_beta"])
+    long["regressor"] = long["regressor"].str.replace("beta_", "", regex=False)
+    parts = []
+    for fold_set, sub in (("main", long[long["include_in_main"]]),
+                          ("all_estimated", long)):
+        g = sub.groupby(["horizon", "variant", "regressor"], sort=False)["std_beta"]
+        parts.append(pd.DataFrame({
+            "n_folds": g.size(), "mean": g.mean(), "median": g.median(),
+            "min": g.min(), "max": g.max(),
+            "n_positive": g.apply(lambda x: int((x > 0).sum())),
+            "n_negative": g.apply(lambda x: int((x < 0).sum())),
+        }).reset_index().assign(fold_set=fold_set))
+    std_summary = pd.concat(parts, ignore_index=True)
+    reg_order = {c: i for i, c in enumerate(HAR_COLS + OVX_EXTRA + GPR_EXTRA)}
+    var_order = {k: i for i, k in enumerate(VARIANTS)}
+    std_summary = (std_summary
+                   .assign(_f=std_summary["fold_set"].map({"main": 0, "all_estimated": 1}),
+                           _v=std_summary["variant"].map(var_order),
+                           _r=std_summary["regressor"].map(reg_order))
+                   .sort_values(["_f", "horizon", "_v", "_r"])
+                   .drop(columns=["_f", "_v", "_r"]))
+    std_summary = std_summary[["fold_set", "horizon", "variant", "regressor", "n_folds",
+                               "mean", "median", "min", "max", "n_positive", "n_negative"]]
+
+    print("\n=== Standartlastirilmis beta ozeti (fold_set=main; 15 tahmin fold'u, "
+          "h=66/126'da 14 metrik fold'u) ===")
+    show = std_summary[std_summary["fold_set"] == "main"]
+    print(show.drop(columns="fold_set").to_string(
+        index=False, float_format=lambda v: "{:+.3f}".format(v)))
+
+    # ===================================================================
     agg_out = agg[["horizon", "variant", "variant_label", "n_folds",
                    "rmse_fold_mean", "mae_fold_mean", "r2_oos_fold_mean"]]
     agg_out.to_csv(OUT_DIR / "ablation_exogenous.csv", index=False)
@@ -317,6 +388,9 @@ def main():
     sign.to_csv(OUT_DIR / "ablation_exogenous_sign_test.csv", index=False)
     deltas.to_csv(OUT_DIR / "ablation_exogenous_fold_deltas.csv", index=False)
     coefs.to_csv(OUT_DIR / "ablation_exogenous_coefficients.csv", index=False)
+    coefs_std.to_csv(OUT_DIR / "ablation_exogenous_coefficients_standardized.csv",
+                     index=False)
+    std_summary.to_csv(OUT_DIR / "ablation_exogenous_std_beta_summary.csv", index=False)
     preds.to_csv(OUT_DIR / "ablation_exogenous_predictions.csv", index=False)
     with open(OUT_DIR / "ablation_exogenous_summary.json", "w", encoding="utf-8") as f:
         json.dump({"variants": {k: list(v) for k, v in VARIANTS.items()},
@@ -324,7 +398,8 @@ def main():
                    "sign_test": sign.to_dict(orient="records")},
                   f, indent=2)
     print("\nYazildi: outputs/ablation_exogenous.csv (+ _folds, _sign_test, "
-          "_fold_deltas, _coefficients, _predictions, _summary.json)")
+          "_fold_deltas, _coefficients, _coefficients_standardized, "
+          "_std_beta_summary, _predictions, _summary.json)")
 
 
 if __name__ == "__main__":

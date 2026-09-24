@@ -647,7 +647,33 @@ not in the variant is empty.
 | `beta_const` | Intercept |
 | `beta_<regressor>` | Coefficient of `har_daily`, `brent_vol5`, `brent_vol20`, `ovx_lag1`, `gprd_lag1`, `gprd_threat_lag1` |
 
-Standardized versions of the `har_x` coefficients are in `harx_standardized_betas.csv`.
+Standardized versions are in `ablation_exogenous_coefficients_standardized.csv`.
+
+**Fold count.** Every variant is *estimated* in 15 folds (test years 2012-2026) at every
+horizon, so the coefficient files have 4 variants × 4 horizons × 15 folds = 240 rows. The
+primary metric aggregation uses 15 folds at h=5 and h=22 but only **14 at h=66 and
+h=126**, where the partial 2026 fold is excluded. That is: 15 estimation folds, 14 metric
+folds at the long horizons.
+
+### `ablation_exogenous_coefficients_standardized.csv`
+The coefficients of `ablation_exogenous_coefficients.csv`, standardized as
+beta_j × sd(X_j) / sd(y), with both standard deviations taken over **that fold's training
+slice**. The raw coefficients are not comparable across regressors because the regressors
+are in levels on very different scales (OVX in the tens, GPRD in the hundreds). Same
+formula as `harx_standardized_betas.csv`; the script asserts that its `har_x` rows
+reproduce that file exactly. Same keys as the raw file plus `include_in_main`; the
+intercept has no standardized counterpart and is omitted.
+
+### `ablation_exogenous_std_beta_summary.csv`
+Per horizon × variant × regressor, over two fold sets.
+
+| Column | Meaning |
+| --- | --- |
+| `fold_set` | `main`: the folds that enter the primary metric mean (15, 15, 14, 14). `all_estimated`: all 15 estimated folds |
+| `regressor` | Regressor name |
+| `n_folds` | Folds in the set |
+| `mean`, `median`, `min`, `max` | Of the standardized coefficient across those folds |
+| `n_positive`, `n_negative` | Folds with a positive / negative standardized coefficient |
 
 ### `ablation_exogenous_sign_test.csv`
 Is the GPR block's damage systematic across folds? `har_ovx` against `har_x`, per horizon
@@ -808,6 +834,42 @@ the exposure table.
 
 ---
 
+## Stage 15: exploratory XGBoost-6
+
+Produced by `15_exploratory_xgb6.py`. **Exploratory and post hoc**, like the ablation
+ladder; not part of the primary hypothesis family and not used for model selection.
+XGBoost is given exactly HAR-X's six regressors, raw, and the HAR-X target in levels (no
+log-ratio reparameterization, no smearing, no feature preprocessing), on the same
+training and test rows as HAR-X (asserted). The tiered capacity rule and shared XGBoost
+parameters are imported from `03_walkforward.py`. Holding inputs and target fixed isolates
+the effect of the functional form.
+
+### `exploratory_xgb6.csv`
+One row per horizon, over the folds that enter the main mean.
+
+| Column | Meaning |
+| --- | --- |
+| `rmse_<m>`, `mae_<m>`, `r2_oos_<m>` | Fold averages for `<m>` = `xgb6`, `har_x`, `xgb_primary` (the primary XGBoost of Stage 3) |
+| `rmse_pct_xgb6_vs_har_x`, `mae_pct_xgb6_vs_har_x` | XGBoost-6 relative to HAR-X, percent; positive = XGBoost-6 worse. The functional-form effect |
+| `rmse_pct_xgb_primary_vs_xgb6`, `mae_pct_xgb_primary_vs_xgb6` | Primary XGBoost relative to XGBoost-6, percent; the joint effect of the 65 features, the log-ratio target, smearing and feature preprocessing |
+| `<metric>_wins_xgb6`, `<metric>_wins_har_x`, `<metric>_ties` | Folds won by each model |
+| `<metric>_sign_p_two_sided` | Two-sided exact binomial sign test, ties excluded, not corrected for multiplicity |
+| `n_folds_tier_yuksek`, `n_folds_tier_orta`, `n_folds_tier_dusuk` | Folds per capacity tier |
+| `n_clipped_total` | Predictions raised to the train-only floor |
+
+### `exploratory_xgb6_folds.csv`
+Per horizon × fold (all 15, with `include_in_main`): training size, effective
+observations, the capacity tier and its parameters, the floor count, the training mean
+and the four metrics.
+
+### `exploratory_xgb6_predictions.csv`
+Test predictions (`pred_xgb6`) with `y_true`.
+
+### `exploratory_xgb6_summary.json`
+Status note, the fixed design choices, runtime and the aggregate table.
+
+---
+
 ## Experiment log
 
 ### `experiment_log.md` — maintained across stages
@@ -863,6 +925,7 @@ Limitations section. The text is in Turkish.
 | `har_x` | HAR plus OVX and GPR exogenous regressors (`ovx_lag1`, `gprd_lag1`, `gprd_threat_lag1`), OLS in levels. Primary HAR-X |
 | `har_ovx` | HAR plus `ovx_lag1` only, OLS in levels. From the exogenous ablation; the lowest fold-average RMSE at h=5, h=66 and h=126 |
 | `har_gpr` | HAR plus `gprd_lag1` and `gprd_threat_lag1` only, OLS in levels. From the exogenous ablation |
+| `xgb6` | XGBoost on HAR-X's six raw regressors with HAR-X's level target, no transformation or smearing. Exploratory (Stage 15) |
 | `har_x_log` | HAR-X in log-log form, secondary. The lowest fold-average RMSE at h=22 |
 | `garch` | GARCH(1,1) with constant mean and Student-t errors, fit on training data only |
 | `xgboost` | XGBoost under the primary specification, the tiered capacity rule |

@@ -320,9 +320,10 @@ python scripts/11_ablation_exogenous.py       # 11. OVX / GPR ablation of the HA
 python scripts/12_robustness_gapfree.py       # 12. main comparison on the gap-free 2017+ folds
 python scripts/13_gap_target_test.py          # 13. direct test: gap-corrected target, fixed predictions
 python scripts/14_date_gap_diagnostics.py     # 14. date-gap diagnostics of the merged series
+python scripts/15_exploratory_xgb6.py         # 15. exploratory: XGBoost on HAR-X's inputs and target
 ```
 
-Steps 11-14 take a few seconds each. Step 12 reads the outputs of steps 3, 5, 6, 7 and 11;
+Steps 11-15 take a few seconds each (step 15 under a minute). Step 12 reads the outputs of steps 3, 5, 6, 7 and 11;
 step 13 reads the prediction files of steps 3, 5, 6, 7 and 11, and imports the gap
 classification from the step 14 script, so it does not need step 14's outputs.
 
@@ -372,7 +373,7 @@ step trains one neural network per fold on CPU. The rest take on the order of mi
 |-- data/
 |   |-- README.md          data sources and reconstruction instructions
 |   +-- veriseti.xlsx      NOT in the repository, built locally
-|-- scripts/               16 independently runnable scripts
+|-- scripts/               17 independently runnable scripts
 +-- outputs/               metrics, predictions, JSON reports, experiment log
 ```
 

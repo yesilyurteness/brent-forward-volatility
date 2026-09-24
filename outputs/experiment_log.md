@@ -1271,3 +1271,97 @@ bu test, ek sağlamlık analizi olarak Aşama 12 verilmeli. Sınırlılık: 2017
 eğitim verisi de dahil, eğitim tarafındaki boşluklu getiriler düzeltilmedi.
 
 Çıktılar: `gap_target_test.csv`, `gap_target_test_folds.csv`, `gap_target_test_summary.json`.
+
+
+---
+
+# Aşama 14: Ablasyon Katsayılarının Standartlaştırılması
+
+`scripts/11_ablation_exogenous.py` (eklendi). **Ne arandı:** Ham katsayılar
+karşılaştırılamıyor; regresörler ölçeklenmemiş düzeyde (OVX onlar, GPRD yüzler
+mertebesinde), birim farkı etki farkı gibi okunabiliyor. Her fold ve ufuk için
+beta_std = beta × sd(X) / sd(y) hesaplandı; sd'ler o fold'un train diliminden. `har_x`
+satırları `harx_standardized_betas.csv` ile birebir aynı çıkıyor (assert).
+
+**Fold sayısı:** Her varyant her ufukta 15 fold'da tahmin ediliyor (240 satır = 4 varyant
+× 4 ufuk × 15 fold). Birincil metrik toplulaştırması h=66 ve h=126'da 14 fold (2026 kısmi
+yıl kuralı). Yani 15 tahmin fold'u, uzun ufuklarda 14 metrik fold'u. Özet dosyası iki
+kümeyi ayrı veriyor (`fold_set` = `main` / `all_estimated`).
+
+## Ne bulundu (fold_set = main; ortalama, pozitif/negatif fold)
+
+| ufuk | HAR-X: ovx_lag1 | HAR-X: gprd_lag1 | HAR-X: gprd_threat_lag1 | HAR+GPR: gprd_lag1 | HAR+GPR: gprd_threat_lag1 |
+| --- | --- | --- | --- | --- | --- |
+| 5 | +0.584 (15/0) | +0.028 (13/2) | −0.024 (4/11) | +0.040 (15/0) | −0.056 (0/15) |
+| 22 | +0.650 (15/0) | +0.019 (11/4) | −0.028 (6/9) | +0.032 (11/4) | −0.063 (4/11) |
+| 66 | +0.586 (14/0) | +0.077 (13/1) | −0.057 (3/11) | +0.091 (11/3) | −0.093 (3/11) |
+| 126 | +0.487 (14/0) | +0.040 (9/5) | −0.007 (5/9) | +0.052 (9/5) | −0.035 (5/9) |
+
+- GPR katsayıları OVX'inkinin kabaca onda biri ya da daha küçük.
+- İki GPR bileşeni sistematik olarak ters işaretli. Train dilimlerinde korelasyonları
+  0.82–0.89; ters işaret, bu yüksek eşdoğrusallıkla uyumlu ve net etkileri kısmen
+  birbirini götürüyor.
+- İşaret kısa ufukta kararlı: HAR+GPR'de h=5'te GPRD 15/15 pozitif, THREAT 15/15 negatif.
+  Uzun ufukta kararsız: h=126'da 9/5 ve 5/9.
+- OVX eklenince brent_vol20'nin standartlaştırılmış katsayısı 0.44–0.62'den 0.06–0.13'e
+  düşüyor. OVX, kalıcılık bilgisinin büyük kısmını üstleniyor.
+
+## Yoruma etkisi
+
+README'deki ifadeyle tutarlı: GPR katsayıları OVX'e göre sıfıra yakın, iki bileşen ters
+işaretli, işaret uzun ufukta kararsız. "İşaret her ufukta fold'dan fold'a savruluyor"
+demek yanlış olur; h=5'te işaret tamamen kararlı.
+
+Çıktılar: `ablation_exogenous_coefficients_standardized.csv`,
+`ablation_exogenous_std_beta_summary.csv`. Mevcut ablasyon çıktıları bayt düzeyinde
+değişmedi.
+
+---
+
+# Aşama 15: XGBoost-6 — fonksiyonel formu izole eden keşifsel koşu
+
+`scripts/15_exploratory_xgb6.py`. **Statü: keşifsel ve post hoc**, ablasyon merdiveniyle
+aynı. Birincil hipotez ailesine dahil değil, model seçiminde kullanılmıyor, birincil
+spesifikasyonu değiştirmiyor. Ana sonuçlar bilindikten sonra tasarlandı.
+
+**Ne arandı:** XGBoost ile HAR-X karşılaştırması üç şeyi birden değiştiriyor: model
+ailesi, girdi kümesi (65 vs 6) ve hedef/ön işleme (log-oran + smearing + özelliklerde
+log1p/winsorize/MinMax vs düzey, dönüşümsüz). XGBoost-6 yalnızca model ailesini
+değiştiriyor: HAR-X'in altı ham regresörü, düzey hedef, smearing yok, ön işleme yok, HAR-X
+ile aynı train/test satırları (assert), aynı train-min tabanı. Kapasite kuralı ve ortak
+parametreler `03_walkforward.py`'dan import edildi. Not: winsorization birincil XGBoost'ta
+yalnızca özelliklere uygulanıyor, hedefe değil.
+
+## Ne bulundu (fold ortalaması RMSE, ana metriğe giren fold'lar)
+
+| ufuk | XGBoost-6 | HAR-X | XGBoost birincil | XGB-6 vs HAR-X | birincil vs XGB-6 | XGB-6 / HAR-X kazanan fold | işaret p |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 5 | 0.010645 | 0.010341 | 0.010913 | +2.94% | +2.51% | 3 / 12 | 0.035 |
+| 22 | 0.008184 | 0.007669 | 0.009080 | +6.72% | +10.94% | 4 / 11 | 0.118 |
+| 66 | 0.008015 | 0.007573 | 0.008924 | +5.84% | +11.34% | 2 / 12 | 0.013 |
+| 126 | 0.008050 | 0.008059 | 0.008627 | −0.12% | +7.17% | 7 / 7 | 1.000 |
+
+MAE'de XGBoost-6, HAR-X'ten %4.3, %10.3, %10.9, %2.6 kötü (işaret p = 0.035, 0.035,
+0.057, 0.42). Kapasite katmanları: h=5'te 15 fold yüksek; h=22'de 9 yüksek ve 6 orta;
+h=66'da 9 orta ve 5 düşük; h=126'da 2 orta ve 12 düşük. Tabana takılan tahmin yok.
+
+- **Fonksiyonel form, girdi ve hedef sabitken:** h=5, 22, 66'da esnek form doğrusal formdan
+  %3–7 kötü. h=126'da fark yok (−%0.12, 7'ye 7). İşaret testleri düzeltmesiz; 4 RMSE
+  testine Holm uygulanınca hiçbiri 0.05 altında kalmıyor (en küçük 0.013 × 4 = 0.052).
+- **Birincil XGBoost'un ek kaybı:** 65 özellik + log-oran hedef + smearing + ön işleme
+  birlikte, XGBoost-6'ya göre %2.5–11.3 daha kötü. Birincil XGBoost ile HAR-X arasındaki
+  farkın (%5.5, %18.4, %17.8, %7.0) bir kısmı fonksiyonel formdan, kalanı bu paketten
+  geliyor.
+- XGBoost-6, düz HAR'ı dört ufukta da geçiyor, çünkü OVX'i görüyor. En iyi HAR-ailesi
+  modelini (HAR + OVX veya HAR-X-log) hiçbir ufukta geçmiyor.
+
+## Yoruma etkisi
+
+"Doğrusal olmayan modelleme katkı sağlamıyor" iddiası, girdi ve hedef sabitken de
+geçerli, ama daha ölçülü: h=5–66'da esnek form küçük ama tutarlı bir kayıp veriyor,
+h=126'da eşitlik. Birincil XGBoost'un büyük kaybı yalnızca fonksiyonel formdan değil,
+zengin özellik seti ve hedef reparametrizasyonundan da geliyor. Bu ayrıştırma makalede
+keşifsel olarak raporlanmalı; birincil karşılaştırmanın yerine geçmez.
+
+Çıktılar: `exploratory_xgb6.csv`, `exploratory_xgb6_folds.csv`,
+`exploratory_xgb6_predictions.csv`, `exploratory_xgb6_summary.json`.

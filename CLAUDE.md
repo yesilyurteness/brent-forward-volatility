@@ -242,3 +242,11 @@ For aggregation, both the fold average and the pooled value are given. CLAUDE.md
 - After writing a script, test it on a small slice of data, then run it on the full data
 - If you notice anything that carries a leakage risk (even if I asked for it), warn me and
   explain why
+
+## Git
+
+- Commit messages do not use a `Co-Authored-By` trailer. This repository is linked to an
+  academic paper via DOI, and publisher policies (ICMJE, COPE, Wiley) do not allow AI tools
+  to be listed as authors. AI use is documented in the README and in the paper's
+  declaration section instead.
+- Do not push; the push decision is always mine.
