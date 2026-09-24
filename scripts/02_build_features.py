@@ -61,6 +61,7 @@ SERIES = {
     "gprd": "GPRD",
     "gprd_threat": "GPRD_THREAT",
 }
+GPR_NAMES = ("gprd", "gprd_threat")
 
 
 def _flag(cond_series, source_z):
@@ -77,10 +78,71 @@ def _flag(cond_series, source_z):
     )
 
 
-def build_features(df):
+def _gpr_observation_features(df):
+    """GPR-derived quantities on the index's OWN observation sequence, NOT shifted.
+
+    Row d uses GPR observations up to and including d. These are the building blocks
+    that _align_gpr maps onto trading days; the spike flags, momentum and interaction
+    terms are derived from the aligned columns afterwards (they are row-wise, so deriving
+    before or after the mapping gives the same values).
+    """
+    g = {}
+    for name in GPR_NAMES:
+        s = df[SERIES[name]]
+        for i in range(1, 6):
+            g[f"{name}_lag{i}"] = s.shift(i - 1)
+        for span in (5, 10, 20):
+            g[f"{name}_ema{span}"] = s.ewm(span=span, adjust=False,
+                                           min_periods=span).mean()
+        g[f"{name}_z60"] = (s - s.rolling(Z_WINDOW).mean()) / s.rolling(Z_WINDOW).std()
+    # Threat ratio: division is safe because the GPRD base is always > 9.
+    g["threat_ratio"] = df["GPRD_THREAT"] / df["GPRD"]
+    return pd.DataFrame(g, index=df.index)
+
+
+def _align_gpr(g, date_parsed, pub_dates):
+    """Maps the unshifted GPR block onto trading days.
+
+    pub_dates is None -> TIMESTAMP alignment: row t takes observation t-1, i.e. the plain
+    .shift(1) used for every other predictor (the original pipeline, reproduced bit for
+    bit).
+
+    pub_dates given -> PUBLICATION (as-of) alignment: row t takes the features of d*,
+    the latest observation whose publication date p(d*) is on or before the PREVIOUS
+    trading day t-1. Every observation inside d*'s lags/EMA/z-score window is older than
+    d* and, because each published file carries the full history, was published by
+    p(d*) as well -- so no window contains a value that was not yet public at t-1.
+
+    Features are computed on the index's own observation sequence and then mapped to
+    trading days by publication date, rather than forward-filling the level series onto
+    the trading calendar. The latter would discard 78% of published observations (only
+    the latest value of each release would ever enter a feature).
+
+    GPR features are aligned one day more conservatively than other predictors. Releases
+    are posted around 13:30 UTC, i.e. before the Brent close, so a value released on day
+    t could technically be used on day t; we nevertheless require p(d*) <= t-1 so that
+    GPR follows the same "information up to t-1" convention as the .shift(1) applied to
+    every other predictor.
+    """
+    if pub_dates is None:
+        return g.shift(1)
+    pub = np.asarray(pub_dates, dtype="datetime64[ns]")
+    assert (np.diff(pub) >= np.timedelta64(0)).all(), "publication dates not monotone"
+    prev_day = np.asarray(date_parsed.shift(1), dtype="datetime64[ns]")
+    pos = np.searchsorted(pub, prev_day, side="right") - 1
+    pos[0] = -1                                   # row 0 has no previous trading day
+    vals = g.to_numpy(dtype="float64")[np.clip(pos, 0, None)]
+    vals[pos < 0] = np.nan
+    return pd.DataFrame(vals, index=g.index, columns=g.columns)
+
+
+def build_features(df, gpr_pub_dates=None):
     """Builds the causal feature matrix from the raw data frame.
 
     df: a frame containing the columns Date, Brent_Petrol, OVX, GPRD, GPRD_THREAT.
+    gpr_pub_dates: None for the timestamp-aligned GPR features (original pipeline), or
+    the publication date of each row's GPR observation (gpr_publication.py) for the
+    publication-aligned ones. Only the GPR-derived columns depend on it.
     The function is pure; it holds no global state. The prefix-invariance test verifies
     causality by calling it again on slices of the data.
     """
@@ -89,12 +151,16 @@ def build_features(df):
         {"Date": df["Date"].values, "Date_parsed": date_parsed.values},
         index=df.index,
     )
+    # Order: availability alignment -> transformations -> the usual one-day shift, all
+    # inside _align_gpr (see its docstring).
+    gpr = _align_gpr(_gpr_observation_features(df), date_parsed, gpr_pub_dates)
 
     # --- 1) Lags 1-5 (4 series x 5 = 20) ------------------------------------
     for name, col in SERIES.items():
         s = df[col]
         for i in range(1, 6):
-            out[f"{name}_lag{i}"] = s.shift(i)
+            out[f"{name}_lag{i}"] = (gpr[f"{name}_lag{i}"] if name in GPR_NAMES
+                                     else s.shift(i))
 
     # --- 2) EMA 5/10/20 (4 series x 3 = 12) ---------------------------------
     # The ewm result includes time t -> .shift(1) makes it causal.
@@ -106,7 +172,8 @@ def build_features(df):
         s = df[col]
         for span in (5, 10, 20):
             out[f"{name}_ema{span}"] = (
-                s.ewm(span=span, adjust=False, min_periods=span).mean().shift(1)
+                gpr[f"{name}_ema{span}"] if name in GPR_NAMES
+                else s.ewm(span=span, adjust=False, min_periods=span).mean().shift(1)
             )
 
     # --- 3) Brent log-return lags 1-5 (5) -----------------------------------
@@ -156,15 +223,14 @@ def build_features(df):
     out["ovx_mr60"] = (ovx / ovx_mean - 1.0).shift(1)
 
     # --- 6) GPR derivatives (7) ---------------------------------------------
-    for name in ("gprd", "gprd_threat"):
-        s = df[SERIES[name]]
-        z = ((s - s.rolling(Z_WINDOW).mean()) / s.rolling(Z_WINDOW).std()).shift(1)
+    # z-score and threat ratio come from the aligned GPR block; spike and momentum are
+    # derived from already-aligned columns and are not shifted again.
+    for name in GPR_NAMES:
+        z = gpr[f"{name}_z60"]
         out[f"{name}_z60"] = z
         out[f"{name}_spike"] = _flag(z > SPIKE_Z, z)
-        # The EMA columns are already shifted; the difference is not shifted again.
         out[f"{name}_momentum"] = out[f"{name}_ema5"] - out[f"{name}_ema20"]
-    # Threat ratio: division is safe because the GPRD base is always > 9.
-    out["threat_ratio"] = (df["GPRD_THREAT"] / df["GPRD"]).shift(1)
+    out["threat_ratio"] = gpr["threat_ratio"]
 
     # --- 7) Interaction terms (4) -------------------------------------------
     # The inputs are already-shifted lag1 columns -> they are not shifted again.
@@ -371,6 +437,159 @@ def main():
     print(f"Yazildi: {OUT_DIR / 'features.csv'} "
           f"({len(feat)} satir x {feat.shape[1]} sutun)")
     print(f"Rapor: {OUT_DIR / 'build_features_report.json'}")
+
+    build_publication_aligned(df, feat, cols)
+
+
+def publication_sensitivity_test(df, pub, n_tests=40, seed=42):
+    """Availability counterpart of the prefix test.
+
+    For a test row t, every GPR observation whose publication date is AFTER the previous
+    trading day t-1 is overwritten with garbage. If the features respect publication
+    dates, rows 0..t are unchanged bit for bit. The same perturbation is applied to the
+    timestamp-aligned pipeline as a control: if it changes row t there, the test has
+    power (the timestamp version uses values that were not yet published).
+    """
+    rng = np.random.default_rng(seed)
+    dates = pd.to_datetime(df["Date"], format="%d.%m.%Y")
+    base_pub = build_features(df, pub)
+    base_ts = build_features(df)
+    rows = np.sort(rng.choice(np.arange(300, len(df)), size=n_tests, replace=False))
+    results = []
+    for t in rows:
+        unpublished = pub > dates.iloc[t - 1].to_datetime64()
+        d2 = df.copy()
+        d2.loc[unpublished, ["GPRD", "GPRD_THREAT"]] = (
+            d2.loc[unpublished, ["GPRD", "GPRD_THREAT"]] * 3.0 + 50.0)
+        f_pub = build_features(d2, pub)
+        pd.testing.assert_frame_equal(base_pub.iloc[: t + 1], f_pub.iloc[: t + 1],
+                                      check_exact=True, obj=f"publication test t={t}")
+        f_ts = build_features(d2)
+        ts_changed = not base_ts.iloc[[t]].equals(f_ts.iloc[[t]])
+        results.append({"row": int(t), "date": str(dates.iloc[t].date()),
+                        "n_unpublished_perturbed": int(unpublished.sum()),
+                        "publication_aligned_unchanged": True,
+                        "timestamp_aligned_row_changed": bool(ts_changed)})
+    return results
+
+
+def build_publication_aligned(df, feat_ts, cols):
+    """Publication-aligned GPR features (see _align_gpr and gpr_publication.py).
+
+    Writes outputs/features_publication_aligned.csv and its report. features.csv (the
+    timestamp-aligned version) is left untouched. Only GPR-derived columns may differ.
+    """
+    import gpr_publication  # local import: lives next to this script
+
+    dates = pd.to_datetime(df["Date"], format="%d.%m.%Y")
+    pub = np.asarray(gpr_publication.publication_dates(dates).values,
+                     dtype="datetime64[ns]")
+    feat = build_features(df, pub)
+
+    # Prefix invariance, same cuts and zero tolerance as for the timestamp version.
+    prefix_results = []
+    for cut in (3000, 4000):
+        truncated = build_features(df.iloc[:cut].copy(), pub[:cut])
+        pd.testing.assert_frame_equal(feat.iloc[:cut], truncated, check_exact=True,
+                                      check_dtype=True,
+                                      obj=f"prefix-invariance pub (kesme={cut})")
+        prefix_results.append({"cut_row": cut, "tolerance": 0.0, "passed": True})
+    print("\n=== Yayim-hizali: prefix-invariance testi GECTI (kesme 3000, 4000; "
+          "tolerans=0) ===")
+
+    sens = publication_sensitivity_test(df, pub)
+    n_ts = sum(r["timestamp_aligned_row_changed"] for r in sens)
+    print(f"=== Yayim tarihine duyarlilik testi: {len(sens)}/{len(sens)} satirda "
+          "yayim-hizali ozellikler degismedi; zaman-damgali surumde ayni bozma "
+          f"{n_ts}/{len(sens)} satiri degistirdi (kontrol) ===")
+
+    # Which columns changed, and did the first valid row move?
+    changed, inv = [], []
+    for c in cols:
+        a, b = feat_ts[c], feat[c]
+        same = a.equals(b)
+        fv_ts, fv_pub = a.first_valid_index(), b.first_valid_index()
+        if not same:
+            changed.append(c)
+        inv.append({"feature": c, "changed": not same,
+                    "first_valid_row_timestamp": int(fv_ts),
+                    "first_valid_row_publication": int(fv_pub),
+                    "n_rows_differ": int((~((a == b) | (a.isna() & b.isna()))).sum())})
+    inv = pd.DataFrame(inv)
+    assert all(c.startswith(("gprd", "threat")) or "gprd" in c for c in changed), (
+        "a non-GPR feature changed")
+    print(f"Degisen ozellik: {len(changed)}/{len(cols)}")
+    print(inv[inv["changed"]].to_string(index=False))
+    last_ts = int(inv["first_valid_row_timestamp"].max())
+    last_pub = int(inv["first_valid_row_publication"].max())
+    print(f"Tum ozelliklerin dolu oldugu ilk satir: zaman-damgali {last_ts}, "
+          f"yayim-hizali {last_pub}")
+
+    # Effective lag actually used: calendar days between row t and the GPR observation
+    # its features end on (timestamp version: t-1).
+    obs_idx = np.searchsorted(pub, np.asarray(dates.shift(1), dtype="datetime64[ns]"),
+                              side="right") - 1
+    ok = np.arange(len(df)) > 0
+    ok &= obs_idx >= 0
+    used = dates.to_numpy()[obs_idx[ok]]
+    lag_cal = (dates.to_numpy()[ok] - used) / np.timedelta64(1, "D")
+    lag_rows = np.arange(len(df))[ok] - obs_idx[ok]
+    ts_lag_cal = (dates - dates.shift(1)).dt.days.to_numpy()[ok]
+    by_dow = (pd.DataFrame({"dow": dates[ok].dt.day_name().values, "lag": lag_cal})
+              .groupby("dow")["lag"].agg(["min", "median", "mean", "max"]))
+    lag_summary = {
+        "calendar_days_publication": {"min": float(lag_cal.min()),
+                                      "median": float(np.median(lag_cal)),
+                                      "mean": float(lag_cal.mean()),
+                                      "max": float(lag_cal.max())},
+        "calendar_days_timestamp": {"min": float(ts_lag_cal.min()),
+                                    "median": float(np.median(ts_lag_cal)),
+                                    "mean": float(ts_lag_cal.mean()),
+                                    "max": float(ts_lag_cal.max())},
+        "trading_rows_publication": {"min": int(lag_rows.min()),
+                                     "median": float(np.median(lag_rows)),
+                                     "mean": float(lag_rows.mean()),
+                                     "max": int(lag_rows.max())},
+        "calendar_days_by_trading_weekday": by_dow.round(2).to_dict("index"),
+        "share_rows_timestamp_uses_unpublished_obs": float((lag_rows > 1).mean()),
+    }
+    print("Kullanilan GPR gozleminin yasi (takvim gunu), yayim-hizali:",
+          lag_summary["calendar_days_publication"])
+    print(by_dow.round(2).to_string())
+
+    feat.to_csv(OUT_DIR / "features_publication_aligned.csv", index=False)
+    inv.to_csv(OUT_DIR / "features_publication_aligned_changes.csv", index=False)
+    cal = gpr_publication.publication_calendar()
+    cal["lag_days"] = (cal["publication_date"] - cal.index.to_series()).dt.days
+    cal.to_csv(OUT_DIR / "gpr_publication_calendar.csv", index_label="date",
+               date_format="%Y-%m-%d")
+    report = {
+        "method": ("Features are computed on the index's own observation sequence and "
+                   "then mapped to trading days by publication date, rather than "
+                   "forward-filling the level series onto the trading calendar. The "
+                   "latter would discard 78% of published observations."),
+        "one_day_conservative": ("GPR features are aligned one day more conservatively "
+                                 "than other predictors: releases are posted ~13:30 UTC, "
+                                 "before the Brent close, so same-day use would be "
+                                 "possible; p(d*) <= t-1 is required for consistency "
+                                 "with the .shift(1) convention."),
+        "publication_rule": {"from_2022-02-24": "empirical first vintage containing d",
+                             "before_2022-02-24": ("first Monday on/after d, next "
+                                                   "business day if federal holiday "
+                                                   "(COUNTERFACTUAL)")},
+        "gpr_values": "data/veriseti.xlsx (identical to the 2026-09-01 vintage)",
+        "prefix_invariance": prefix_results,
+        "publication_sensitivity_test": sens,
+        "n_features": len(cols),
+        "n_changed": len(changed),
+        "changed_features": changed,
+        "first_fully_valid_row": {"timestamp": last_ts, "publication": last_pub},
+        "effective_lag": lag_summary,
+    }
+    with open(OUT_DIR / "build_features_publication_aligned_report.json", "w",
+              encoding="utf-8") as f:
+        json.dump(report, f, ensure_ascii=False, indent=2)
+    print(f"Yazildi: {OUT_DIR / 'features_publication_aligned.csv'}")
 
 
 if __name__ == "__main__":

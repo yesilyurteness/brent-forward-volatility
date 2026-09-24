@@ -1,0 +1,391 @@
+{
+  "method": "Features are computed on the index's own observation sequence and then mapped to trading days by publication date, rather than forward-filling the level series onto the trading calendar. The latter would discard 78% of published observations.",
+  "one_day_conservative": "GPR features are aligned one day more conservatively than other predictors: releases are posted ~13:30 UTC, before the Brent close, so same-day use would be possible; p(d*) <= t-1 is required for consistency with the .shift(1) convention.",
+  "publication_rule": {
+    "from_2022-02-24": "empirical first vintage containing d",
+    "before_2022-02-24": "first Monday on/after d, next business day if federal holiday (COUNTERFACTUAL)"
+  },
+  "gpr_values": "data/veriseti.xlsx (identical to the 2026-09-01 vintage)",
+  "prefix_invariance": [
+    {
+      "cut_row": 3000,
+      "tolerance": 0.0,
+      "passed": true
+    },
+    {
+      "cut_row": 4000,
+      "tolerance": 0.0,
+      "passed": true
+    }
+  ],
+  "publication_sensitivity_test": [
+    {
+      "row": 576,
+      "date": "2010-05-18",
+      "n_unpublished_perturbed": 4065,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": false
+    },
+    {
+      "row": 670,
+      "date": "2010-10-01",
+      "n_unpublished_perturbed": 3974,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 683,
+      "date": "2010-10-20",
+      "n_unpublished_perturbed": 3959,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 699,
+      "date": "2010-11-11",
+      "n_unpublished_perturbed": 3944,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 705,
+      "date": "2010-11-19",
+      "n_unpublished_perturbed": 3939,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 853,
+      "date": "2011-06-28",
+      "n_unpublished_perturbed": 3788,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": false
+    },
+    {
+      "row": 1089,
+      "date": "2012-06-18",
+      "n_unpublished_perturbed": 3556,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 1168,
+      "date": "2012-10-11",
+      "n_unpublished_perturbed": 3475,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 1284,
+      "date": "2013-04-11",
+      "n_unpublished_perturbed": 3359,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 1501,
+      "date": "2014-03-06",
+      "n_unpublished_perturbed": 3142,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 1902,
+      "date": "2015-10-07",
+      "n_unpublished_perturbed": 2740,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 2041,
+      "date": "2016-04-27",
+      "n_unpublished_perturbed": 2601,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 2164,
+      "date": "2016-10-21",
+      "n_unpublished_perturbed": 2480,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 2189,
+      "date": "2016-11-29",
+      "n_unpublished_perturbed": 2452,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": false
+    },
+    {
+      "row": 2220,
+      "date": "2017-01-13",
+      "n_unpublished_perturbed": 2424,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 2246,
+      "date": "2017-02-22",
+      "n_unpublished_perturbed": 2396,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 2251,
+      "date": "2017-03-01",
+      "n_unpublished_perturbed": 2391,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 2462,
+      "date": "2017-12-29",
+      "n_unpublished_perturbed": 2182,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 2516,
+      "date": "2018-03-20",
+      "n_unpublished_perturbed": 2125,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": false
+    },
+    {
+      "row": 2570,
+      "date": "2018-06-06",
+      "n_unpublished_perturbed": 2072,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 2661,
+      "date": "2018-10-15",
+      "n_unpublished_perturbed": 1984,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 2704,
+      "date": "2018-12-17",
+      "n_unpublished_perturbed": 1941,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 3042,
+      "date": "2020-04-22",
+      "n_unpublished_perturbed": 1600,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 3086,
+      "date": "2020-06-24",
+      "n_unpublished_perturbed": 1556,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 3117,
+      "date": "2020-08-07",
+      "n_unpublished_perturbed": 1527,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 3304,
+      "date": "2021-05-06",
+      "n_unpublished_perturbed": 1339,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 3396,
+      "date": "2021-09-16",
+      "n_unpublished_perturbed": 1247,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 3474,
+      "date": "2022-01-06",
+      "n_unpublished_perturbed": 1169,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 3584,
+      "date": "2022-06-15",
+      "n_unpublished_perturbed": 1058,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 3630,
+      "date": "2022-08-22",
+      "n_unpublished_perturbed": 1015,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 3681,
+      "date": "2022-11-02",
+      "n_unpublished_perturbed": 961,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 3693,
+      "date": "2022-11-18",
+      "n_unpublished_perturbed": 951,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 3861,
+      "date": "2023-07-25",
+      "n_unpublished_perturbed": 780,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": false
+    },
+    {
+      "row": 3891,
+      "date": "2023-09-06",
+      "n_unpublished_perturbed": 750,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": false
+    },
+    {
+      "row": 3927,
+      "date": "2023-10-26",
+      "n_unpublished_perturbed": 716,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 3997,
+      "date": "2024-02-07",
+      "n_unpublished_perturbed": 645,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 4023,
+      "date": "2024-03-15",
+      "n_unpublished_perturbed": 621,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 4149,
+      "date": "2024-09-16",
+      "n_unpublished_perturbed": 496,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    },
+    {
+      "row": 4308,
+      "date": "2025-05-06",
+      "n_unpublished_perturbed": 333,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": false
+    },
+    {
+      "row": 4507,
+      "date": "2026-02-20",
+      "n_unpublished_perturbed": 136,
+      "publication_aligned_unchanged": true,
+      "timestamp_aligned_row_changed": true
+    }
+  ],
+  "n_features": 65,
+  "n_changed": 27,
+  "changed_features": [
+    "gprd_lag1",
+    "gprd_lag2",
+    "gprd_lag3",
+    "gprd_lag4",
+    "gprd_lag5",
+    "gprd_threat_lag1",
+    "gprd_threat_lag2",
+    "gprd_threat_lag3",
+    "gprd_threat_lag4",
+    "gprd_threat_lag5",
+    "gprd_ema5",
+    "gprd_ema10",
+    "gprd_ema20",
+    "gprd_threat_ema5",
+    "gprd_threat_ema10",
+    "gprd_threat_ema20",
+    "gprd_z60",
+    "gprd_spike",
+    "gprd_momentum",
+    "gprd_threat_z60",
+    "gprd_threat_spike",
+    "gprd_threat_momentum",
+    "threat_ratio",
+    "ovx_x_gprd",
+    "ovx_x_gprd_threat",
+    "ovx_regime_high_x_gprd",
+    "ovx_regime_low_x_gprd"
+  ],
+  "first_fully_valid_row": {
+    "timestamp": 127,
+    "publication": 127
+  },
+  "effective_lag": {
+    "calendar_days_publication": {
+      "min": 1.0,
+      "median": 3.0,
+      "mean": 3.6866508518438645,
+      "max": 20.0
+    },
+    "calendar_days_timestamp": {
+      "min": 1.0,
+      "median": 1.0,
+      "mean": 1.4690532671986198,
+      "max": 17.0
+    },
+    "trading_rows_publication": {
+      "min": 1,
+      "median": 3.0,
+      "mean": 2.9657105887427218,
+      "max": 8
+    },
+    "calendar_days_by_trading_weekday": {
+      "Friday": {
+        "min": 1.0,
+        "median": 4.0,
+        "mean": 4.2,
+        "max": 18.0
+      },
+      "Monday": {
+        "min": 3.0,
+        "median": 7.0,
+        "mean": 7.15,
+        "max": 20.0
+      },
+      "Thursday": {
+        "min": 1.0,
+        "median": 3.0,
+        "mean": 3.2,
+        "max": 7.0
+      },
+      "Tuesday": {
+        "min": 1.0,
+        "median": 1.0,
+        "mean": 1.92,
+        "max": 11.0
+      },
+      "Wednesday": {
+        "min": 1.0,
+        "median": 2.0,
+        "mean": 2.27,
+        "max": 9.0
+      }
+    },
+    "share_rows_timestamp_uses_unpublished_obs": 0.8031054561138667
+  }
+}

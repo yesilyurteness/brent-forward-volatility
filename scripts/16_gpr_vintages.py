@@ -131,17 +131,20 @@ def main():
 
     # ---- (2) first-release series ------------------------------------------------------
     # For each date d >= first vintage date: the value in the earliest vintage containing d.
+    # Tracked as a set, not as "after the latest date seen": a date can be skipped and
+    # added later (2024-02-29 is missing from the 2024-03-01 and 03-04 vintages and first
+    # appears on 2024-03-05).
     rows = []
     first_vd = vdates[0]
-    seen = pd.Timestamp.min
+    seen = set()
     for vd in vdates:
         v = vint[vd]
-        new = v.index[(v.index > seen) & (v.index >= first_vd)]
+        new = [d for d in v.index[v.index >= first_vd] if d not in seen]
         for d in new:
             rows.append({"date": d, "vintage_date": vd, **{f"{s}_first": v.at[d, s]
                                                            for s in SERIES}})
-        seen = max(seen, v.index.max())
-    fr = pd.DataFrame(rows).set_index("date")
+        seen.update(new)
+    fr = pd.DataFrame(rows).set_index("date").sort_index()
     fr["obs_weekday"] = fr.index.day_name()
     fr["publication_lag_days"] = (fr["vintage_date"] - fr.index).dt.days
     for s in SERIES:
