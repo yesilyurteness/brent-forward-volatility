@@ -6,6 +6,11 @@ data/*.xlsx
 data/*.xls
 data/*.csv
 
+# Local verification snapshots of the Caldara-Iacoviello GPR page and data files
+# (current and Wayback Machine vintages), used to establish the publication rule.
+# Third-party content: only the URLs, access dates and quoted rule are reported.
+data/gpr_vintages/
+
 # --- Python environment -----------------------------------------------------
 .venv/
 venv/
