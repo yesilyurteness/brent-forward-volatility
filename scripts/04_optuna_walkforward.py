@@ -98,6 +98,8 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from xgboost import XGBRegressor
 
+import alignment
+
 optuna.logging.set_verbosity(optuna.logging.WARNING)
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -143,10 +145,16 @@ TARGET_MODE_DEFAULT = "ratio"
 # while pulling the long horizons (n_eff ~6.6 and w ~0.40 at h=66; n_eff ~5 and w ~0.33 at
 # h=126) strongly towards 1. K is PRE-DECLARED and will not be tuned to the test result.
 SMEARING_SHRINK_K = 10.0
+# --raw-smearing switches the shrinkage off (w = 1, S = S_raw) everywhere it is applied.
+# This reproduces the pre-shrinkage run stored as outputs/opt_rawsmearing_* (the appendix
+# bias-variance record); it is NOT an alternative specification.
+SHRINK_ENABLED = True
 
 
 def shrink_smearing(s_raw, n_eff):
     """Shrinks the raw smearing factor towards 1 according to the effective observation count."""
+    if not SHRINK_ENABLED:
+        return s_raw, 1.0
     w = n_eff / (n_eff + SMEARING_SHRINK_K)
     return 1.0 + w * (s_raw - 1.0), w
 
@@ -555,11 +563,20 @@ def main():
     ap.add_argument("--target-mode", choices=["ratio", "log"],
                     default=TARGET_MODE_DEFAULT)
     ap.add_argument("--suffix", default="")
+    ap.add_argument("--raw-smearing", action="store_true",
+                    help="Kucultmeyi kapat (S = S_ham); opt_rawsmearing_* ekini uretir. "
+                         "Yalnizca Ek'teki yanlilik-varyans kaydi icin.")
+    alignment.add_argument(ap)
     args = ap.parse_args()
+    global SHRINK_ENABLED
+    SHRINK_ENABLED = not args.raw_smearing
+    prefix = "opt_rawsmearing" if args.raw_smearing else "opt"
+    asfx = alignment.suffix(args.gpr_alignment)
 
     t0 = time.time()
 
-    feat = pd.read_csv(OUT_DIR / "features.csv", parse_dates=["Date_parsed"])
+    feat = pd.read_csv(alignment.features_path(args.gpr_alignment),
+                       parse_dates=["Date_parsed"])
     tgt = pd.read_csv(OUT_DIR / "targets.csv", parse_dates=["Date_parsed"])
     raw = pd.read_excel(DATA_PATH)
     assert len(feat) == len(tgt) == len(raw)
@@ -726,16 +743,37 @@ def main():
         print("bazinda satirlar birlikte okunmalidir.")
     print()
 
+    # --- Publication mode: same sample and the same validation design -------
+    # The validation split, the Optuna eligibility and the capacity tier depend only on
+    # row counts, so they must match the timestamp run exactly; the baselines too.
+    if not args.suffix:
+        covered = lambda d: d["horizon"].isin(args.horizons) & d["test_year"].isin(test_years)
+        alignment.check_equal(preds_all, "opt_predictions_all.csv",
+                              ["horizon", "Date", "fold", "test_year"],
+                              ["include_in_main", "y_true", "pred_train_mean",
+                               "pred_past_vol"], args.gpr_alignment, rows=covered,
+                              what="ayni orneklem + GPR'siz baseline tahminleri")
+        alignment.check_equal(fold_all, f"{prefix}_folds_all.csv",
+                              ["horizon", "test_year"],
+                              ["n_val_years", "val_years", "n_train_proper", "n_val",
+                               "n_test", "tp_effective", "val_effective",
+                               "capacity_tier", "optuna_used", "n_trials",
+                               "train_mean_target"],
+                              args.gpr_alignment, rows=covered,
+                              what="validation tasarimi + satir sayilari")
+
     # --- Writing ------------------------------------------------------------
-    sfx = args.suffix
-    preds_all.to_csv(OUT_DIR / f"opt_predictions_all{sfx}.csv", index=False)
-    metrics_all.to_csv(OUT_DIR / f"opt_metrics_all{sfx}.csv", index=False)
-    agg_all.to_csv(OUT_DIR / f"opt_aggregate_all{sfx}.csv", index=False)
-    fold_all.to_csv(OUT_DIR / f"opt_folds_all{sfx}.csv", index=False)
+    sfx = args.suffix + asfx
+    preds_all.to_csv(OUT_DIR / f"{prefix}_predictions_all{sfx}.csv", index=False)
+    metrics_all.to_csv(OUT_DIR / f"{prefix}_metrics_all{sfx}.csv", index=False)
+    agg_all.to_csv(OUT_DIR / f"{prefix}_aggregate_all{sfx}.csv", index=False)
+    fold_all.to_csv(OUT_DIR / f"{prefix}_folds_all{sfx}.csv", index=False)
 
     runtime = time.time() - t0
     summary = {
         "horizons": args.horizons, "test_years": test_years, "seed": SEED,
+        "gpr_alignment": args.gpr_alignment,
+        "raw_smearing": bool(args.raw_smearing),
         "n_trials_per_fold": args.n_trials,
         "target_mode": args.target_mode,
         "n_features": len(feature_cols),
@@ -781,13 +819,15 @@ def main():
         "folds": all_recs,
         "runtime_seconds": round(runtime, 2),
     }
-    with open(OUT_DIR / f"opt_summary_all{sfx}.json", "w", encoding="utf-8") as f:
+    if args.raw_smearing:
+        summary["smearing_shrinkage"] = "KAPALI (--raw-smearing): S = S_ham"
+    with open(OUT_DIR / f"{prefix}_summary_all{sfx}.json", "w", encoding="utf-8") as f:
         json.dump(summary, f, ensure_ascii=False, indent=2, default=str)
 
     n_opt = int(fold_all["optuna_used"].sum())
-    print(f"Yazildi: opt_predictions_all{sfx}.csv, opt_metrics_all{sfx}.csv, "
-          f"opt_aggregate_all{sfx}.csv, opt_folds_all{sfx}.csv")
-    print(f"Rapor  : opt_summary_all{sfx}.json")
+    print(f"Yazildi: {prefix}_predictions_all{sfx}.csv, {prefix}_metrics_all{sfx}.csv, "
+          f"{prefix}_aggregate_all{sfx}.csv, {prefix}_folds_all{sfx}.csv")
+    print(f"Rapor  : {prefix}_summary_all{sfx}.json")
     print(f"Optuna calisan fold: {n_opt}/{len(fold_all)} | "
           f"toplam deneme: {int(fold_all['n_trials'].sum())}")
     print(f"Sure   : {runtime:.1f} saniye")

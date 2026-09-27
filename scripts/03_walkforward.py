@@ -103,6 +103,8 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from xgboost import XGBRegressor
 
+import alignment
+
 ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "data" / "veriseti.xlsx"
 OUT_DIR = ROOT / "outputs"
@@ -488,12 +490,15 @@ def main():
                          "log: duz log hedef (onceki surum).")
     ap.add_argument("--suffix", default="",
                     help="Cikti dosya adlarina eklenecek ek (karsilastirma icin)")
+    alignment.add_argument(ap)
     args = ap.parse_args()
+    asfx = alignment.suffix(args.gpr_alignment)
 
     t0 = time.time()
 
     # --- Data loading and alignment ----------------------------------------
-    feat = pd.read_csv(OUT_DIR / "features.csv", parse_dates=["Date_parsed"])
+    feat = pd.read_csv(alignment.features_path(args.gpr_alignment),
+                       parse_dates=["Date_parsed"])
     tgt = pd.read_csv(OUT_DIR / "targets.csv", parse_dates=["Date_parsed"])
     raw = pd.read_excel(DATA_PATH)
     assert len(feat) == len(tgt) == len(raw), "Kaynak dosyalarin satir sayisi uyusmuyor"
@@ -541,7 +546,7 @@ def main():
         metrics_df = metrics_table(fold_records)
         agg_rows = aggregate(metrics_df, preds_df, h)
 
-        suffix = f"h{h}{args.suffix}"
+        suffix = f"h{h}{args.suffix}{asfx}"
         preds_df.to_csv(OUT_DIR / f"wf_predictions_{suffix}.csv", index=False)
         metrics_df.to_csv(OUT_DIR / f"wf_metrics_{suffix}.csv", index=False)
 
@@ -688,7 +693,25 @@ def main():
     # ===================================================================
     # Writing
     # ===================================================================
-    sfx = args.suffix
+    # Publication mode: same sample as the timestamp run, and the GPR-free baselines
+    # (train_mean, past_vol) reproduced bit for bit. Rows restricted to what this run
+    # covered, so smoke runs are checked too.
+    if not args.suffix:
+        covered = lambda d: d["horizon"].isin(args.horizons) & d["test_year"].isin(test_years)
+        alignment.check_equal(preds_all, "wf_predictions_all.csv",
+                              ["horizon", "Date", "fold", "test_year"],
+                              ["include_in_main", "y_true", "pred_train_mean",
+                               "pred_past_vol"], args.gpr_alignment, rows=covered,
+                              what="ayni orneklem + GPR'siz baseline tahminleri")
+        alignment.check_equal(metrics_all, "wf_metrics_all.csv",
+                              ["horizon", "test_year", "model"],
+                              ["n_test", "rmse", "mae", "r2_oos", "r2"],
+                              args.gpr_alignment,
+                              rows=lambda d: covered(d) & d["model"].isin(
+                                  ["train_mean", "past_vol"]),
+                              what="GPR'siz baseline metrikleri")
+
+    sfx = args.suffix + asfx
     metrics_all.to_csv(OUT_DIR / f"wf_metrics_all{sfx}.csv", index=False)
     agg_all.to_csv(OUT_DIR / f"wf_aggregate_all{sfx}.csv", index=False)
     preds_all.to_csv(OUT_DIR / f"wf_predictions_all{sfx}.csv", index=False)
@@ -696,6 +719,7 @@ def main():
     runtime = time.time() - t0
     summary = {
         "horizons": args.horizons,
+        "gpr_alignment": args.gpr_alignment,
         "seed": SEED,
         "n_folds_per_horizon": len(test_years),
         "test_years": test_years,

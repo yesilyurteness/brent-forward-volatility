@@ -77,6 +77,8 @@ import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
 from xgboost import XGBRegressor
 
+import alignment
+
 ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "data" / "veriseti.xlsx"
 OUT_DIR = ROOT / "outputs"
@@ -200,15 +202,17 @@ def main():
     ap.add_argument("--horizons", type=int, nargs="+", default=HORIZONS)
     ap.add_argument("--test-years", type=int, nargs="+", default=None)
     ap.add_argument("--suffix", default="")
+    alignment.add_argument(ap)
     args = ap.parse_args()
+    al = args.gpr_alignment
     t0 = time.time()
 
-    # --- Saved predictions -------------------------------------------------
+    # --- Saved predictions (same alignment as this run) --------------------
     xgb_p = pd.concat(
-        [pd.read_csv(OUT_DIR / f"wf_predictions_h{h}.csv").assign(horizon=h)
+        [pd.read_csv(alignment.out(f"wf_predictions_h{h}.csv", al)).assign(horizon=h)
          for h in HORIZONS], ignore_index=True)
-    bil_p = pd.read_csv(OUT_DIR / "bilstm_predictions_all.csv")
-    ben_p = pd.read_csv(OUT_DIR / "bench_predictions_all.csv")
+    bil_p = pd.read_csv(alignment.out("bilstm_predictions_all.csv", al))
+    ben_p = pd.read_csv(alignment.out("bench_predictions_all.csv", al))
 
     key = ["horizon", "Date"]
     merged = (xgb_p[key + ["test_year", "include_in_main", "y_true",
@@ -236,7 +240,7 @@ def main():
     merged["pred_h2_harx_xgb"] = w * merged["pred_har_x"] + (1 - w) * merged["pred_xgboost"]
 
     # --- H3: HAR-X residual modelling --------------------------------------
-    feat = pd.read_csv(OUT_DIR / "features.csv", parse_dates=["Date_parsed"])
+    feat = pd.read_csv(alignment.features_path(al), parse_dates=["Date_parsed"])
     tgt = pd.read_csv(OUT_DIR / "targets.csv", parse_dates=["Date_parsed"])
     raw = pd.read_excel(DATA_PATH)
     daily_ret = np.log(raw["Brent_Petrol"] / raw["Brent_Petrol"].shift(1))
@@ -433,9 +437,22 @@ def main():
     print()
 
     # --- Writing -----------------------------------------------------------
-    sfx = args.suffix
+    sfx = args.suffix + alignment.suffix(al)
     keep = key + ["test_year", "include_in_main", "y_true"] + \
         [f"pred_{m}" for m in all_models if f"pred_{m}" in merged]
+    # Publication mode: same sample, HAR / train_mean / past_vol bit for bit, and the
+    # H3 residual design (train rows, tier) unchanged.
+    if not args.suffix:
+        covered = lambda d: d["horizon"].isin(args.horizons) & d["test_year"].isin(test_years)
+        alignment.check_equal(merged[keep], "hybrid_predictions_all.csv",
+                              ["horizon", "Date", "test_year"],
+                              ["include_in_main", "y_true", "pred_har",
+                               "pred_train_mean", "pred_past_vol"], al, rows=covered,
+                              what="ayni orneklem + GPR'siz model tahminleri")
+        alignment.check_equal(fold_all, "hybrid_folds_all.csv", ["horizon", "test_year"],
+                              ["n_train_harx", "n_train_resid", "n_test",
+                               "n_train_effective", "capacity_tier"], al, rows=covered,
+                              what="H3 train/test satir sayilari + kademe")
     merged[keep].to_csv(OUT_DIR / f"hybrid_predictions_all{sfx}.csv", index=False)
     metrics_all.to_csv(OUT_DIR / f"hybrid_metrics_all{sfx}.csv", index=False)
     agg.to_csv(OUT_DIR / f"hybrid_aggregate_all{sfx}.csv", index=False)
@@ -445,6 +462,7 @@ def main():
     runtime = time.time() - t0
     summary = {
         "horizons": args.horizons, "seed": SEED,
+        "gpr_alignment": al,
         "hybrid_weight": HYBRID_WEIGHT,
         "weight_note": ("Sabit 0.5/0.5, ONCEDEN ILAN EDILMIS. Agirlik optimizasyonu "
                         "validation gerektirir; Asama 4'te bu kurgunun gurultu "

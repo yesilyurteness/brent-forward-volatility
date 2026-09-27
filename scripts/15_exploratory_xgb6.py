@@ -61,6 +61,8 @@ import numpy as np
 import pandas as pd
 from xgboost import XGBRegressor
 
+import alignment
+
 ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "data" / "veriseti.xlsx"
 OUT_DIR = ROOT / "outputs"
@@ -93,8 +95,8 @@ def sign_test_p(n_wins, n_trials):
     return float(min(1.0, 2 * sum(comb(n_trials, i) for i in range(k + 1)) / 2 ** n_trials))
 
 
-def load_frame():
-    feat = pd.read_csv(OUT_DIR / "features.csv", parse_dates=["Date_parsed"])
+def load_frame(al):
+    feat = pd.read_csv(alignment.features_path(al), parse_dates=["Date_parsed"])
     tgt = pd.read_csv(OUT_DIR / "targets.csv", parse_dates=["Date_parsed"])
     raw = pd.read_excel(DATA_PATH)
     assert len(feat) == len(tgt) == len(raw)
@@ -169,7 +171,9 @@ def main():
     ap.add_argument("--horizons", type=int, nargs="+", default=HORIZONS)
     ap.add_argument("--max-folds", type=int, default=None,
                     help="quick trial on the first N folds; outputs are NOT written")
+    alignment.add_argument(ap)
     args = ap.parse_args()
+    al = args.gpr_alignment
     t0 = time.time()
 
     test_years = list(range(FIRST_TEST_YEAR, LAST_TEST_YEAR + 1))
@@ -177,32 +181,37 @@ def main():
     if trial:
         test_years = test_years[:args.max_folds]
 
-    df = load_frame()
+    df = load_frame(al)
     print("=== XGBoost-6 (KESIFSEL, post hoc) | girdiler: HAR-X'in 6 regresoru | "
           "hedef: duzey, donusum/smearing yok ===")
     folds, preds = run(df, args.horizons, test_years)
 
     # ---- Same rows as HAR-X: training size per fold, test rows and y_true ----
-    abl = pd.read_csv(OUT_DIR / "ablation_exogenous_folds.csv")
+    abl = pd.read_csv(alignment.out("ablation_exogenous_folds.csv", al))
     abl = abl[abl["variant"] == "har_x"].set_index(["horizon", "test_year"])
     j = folds.set_index(["horizon", "test_year"]).join(
         abl[["n_train", "n_test", "rmse", "mae", "r2_oos"]], rsuffix="_har_x")
     assert (j["n_train"] == j["n_train_har_x"]).all(), "train satirlari HAR-X'ten farkli"
     assert (j["n_test"] == j["n_test_har_x"]).all(), "test satirlari HAR-X'ten farkli"
-    ap_ = pd.read_csv(OUT_DIR / "ablation_exogenous_predictions.csv")
+    ap_ = pd.read_csv(alignment.out("ablation_exogenous_predictions.csv", al))
     ap_ = ap_[ap_["variant"] == "har_x"]
     chk = preds.merge(ap_[["horizon", "Date", "y_true", "pred"]], on=["horizon", "Date"],
                       suffixes=("", "_harx"), validate="1:1")
     assert len(chk) == len(preds)
     assert np.allclose(chk["y_true"], chk["y_true_harx"], rtol=0, atol=0)
     print("\n[OK] XGBoost-6 ile HAR-X ayni train/test satirlarini goruyor.")
+    covered = lambda d: d["horizon"].isin(args.horizons) & d["test_year"].isin(test_years)
+    alignment.check_equal(folds, "exploratory_xgb6_folds.csv", ["horizon", "test_year"],
+                          ["n_train", "n_test", "n_train_effective", "capacity_tier",
+                           "train_mean_target"], al, rows=covered,
+                          what="train/test satir sayilari + kapasite kademesi")
     if trial:
         print(f"Deneme kosusu ({args.max_folds} fold) -- cikti YAZILMADI. "
               f"Sure {time.time() - t0:.1f} sn.")
         return
 
     # ---- Side-by-side: XGBoost-6, HAR-X, primary XGBoost ----
-    wf = pd.read_csv(OUT_DIR / "wf_metrics_all.csv")
+    wf = pd.read_csv(alignment.out("wf_metrics_all.csv", al))
     wf = wf[wf["model"] == "xgboost"].set_index(["horizon", "test_year"])
     j = j.join(wf[["rmse", "mae", "r2_oos"]].add_suffix("_xgb_primary"))
     main_j = j[j["include_in_main"]].reset_index()
@@ -231,12 +240,14 @@ def main():
         rows.append(r)
     out = pd.DataFrame(rows)
 
-    out.to_csv(OUT_DIR / "exploratory_xgb6.csv", index=False)
-    folds.to_csv(OUT_DIR / "exploratory_xgb6_folds.csv", index=False)
-    preds.to_csv(OUT_DIR / "exploratory_xgb6_predictions.csv", index=False)
+    out.to_csv(alignment.out("exploratory_xgb6.csv", al), index=False)
+    folds.to_csv(alignment.out("exploratory_xgb6_folds.csv", al), index=False)
+    preds.to_csv(alignment.out("exploratory_xgb6_predictions.csv", al), index=False)
     runtime = time.time() - t0
-    with open(OUT_DIR / "exploratory_xgb6_summary.json", "w", encoding="utf-8") as f:
-        json.dump({"status": "exploratory, post hoc; not in the primary hypothesis family; "
+    with open(alignment.out("exploratory_xgb6_summary.json", al), "w",
+              encoding="utf-8") as f:
+        json.dump({"gpr_alignment": al,
+                   "status": "exploratory, post hoc; not in the primary hypothesis family; "
                              "does not change the primary specification",
                    "inputs": HARX_COLS, "target": "target_vol_h in levels",
                    "transformations": "none (no log, no log-ratio, no smearing, no "

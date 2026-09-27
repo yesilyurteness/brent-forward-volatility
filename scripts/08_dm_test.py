@@ -74,6 +74,7 @@ MULTIPLE TESTING
 5 pairs x 4 horizons = 20 tests. Holm-Bonferroni corrected values are reported alongside
 the raw p-values. No decision rests on a single p-value.
 """
+import argparse
 import json
 import time
 from pathlib import Path
@@ -81,6 +82,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+import alignment
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "outputs"
@@ -176,10 +179,13 @@ def holm(pvals):
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    alignment.add_argument(ap)
+    al = ap.parse_args().gpr_alignment
     t0 = time.time()
 
-    hyb = pd.read_csv(OUT_DIR / "hybrid_predictions_all.csv")
-    ben = pd.read_csv(OUT_DIR / "bench_predictions_all.csv")
+    hyb = pd.read_csv(alignment.out("hybrid_predictions_all.csv", al))
+    ben = pd.read_csv(alignment.out("bench_predictions_all.csv", al))
     key = ["horizon", "Date"]
     df = hyb.merge(ben[key + ["pred_garch", "y_true"]], on=key,
                    suffixes=("", "_b"))
@@ -359,10 +365,20 @@ def main():
                         "isaret_kazanan", "isaret_fold"]].to_string(index=False))
     print()
 
-    res.to_csv(OUT_DIR / "dm_test_results.csv", index=False)
-    pd.DataFrame(diag_rows).to_csv(OUT_DIR / "dm_diagnostics.csv", index=False)
-    with open(OUT_DIR / "dm_summary.json", "w", encoding="utf-8") as f:
+    # Publication mode: the only comparison without a GPR-using model (HAR vs
+    # past-volatility) must reproduce the timestamp statistics bit for bit. Multiple-
+    # testing adjustments are excluded: they depend on the other p-values in the family.
+    alignment.check_equal(res, "dm_test_results.csv", ["horizon", "model1", "model2"],
+                          ["n", "lag", "rmse1", "rmse2", "DM_ham", "p_ham", "DM_HLN",
+                           "p_HLN", "isaret_kazanan", "isaret_fold", "p_isaret"], al,
+                          rows=lambda d: (d["model1"] == "har") & (d["model2"] == "past_vol"),
+                          what="GPR'siz karsilastirma (har vs past_vol)")
+
+    res.to_csv(alignment.out("dm_test_results.csv", al), index=False)
+    pd.DataFrame(diag_rows).to_csv(alignment.out("dm_diagnostics.csv", al), index=False)
+    with open(alignment.out("dm_summary.json", al), "w", encoding="utf-8") as f:
         json.dump({
+            "gpr_alignment": al,
             "loss": "karesel hata",
             "sign_convention": "negatif DM / rmse_orani < 1 -> model1 daha iyi",
             "hac": "Newey-West, Bartlett, L = h-1 (onceden ilan edilmis)",
@@ -399,8 +415,9 @@ def main():
             "runtime_seconds": round(time.time() - t0, 2),
         }, f, ensure_ascii=False, indent=2, default=str)
 
-    print("Yazildi: dm_test_results.csv, dm_diagnostics.csv")
-    print("Rapor  : dm_summary.json")
+    sfx = alignment.suffix(al)
+    print(f"Yazildi: dm_test_results{sfx}.csv, dm_diagnostics{sfx}.csv")
+    print(f"Rapor  : dm_summary{sfx}.json")
     print(f"Sure   : {time.time() - t0:.1f} saniye")
 
 

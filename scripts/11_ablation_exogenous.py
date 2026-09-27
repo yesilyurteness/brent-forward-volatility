@@ -34,12 +34,15 @@ two-sided exact binomial p-value is reported alongside the win counts.
 
 Runtime: a few seconds (OLS only, no GARCH, no gradient boosting).
 """
+import argparse
 import json
 from math import comb
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+import alignment
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "data" / "veriseti.xlsx"
@@ -110,7 +113,10 @@ def sign_test_p(n_wins, n_trials):
 
 
 def main():
-    feat = pd.read_csv(OUT_DIR / "features.csv", parse_dates=["Date_parsed"])
+    ap = argparse.ArgumentParser()
+    alignment.add_argument(ap)
+    al = ap.parse_args().gpr_alignment
+    feat = pd.read_csv(alignment.features_path(al), parse_dates=["Date_parsed"])
     tgt = pd.read_csv(OUT_DIR / "targets.csv", parse_dates=["Date_parsed"])
     raw = pd.read_excel(DATA_PATH)
     assert len(feat) == len(tgt) == len(raw)
@@ -245,7 +251,7 @@ def main():
               .sort_values(["horizon", "_o"]).drop(columns="_o"))
 
     # ---- Reproduction check against the published benchmark run ----
-    bench = pd.read_csv(OUT_DIR / "bench_aggregate_all.csv")
+    bench = pd.read_csv(alignment.out("bench_aggregate_all.csv", al))
     for key in ("har", "har_x"):
         for _, r in agg[agg["variant"] == key].iterrows():
             ref = bench[(bench["horizon"] == r["horizon"]) & (bench["model"] == key)]
@@ -333,7 +339,7 @@ def main():
     #   fold_set="main"          -> the folds that enter the metric mean (15/15/14/14)
     #   fold_set="all_estimated" -> all 15 estimated folds
     # Cross-check: har_x must reproduce harx_standardized_betas.csv (10_shap_analysis.py).
-    ref_path = OUT_DIR / "harx_standardized_betas.csv"
+    ref_path = alignment.out("harx_standardized_betas.csv", al)
     if ref_path.exists():
         ref = pd.read_csv(ref_path)
         chk = coefs_std[coefs_std["variant"] == "har_x"].melt(
@@ -383,17 +389,38 @@ def main():
     # ===================================================================
     agg_out = agg[["horizon", "variant", "variant_label", "n_folds",
                    "rmse_fold_mean", "mae_fold_mean", "r2_oos_fold_mean"]]
-    agg_out.to_csv(OUT_DIR / "ablation_exogenous.csv", index=False)
-    folds.to_csv(OUT_DIR / "ablation_exogenous_folds.csv", index=False)
-    sign.to_csv(OUT_DIR / "ablation_exogenous_sign_test.csv", index=False)
-    deltas.to_csv(OUT_DIR / "ablation_exogenous_fold_deltas.csv", index=False)
-    coefs.to_csv(OUT_DIR / "ablation_exogenous_coefficients.csv", index=False)
-    coefs_std.to_csv(OUT_DIR / "ablation_exogenous_coefficients_standardized.csv",
+    # Publication mode: the GPR-free variants (HAR, HAR + OVX) must reproduce the
+    # timestamp run bit for bit -- predictions, fold metrics and coefficients.
+    gpr_free = lambda d: d["variant"].isin(["har", "har_ovx"])
+    alignment.check_equal(preds, "ablation_exogenous_predictions.csv",
+                          ["horizon", "Date", "fold", "variant"],
+                          ["test_year", "include_in_main", "y_true", "pred"], al,
+                          rows=gpr_free, what="HAR ve HAR+OVX tahminleri")
+    alignment.check_equal(preds, "ablation_exogenous_predictions.csv",
+                          ["horizon", "Date", "fold", "variant"], ["y_true"], al,
+                          what="ayni orneklem, tum varyantlar")
+    alignment.check_equal(folds, "ablation_exogenous_folds.csv",
+                          ["horizon", "test_year", "variant"],
+                          ["n_train", "n_test", "rmse", "mae", "r2_oos", "r2"], al,
+                          rows=gpr_free, what="HAR ve HAR+OVX fold metrikleri")
+    alignment.check_equal(coefs, "ablation_exogenous_coefficients.csv",
+                          ["horizon", "fold", "variant"],
+                          [c for c in coefs.columns if c.startswith("beta_")], al,
+                          rows=gpr_free, what="HAR ve HAR+OVX katsayilari")
+
+    agg_out.to_csv(alignment.out("ablation_exogenous.csv", al), index=False)
+    folds.to_csv(alignment.out("ablation_exogenous_folds.csv", al), index=False)
+    sign.to_csv(alignment.out("ablation_exogenous_sign_test.csv", al), index=False)
+    deltas.to_csv(alignment.out("ablation_exogenous_fold_deltas.csv", al), index=False)
+    coefs.to_csv(alignment.out("ablation_exogenous_coefficients.csv", al), index=False)
+    coefs_std.to_csv(alignment.out("ablation_exogenous_coefficients_standardized.csv", al),
                      index=False)
-    std_summary.to_csv(OUT_DIR / "ablation_exogenous_std_beta_summary.csv", index=False)
-    preds.to_csv(OUT_DIR / "ablation_exogenous_predictions.csv", index=False)
-    with open(OUT_DIR / "ablation_exogenous_summary.json", "w", encoding="utf-8") as f:
-        json.dump({"variants": {k: list(v) for k, v in VARIANTS.items()},
+    std_summary.to_csv(alignment.out("ablation_exogenous_std_beta_summary.csv", al), index=False)
+    preds.to_csv(alignment.out("ablation_exogenous_predictions.csv", al), index=False)
+    with open(alignment.out("ablation_exogenous_summary.json", al), "w",
+              encoding="utf-8") as f:
+        json.dump({"gpr_alignment": al,
+                   "variants": {k: list(v) for k, v in VARIANTS.items()},
                    "aggregate": agg_out.to_dict(orient="records"),
                    "sign_test": sign.to_dict(orient="records")},
                   f, indent=2)

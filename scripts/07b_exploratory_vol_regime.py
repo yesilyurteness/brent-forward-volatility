@@ -26,6 +26,7 @@ The median is computed separately per horizon, because the set of folds included
 main metric varies by horizon (2026 is excluded at h=66 and h=126 under the partial-year
 rule).
 """
+import argparse
 import json
 import time
 from pathlib import Path
@@ -33,8 +34,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+import alignment
+
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "outputs"
+AL = "timestamp"  # set from --gpr-alignment in main()
 
 HORIZONS = [5, 22, 66, 126]
 MODELS = ["har_x", "xgboost", "h2_harx_xgb"]
@@ -46,8 +50,12 @@ def rmse(y, p):
 
 
 def main():
+    global AL
+    ap = argparse.ArgumentParser()
+    alignment.add_argument(ap)
+    AL = ap.parse_args().gpr_alignment
     t0 = time.time()
-    pred = pd.read_csv(OUT_DIR / "hybrid_predictions_all.csv")
+    pred = pd.read_csv(alignment.out("hybrid_predictions_all.csv", AL))
     pred = pred[pred["include_in_main"]].copy()
 
     pd.set_option("display.width", 240)
@@ -204,15 +212,16 @@ def main():
         float_format=lambda v: f"{v:+.2f}"))
     print()
 
-    tail.to_csv(OUT_DIR / "explore_tail_robustness.csv", index=False)
-    dist.to_csv(OUT_DIR / "explore_tail_year_distribution.csv", index=False)
+    tail.to_csv(alignment.out("explore_tail_robustness.csv", AL), index=False)
+    dist.to_csv(alignment.out("explore_tail_year_distribution.csv", AL), index=False)
 
-    years.to_csv(OUT_DIR / "explore_vol_regime_years.csv", index=False)
-    groups.to_csv(OUT_DIR / "explore_vol_regime_groups.csv", index=False)
-    folds.to_csv(OUT_DIR / "explore_vol_regime_folds.csv", index=False)
-    with open(OUT_DIR / "explore_vol_regime_summary.json", "w",
+    years.to_csv(alignment.out("explore_vol_regime_years.csv", AL), index=False)
+    groups.to_csv(alignment.out("explore_vol_regime_groups.csv", AL), index=False)
+    folds.to_csv(alignment.out("explore_vol_regime_folds.csv", AL), index=False)
+    with open(alignment.out("explore_vol_regime_summary.json", AL), "w",
               encoding="utf-8") as f:
         json.dump({
+            "gpr_alignment": AL,
             "status": "KESIFSEL / IKINCIL -- birincil bulguyu degistirmez",
             "split_rule": ("Test yilinin ortalama gerceklesen volatilitesi, ufuk "
                            "basina medyana gore ikiye ayrilir. Mekanik kriter, "

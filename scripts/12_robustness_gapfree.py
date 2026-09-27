@@ -19,14 +19,18 @@ are different volatility regimes); 13_gap_target_test.py isolates the gap effect
 Inputs : outputs/{wf,bench,bilstm,hybrid}_metrics_all.csv, outputs/ablation_exogenous_folds.csv
 Outputs: outputs/robustness_gapfree_2017plus.csv, outputs/robustness_gapfree_2017plus_summary.json
 """
+import argparse
 import json
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+import alignment
+
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "outputs"
+AL = "timestamp"  # set from --gpr-alignment in main()
 GAPFREE_START = 2017
 GAP_PERIOD = (2012, 2016)
 HORIZONS = [5, 22, 66, 126]
@@ -37,16 +41,16 @@ COLS = ["horizon", "test_year", "include_in_main", "model", "rmse", "mae", "r2_o
 
 def load_fold_metrics():
     # Same sources as all_models_comparison.csv (scripts/06_attention_bilstm.py)
-    bil = pd.read_csv(OUT_DIR / "bilstm_metrics_all.csv")
-    wf = pd.read_csv(OUT_DIR / "wf_metrics_all.csv")
+    bil = pd.read_csv(alignment.out("bilstm_metrics_all.csv", AL))
+    wf = pd.read_csv(alignment.out("wf_metrics_all.csv", AL))
     wf = wf[wf["model"] == "xgboost"]
-    bench = pd.read_csv(OUT_DIR / "bench_metrics_all.csv")
+    bench = pd.read_csv(alignment.out("bench_metrics_all.csv", AL))
     bench = bench[~bench["model"].isin(["train_mean", "past_vol"])]
     # HAR + OVX from the exogenous ablation (scripts/11)
-    abl = pd.read_csv(OUT_DIR / "ablation_exogenous_folds.csv")
+    abl = pd.read_csv(alignment.out("ablation_exogenous_folds.csv", AL))
     abl = abl[abl["variant"] == "har_ovx"].rename(columns={"variant": "model"})
     # Simple-average hybrid 0.5*XGB + 0.5*BiLSTM (scripts/07)
-    hyb = pd.read_csv(OUT_DIR / "hybrid_metrics_all.csv")
+    hyb = pd.read_csv(alignment.out("hybrid_metrics_all.csv", AL))
     hyb = hyb[hyb["model"] == "h1_xgb_bilstm"]
     m = pd.concat([d[COLS] for d in (bil, wf, bench, abl, hyb)], ignore_index=True)
     assert not m.duplicated(["horizon", "test_year", "model"]).any()
@@ -64,11 +68,15 @@ def aggregate(m, label):
 
 
 def main():
+    global AL
+    ap = argparse.ArgumentParser()
+    alignment.add_argument(ap)
+    AL = ap.parse_args().gpr_alignment
     m = load_fold_metrics()
 
     full = aggregate(m, "full")
     # Sanity check: the full-sample aggregation must reproduce the committed main table
-    ref = pd.read_csv(OUT_DIR / "all_models_comparison.csv").set_index(["horizon", "model"])
+    ref = pd.read_csv(alignment.out("all_models_comparison.csv", AL)).set_index(["horizon", "model"])
     chk = full.join(ref, how="inner")
     assert len(chk) == len(ref), "main-table models missing"
     for c in ["rmse_fold_mean", "mae_fold_mean", "r2_oos_fold_mean"]:
@@ -83,7 +91,7 @@ def main():
     out["rank_mae_change"] = out["rank_mae_2017plus"] - out["rank_mae_full"]
     out["_o"] = out["model"].map({k: i for i, k in enumerate(MODEL_ORDER)})
     out = out.sort_values(["horizon", "rank_rmse_full", "_o"]).drop(columns="_o")
-    out.to_csv(OUT_DIR / "robustness_gapfree_2017plus.csv", index=False)
+    out.to_csv(alignment.out("robustness_gapfree_2017plus.csv", AL), index=False)
 
     summary = {"gapfree_start_year": GAPFREE_START, "gap_period_years": list(GAP_PERIOD),
                "note": "re-aggregation of existing per-fold OOS metrics; no refit", "horizons": {}}
@@ -111,7 +119,8 @@ def main():
         print(f"Spearman RMSE-sirasi tam vs 2017+: {d['spearman_rmse_full_vs_2017plus']:.3f} | "
               f"MAE: {d['spearman_mae_full_vs_2017plus']:.3f}")
 
-    with open(OUT_DIR / "robustness_gapfree_2017plus_summary.json", "w", encoding="utf-8") as f:
+    with open(alignment.out("robustness_gapfree_2017plus_summary.json", AL), "w", encoding="utf-8") as f:
+        summary["gpr_alignment"] = AL
         json.dump(summary, f, indent=2, ensure_ascii=False)
     print("\nYazildi: robustness_gapfree_2017plus.csv, robustness_gapfree_2017plus_summary.json")
 

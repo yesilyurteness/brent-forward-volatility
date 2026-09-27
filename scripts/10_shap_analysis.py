@@ -78,6 +78,7 @@ be misleading.
 Note: the preprocessing (log1p -> winsor clip -> MinMax) is monotonically INCREASING, so
 the scaled and raw feature values give the same sign correlation.
 """
+import argparse
 import json
 import time
 from pathlib import Path
@@ -88,6 +89,8 @@ import xgboost as xgb
 from scipy import stats
 from sklearn.preprocessing import MinMaxScaler
 from xgboost import XGBRegressor
+
+import alignment
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "data" / "veriseti.xlsx"
@@ -191,8 +194,11 @@ def ols_fit(X, y):
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    alignment.add_argument(ap)
+    al = ap.parse_args().gpr_alignment
     t0 = time.time()
-    feat = pd.read_csv(OUT_DIR / "features.csv", parse_dates=["Date_parsed"])
+    feat = pd.read_csv(alignment.features_path(al), parse_dates=["Date_parsed"])
     tgt = pd.read_csv(OUT_DIR / "targets.csv", parse_dates=["Date_parsed"])
     raw = pd.read_excel(DATA_PATH)
     daily_ret = np.log(raw["Brent_Petrol"] / raw["Brent_Petrol"].shift(1))
@@ -486,15 +492,16 @@ def main():
         float_format=lambda v: f"{v:.1f}"))
     print()
 
-    fi.to_csv(OUT_DIR / "shap_feature_importance.csv", index=False)
-    gsum.to_csv(OUT_DIR / "shap_group_importance.csv", index=False)
-    beta_df.to_csv(OUT_DIR / "harx_standardized_betas.csv", index=False)
-    stab.to_csv(OUT_DIR / "shap_stability.csv", index=False)
-    dist.to_csv(OUT_DIR / "shap_stability_by_distance.csv", index=False)
-    sign_df.to_csv(OUT_DIR / "shap_sign_agreement.csv", index=False)
+    fi.to_csv(alignment.out("shap_feature_importance.csv", al), index=False)
+    gsum.to_csv(alignment.out("shap_group_importance.csv", al), index=False)
+    beta_df.to_csv(alignment.out("harx_standardized_betas.csv", al), index=False)
+    stab.to_csv(alignment.out("shap_stability.csv", al), index=False)
+    dist.to_csv(alignment.out("shap_stability_by_distance.csv", al), index=False)
+    sign_df.to_csv(alignment.out("shap_sign_agreement.csv", al), index=False)
 
-    with open(OUT_DIR / "shap_summary.json", "w", encoding="utf-8") as f:
+    with open(alignment.out("shap_summary.json", al), "w", encoding="utf-8") as f:
         json.dump({
+            "gpr_alignment": al,
             "method": "TreeSHAP via xgboost pred_contribs (shap paketi kullanilmadi)",
             "shap_units": ("log-oran uzayi (log(vol)-log(past_vol)); ham volatilite "
                            "birimi DEGIL"),
@@ -532,9 +539,10 @@ def main():
             "runtime_seconds": round(time.time() - t0, 2),
         }, f, ensure_ascii=False, indent=2, default=str)
 
-    print("Yazildi: shap_feature_importance.csv, shap_group_importance.csv, "
-          "harx_standardized_betas.csv, shap_stability.csv, shap_sign_agreement.csv")
-    print("Rapor  : shap_summary.json")
+    sfx = alignment.suffix(al)
+    print(f"Yazildi (ek '{sfx}'): shap_feature_importance, shap_group_importance, "
+          "harx_standardized_betas, shap_stability, shap_sign_agreement")
+    print(f"Rapor  : shap_summary{sfx}.json")
     print(f"Sure   : {time.time() - t0:.1f} saniye")
 
 

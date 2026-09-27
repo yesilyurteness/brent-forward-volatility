@@ -1,0 +1,730 @@
+{
+  "gpr_alignment": "publication",
+  "method": "TreeSHAP via xgboost pred_contribs (shap paketi kullanilmadi)",
+  "shap_units": "log-oran uzayi (log(vol)-log(past_vol)); ham volatilite birimi DEGIL",
+  "comparability_note": "mean|SHAP| ile standartlastirilmis beta ayni buyukluk degildir; yalnizca siralama ve pay duzeyinde karsilastirilabilir",
+  "spearman_warning": "3 grup uzerinde Spearman -1/-0.5/+0.5/+1 disinda deger alamaz; p >= 0.33, anlamlilik imkansiz",
+  "groups": {
+    "brent_fiyat": 13,
+    "brent_vol": 7,
+    "ovx": 13,
+    "gpr": 23,
+    "etkilesim": 4,
+    "takvim": 5
+  },
+  "shared_regressors": [
+    "brent_vol5",
+    "brent_vol20",
+    "ovx_lag1",
+    "gprd_lag1",
+    "gprd_threat_lag1"
+  ],
+  "har_daily_excluded_from_sign": "XGBoost setinde tam karsiligi yok; en yakini brent_ret_lag1 (isaretli getiri), |r| ile iliskisi U-bicimli",
+  "group_shares_xgb": [
+    {
+      "horizon": 5,
+      "grup": "brent_fiyat",
+      "mean_abs_shap": 1.5147587870014831,
+      "pay_pct": 8.329420022876755
+    },
+    {
+      "horizon": 5,
+      "grup": "brent_vol",
+      "mean_abs_shap": 8.254249396268278,
+      "pay_pct": 45.3888175365495
+    },
+    {
+      "horizon": 5,
+      "grup": "etkilesim",
+      "mean_abs_shap": 0.6845328696072102,
+      "pay_pct": 3.764138448544941
+    },
+    {
+      "horizon": 5,
+      "grup": "gpr",
+      "mean_abs_shap": 4.633811146726657,
+      "pay_pct": 25.48059775522314
+    },
+    {
+      "horizon": 5,
+      "grup": "ovx",
+      "mean_abs_shap": 2.8632107739213097,
+      "pay_pct": 15.744345142388179
+    },
+    {
+      "horizon": 5,
+      "grup": "takvim",
+      "mean_abs_shap": 0.2350823996366671,
+      "pay_pct": 1.2926810944174791
+    },
+    {
+      "horizon": 22,
+      "grup": "brent_fiyat",
+      "mean_abs_shap": 1.1065188485590625,
+      "pay_pct": 11.15813253069209
+    },
+    {
+      "horizon": 22,
+      "grup": "brent_vol",
+      "mean_abs_shap": 3.855943341040984,
+      "pay_pct": 38.883320321387544
+    },
+    {
+      "horizon": 22,
+      "grup": "etkilesim",
+      "mean_abs_shap": 0.18636376898939488,
+      "pay_pct": 1.8792916505768469
+    },
+    {
+      "horizon": 22,
+      "grup": "gpr",
+      "mean_abs_shap": 2.9588341031258096,
+      "pay_pct": 29.8368736348254
+    },
+    {
+      "horizon": 22,
+      "grup": "ovx",
+      "mean_abs_shap": 1.4976700910041245,
+      "pay_pct": 15.102500408772487
+    },
+    {
+      "horizon": 22,
+      "grup": "takvim",
+      "mean_abs_shap": 0.3113727141395657,
+      "pay_pct": 3.139881453745636
+    },
+    {
+      "horizon": 66,
+      "grup": "brent_fiyat",
+      "mean_abs_shap": 0.9799703488861269,
+      "pay_pct": 16.659077379180495
+    },
+    {
+      "horizon": 66,
+      "grup": "brent_vol",
+      "mean_abs_shap": 1.7387326283678703,
+      "pay_pct": 29.55771205793091
+    },
+    {
+      "horizon": 66,
+      "grup": "etkilesim",
+      "mean_abs_shap": 0.09377223110641353,
+      "pay_pct": 1.5940878780625871
+    },
+    {
+      "horizon": 66,
+      "grup": "gpr",
+      "mean_abs_shap": 1.1785239520322648,
+      "pay_pct": 20.034403829094302
+    },
+    {
+      "horizon": 66,
+      "grup": "ovx",
+      "mean_abs_shap": 1.6386288146622974,
+      "pay_pct": 27.855989979943846
+    },
+    {
+      "horizon": 66,
+      "grup": "takvim",
+      "mean_abs_shap": 0.2528727576136589,
+      "pay_pct": 4.29872887578786
+    },
+    {
+      "horizon": 126,
+      "grup": "brent_fiyat",
+      "mean_abs_shap": 1.0988245502812788,
+      "pay_pct": 24.80594073960899
+    },
+    {
+      "horizon": 126,
+      "grup": "brent_vol",
+      "mean_abs_shap": 1.2417096890785615,
+      "pay_pct": 28.03156969435786
+    },
+    {
+      "horizon": 126,
+      "grup": "etkilesim",
+      "mean_abs_shap": 0.1322672505521041,
+      "pay_pct": 2.985930354528964
+    },
+    {
+      "horizon": 126,
+      "grup": "gpr",
+      "mean_abs_shap": 0.6763475845364155,
+      "pay_pct": 15.268532266678324
+    },
+    {
+      "horizon": 126,
+      "grup": "ovx",
+      "mean_abs_shap": 1.2110949329144205,
+      "pay_pct": 27.34044222822065
+    },
+    {
+      "horizon": 126,
+      "grup": "takvim",
+      "mean_abs_shap": 0.06943903435603715,
+      "pay_pct": 1.5675847166052141
+    }
+  ],
+  "group_shares_harx": [
+    {
+      "horizon": 5,
+      "grup": "brent_vol",
+      "abs_std_beta": 2.415136250369452,
+      "pay_pct": 19.902121598814038
+    },
+    {
+      "horizon": 5,
+      "grup": "gpr",
+      "abs_std_beta": 0.9228126413031091,
+      "pay_pct": 7.604510676086179
+    },
+    {
+      "horizon": 5,
+      "grup": "ovx",
+      "abs_std_beta": 8.797120419296624,
+      "pay_pct": 72.49336772509979
+    },
+    {
+      "horizon": 22,
+      "grup": "brent_vol",
+      "abs_std_beta": 2.5510173722206195,
+      "pay_pct": 19.23277075958336
+    },
+    {
+      "horizon": 22,
+      "grup": "gpr",
+      "abs_std_beta": 0.9781664588907556,
+      "pay_pct": 7.374646473764715
+    },
+    {
+      "horizon": 22,
+      "grup": "ovx",
+      "abs_std_beta": 9.73472600335432,
+      "pay_pct": 73.39258276665193
+    },
+    {
+      "horizon": 66,
+      "grup": "brent_vol",
+      "abs_std_beta": 1.8163857963830328,
+      "pay_pct": 15.44943574171517
+    },
+    {
+      "horizon": 66,
+      "grup": "gpr",
+      "abs_std_beta": 1.7371501857306322,
+      "pay_pct": 14.775489998653612
+    },
+    {
+      "horizon": 66,
+      "grup": "ovx",
+      "abs_std_beta": 8.203435772386028,
+      "pay_pct": 69.77507425963121
+    },
+    {
+      "horizon": 126,
+      "grup": "brent_vol",
+      "abs_std_beta": 2.336683341074672,
+      "pay_pct": 20.185693880206433
+    },
+    {
+      "horizon": 126,
+      "grup": "gpr",
+      "abs_std_beta": 2.4655344021549226,
+      "pay_pct": 21.298787823825474
+    },
+    {
+      "horizon": 126,
+      "grup": "ovx",
+      "abs_std_beta": 6.773719923029988,
+      "pay_pct": 58.5155182959681
+    }
+  ],
+  "outside_harx_share_pct": {
+    "5": 13.386239565839176,
+    "22": 16.177305635014573,
+    "66": 22.55189413303094,
+    "126": 29.359455810743167
+  },
+  "spearman": [
+    {
+      "horizon": 5,
+      "grup_rho": -0.5,
+      "grup_p": 0.6666666666666666,
+      "ortak_regresor_rho": -0.19999999999999998,
+      "ortak_regresor_p": 0.7470600781046621
+    },
+    {
+      "horizon": 22,
+      "grup_rho": -0.5,
+      "grup_p": 0.6666666666666666,
+      "ortak_regresor_rho": 0.3,
+      "ortak_regresor_p": 0.623837664781073
+    },
+    {
+      "horizon": 66,
+      "grup_rho": 0.5,
+      "grup_p": 0.6666666666666666,
+      "ortak_regresor_rho": 0.3,
+      "ortak_regresor_p": 0.623837664781073
+    },
+    {
+      "horizon": 126,
+      "grup_rho": -0.5,
+      "grup_p": 0.6666666666666666,
+      "ortak_regresor_rho": 0.7999999999999999,
+      "ortak_regresor_p": 0.10408803866182788
+    }
+  ],
+  "sign_test_limits": {
+    "unused_feature": "SHAP ozdes sifir ise yon tanimsizdir; 'zit yon' degildir ve uyum oranindan dislanir",
+    "ratio_target_confound": "brent_vol5/brent_vol20 log-oran hedefinin paydasiyla mekanik ilintilidir; bu iki ozellikte isaret karsilastirmasi gecersiz"
+  },
+  "sign_agreement_unused_pct": 22.413793103448278,
+  "sign_agreement_all_used_pct": 49.333333333333336,
+  "sign_agreement_exogenous_pct": 60.902255639097746,
+  "stability": [
+    {
+      "horizon": 5,
+      "n_fold": 15,
+      "ardisik_rho_ort": 0.8479049975387835,
+      "ardisik_rho_min": 0.7315847169299705,
+      "ardisik_rho_maks": 0.9628593346399624,
+      "ardisik_ortusme_pct": 89.08077767327488,
+      "ilk_son_rho": 0.5539295630852402,
+      "ilk_son_ortusme_pct": 19.391985260248735,
+      "havuza_rho_ort": 0.8420948265239317,
+      "ilk5e_giren_farkli_ozellik": 14,
+      "en_sik_birinci": "vol5_vol60",
+      "birinci_kalma_fold": 8,
+      "ilk5_yogunlasma_pct": 41.472734219274386
+    },
+    {
+      "horizon": 22,
+      "n_fold": 15,
+      "ardisik_rho_ort": 0.8340061790793792,
+      "ardisik_rho_min": 0.686003710580805,
+      "ardisik_rho_maks": 0.9354292685180744,
+      "ardisik_ortusme_pct": 88.98176234425705,
+      "ilk_son_rho": 0.7034803949665629,
+      "ilk_son_ortusme_pct": 19.07514450867052,
+      "havuza_rho_ort": 0.8824074169711227,
+      "ilk5e_giren_farkli_ozellik": 16,
+      "en_sik_birinci": "brent_vol20",
+      "birinci_kalma_fold": 11,
+      "ilk5_yogunlasma_pct": 40.38169449059829
+    },
+    {
+      "horizon": 66,
+      "n_fold": 14,
+      "ardisik_rho_ort": 0.8281597162055601,
+      "ardisik_rho_min": 0.6769793227581702,
+      "ardisik_rho_maks": 0.9140507507524411,
+      "ardisik_ortusme_pct": 88.2964202300361,
+      "ilk_son_rho": 0.5683498301243703,
+      "ilk_son_ortusme_pct": 19.374844951624908,
+      "havuza_rho_ort": 0.8334344433731137,
+      "ilk5e_giren_farkli_ozellik": 13,
+      "en_sik_birinci": "brent_vol60",
+      "birinci_kalma_fold": 4,
+      "ilk5_yogunlasma_pct": 52.810578308442075
+    },
+    {
+      "horizon": 126,
+      "n_fold": 14,
+      "ardisik_rho_ort": 0.7834465054489148,
+      "ardisik_rho_min": 0.6225082865986329,
+      "ardisik_rho_maks": 0.872362512370486,
+      "ardisik_ortusme_pct": 87.8834190315291,
+      "ilk_son_rho": 0.5266840761490785,
+      "ilk_son_ortusme_pct": 18.156635608159153,
+      "havuza_rho_ort": 0.7863832769911533,
+      "ilk5e_giren_farkli_ozellik": 14,
+      "en_sik_birinci": "brent_vol126",
+      "birinci_kalma_fold": 6,
+      "ilk5_yogunlasma_pct": 60.37223416177453
+    }
+  ],
+  "stability_warning": "Genisleyen pencerede ardisik fold'larin egitim verisi buyuk olcude ortusur (kucugun train seti buyugun ALT KUMESIDIR); yuksek ardisik Spearman KISMEN MEKANIKTIR ve bagimsiz kararlilik kaniti degildir. En durust olcut ilk-son fold ciftidir (ilk_son_rho).",
+  "stability_by_distance": [
+    {
+      "horizon": 5,
+      "fold_mesafesi": 1,
+      "cift": 14,
+      "rho_ort": 0.8479049975387835,
+      "ortusme_ort_pct": 89.08077767327488
+    },
+    {
+      "horizon": 5,
+      "fold_mesafesi": 2,
+      "cift": 13,
+      "rho_ort": 0.8141852226365468,
+      "ortusme_ort_pct": 79.9646680644856
+    },
+    {
+      "horizon": 5,
+      "fold_mesafesi": 3,
+      "cift": 12,
+      "rho_ort": 0.7981938909666909,
+      "ortusme_ort_pct": 72.07586785501066
+    },
+    {
+      "horizon": 5,
+      "fold_mesafesi": 4,
+      "cift": 11,
+      "rho_ort": 0.7717481407644591,
+      "ortusme_ort_pct": 65.09897951094283
+    },
+    {
+      "horizon": 5,
+      "fold_mesafesi": 5,
+      "cift": 10,
+      "rho_ort": 0.7511056202516968,
+      "ortusme_ort_pct": 58.82395863639905
+    },
+    {
+      "horizon": 5,
+      "fold_mesafesi": 6,
+      "cift": 9,
+      "rho_ort": 0.7292264021852762,
+      "ortusme_ort_pct": 53.10417104939992
+    },
+    {
+      "horizon": 5,
+      "fold_mesafesi": 7,
+      "cift": 8,
+      "rho_ort": 0.7142603512174845,
+      "ortusme_ort_pct": 47.8432937941967
+    },
+    {
+      "horizon": 5,
+      "fold_mesafesi": 8,
+      "cift": 7,
+      "rho_ort": 0.6743617156544941,
+      "ortusme_ort_pct": 42.965420665817796
+    },
+    {
+      "horizon": 5,
+      "fold_mesafesi": 9,
+      "cift": 6,
+      "rho_ort": 0.6390243310698468,
+      "ortusme_ort_pct": 38.41357062982058
+    },
+    {
+      "horizon": 5,
+      "fold_mesafesi": 10,
+      "cift": 5,
+      "rho_ort": 0.6438083218657535,
+      "ortusme_ort_pct": 34.146566313610705
+    },
+    {
+      "horizon": 5,
+      "fold_mesafesi": 11,
+      "cift": 4,
+      "rho_ort": 0.6342751735933607,
+      "ortusme_ort_pct": 30.12637862123436
+    },
+    {
+      "horizon": 5,
+      "fold_mesafesi": 12,
+      "cift": 3,
+      "rho_ort": 0.6514628237506639,
+      "ortusme_ort_pct": 26.342406242293965
+    },
+    {
+      "horizon": 5,
+      "fold_mesafesi": 13,
+      "cift": 2,
+      "rho_ort": 0.6094154631377663,
+      "ortusme_ort_pct": 22.78260983109351
+    },
+    {
+      "horizon": 5,
+      "fold_mesafesi": 14,
+      "cift": 1,
+      "rho_ort": 0.5539295630852402,
+      "ortusme_ort_pct": 19.391985260248735
+    },
+    {
+      "horizon": 22,
+      "fold_mesafesi": 1,
+      "cift": 14,
+      "rho_ort": 0.8340061790793792,
+      "ortusme_ort_pct": 88.98176234425705
+    },
+    {
+      "horizon": 22,
+      "fold_mesafesi": 2,
+      "cift": 13,
+      "rho_ort": 0.8259690861120549,
+      "ortusme_ort_pct": 79.80666454223405
+    },
+    {
+      "horizon": 22,
+      "fold_mesafesi": 3,
+      "cift": 12,
+      "rho_ort": 0.7853447637407727,
+      "ortusme_ort_pct": 71.87900329219846
+    },
+    {
+      "horizon": 22,
+      "fold_mesafesi": 4,
+      "cift": 11,
+      "rho_ort": 0.769862181791877,
+      "ortusme_ort_pct": 64.87474988747748
+    },
+    {
+      "horizon": 22,
+      "fold_mesafesi": 5,
+      "cift": 10,
+      "rho_ort": 0.758178569182104,
+      "ortusme_ort_pct": 58.57942443364561
+    },
+    {
+      "horizon": 22,
+      "fold_mesafesi": 6,
+      "cift": 9,
+      "rho_ort": 0.754687706798469,
+      "ortusme_ort_pct": 52.844002143595894
+    },
+    {
+      "horizon": 22,
+      "fold_mesafesi": 7,
+      "cift": 8,
+      "rho_ort": 0.7439180756761992,
+      "ortusme_ort_pct": 47.570741065536
+    },
+    {
+      "horizon": 22,
+      "fold_mesafesi": 8,
+      "cift": 7,
+      "rho_ort": 0.7353728950206805,
+      "ortusme_ort_pct": 42.68283574055142
+    },
+    {
+      "horizon": 22,
+      "fold_mesafesi": 9,
+      "cift": 6,
+      "rho_ort": 0.7579755247875516,
+      "ortusme_ort_pct": 38.12269239854779
+    },
+    {
+      "horizon": 22,
+      "fold_mesafesi": 10,
+      "cift": 5,
+      "rho_ort": 0.7565129612028754,
+      "ortusme_ort_pct": 33.848709843097524
+    },
+    {
+      "horizon": 22,
+      "fold_mesafesi": 11,
+      "cift": 4,
+      "rho_ort": 0.7674346753948288,
+      "ortusme_ort_pct": 29.822570234653757
+    },
+    {
+      "horizon": 22,
+      "fold_mesafesi": 12,
+      "cift": 3,
+      "rho_ort": 0.7536827477958314,
+      "ortusme_ort_pct": 26.033546249995954
+    },
+    {
+      "horizon": 22,
+      "fold_mesafesi": 13,
+      "cift": 2,
+      "rho_ort": 0.7458142263417238,
+      "ortusme_ort_pct": 22.46952019575162
+    },
+    {
+      "horizon": 22,
+      "fold_mesafesi": 14,
+      "cift": 1,
+      "rho_ort": 0.7034803949665629,
+      "ortusme_ort_pct": 19.07514450867052
+    },
+    {
+      "horizon": 66,
+      "fold_mesafesi": 1,
+      "cift": 13,
+      "rho_ort": 0.8281597162055601,
+      "ortusme_ort_pct": 88.2964202300361
+    },
+    {
+      "horizon": 66,
+      "fold_mesafesi": 2,
+      "cift": 12,
+      "rho_ort": 0.7809625107498032,
+      "ortusme_ort_pct": 78.6433976697362
+    },
+    {
+      "horizon": 66,
+      "fold_mesafesi": 3,
+      "cift": 11,
+      "rho_ort": 0.7433568216653931,
+      "ortusme_ort_pct": 70.34776119941928
+    },
+    {
+      "horizon": 66,
+      "fold_mesafesi": 4,
+      "cift": 10,
+      "rho_ort": 0.7058603555695986,
+      "ortusme_ort_pct": 63.05060282932004
+    },
+    {
+      "horizon": 66,
+      "fold_mesafesi": 5,
+      "cift": 9,
+      "rho_ort": 0.6889340089634454,
+      "ortusme_ort_pct": 56.51509209116861
+    },
+    {
+      "horizon": 66,
+      "fold_mesafesi": 6,
+      "cift": 8,
+      "rho_ort": 0.6751429043532815,
+      "ortusme_ort_pct": 50.57918566148
+    },
+    {
+      "horizon": 66,
+      "fold_mesafesi": 7,
+      "cift": 7,
+      "rho_ort": 0.6500892175370925,
+      "ortusme_ort_pct": 45.13198241975396
+    },
+    {
+      "horizon": 66,
+      "fold_mesafesi": 8,
+      "cift": 6,
+      "rho_ort": 0.645158921239286,
+      "ortusme_ort_pct": 40.09015786224199
+    },
+    {
+      "horizon": 66,
+      "fold_mesafesi": 9,
+      "cift": 5,
+      "rho_ort": 0.600731850647873,
+      "ortusme_ort_pct": 35.39570375863548
+    },
+    {
+      "horizon": 66,
+      "fold_mesafesi": 10,
+      "cift": 4,
+      "rho_ort": 0.6149809079526881,
+      "ortusme_ort_pct": 31.000737943348167
+    },
+    {
+      "horizon": 66,
+      "fold_mesafesi": 11,
+      "cift": 3,
+      "rho_ort": 0.6020148631908847,
+      "ortusme_ort_pct": 26.886479170455118
+    },
+    {
+      "horizon": 66,
+      "fold_mesafesi": 12,
+      "cift": 2,
+      "rho_ort": 0.6308084973265857,
+      "ortusme_ort_pct": 23.03498442771091
+    },
+    {
+      "horizon": 66,
+      "fold_mesafesi": 13,
+      "cift": 1,
+      "rho_ort": 0.5683498301243703,
+      "ortusme_ort_pct": 19.374844951624908
+    },
+    {
+      "horizon": 126,
+      "fold_mesafesi": 1,
+      "cift": 13,
+      "rho_ort": 0.7834465054489148,
+      "ortusme_ort_pct": 87.8834190315291
+    },
+    {
+      "horizon": 126,
+      "fold_mesafesi": 2,
+      "cift": 12,
+      "rho_ort": 0.7416617146734724,
+      "ortusme_ort_pct": 77.9965503796444
+    },
+    {
+      "horizon": 126,
+      "fold_mesafesi": 3,
+      "cift": 11,
+      "rho_ort": 0.7236683147591573,
+      "ortusme_ort_pct": 69.55169915469672
+    },
+    {
+      "horizon": 126,
+      "fold_mesafesi": 4,
+      "cift": 10,
+      "rho_ort": 0.7334695365990511,
+      "ortusme_ort_pct": 62.151776388243476
+    },
+    {
+      "horizon": 126,
+      "fold_mesafesi": 5,
+      "cift": 9,
+      "rho_ort": 0.7315042026777975,
+      "ortusme_ort_pct": 55.54122746238498
+    },
+    {
+      "horizon": 126,
+      "fold_mesafesi": 6,
+      "cift": 8,
+      "rho_ort": 0.7012623957696065,
+      "ortusme_ort_pct": 49.54830159046782
+    },
+    {
+      "horizon": 126,
+      "fold_mesafesi": 7,
+      "cift": 7,
+      "rho_ort": 0.6761645178595541,
+      "ortusme_ort_pct": 44.05637397963618
+    },
+    {
+      "horizon": 126,
+      "fold_mesafesi": 8,
+      "cift": 6,
+      "rho_ort": 0.6750727716188965,
+      "ortusme_ort_pct": 38.97860875686604
+    },
+    {
+      "horizon": 126,
+      "fold_mesafesi": 9,
+      "cift": 5,
+      "rho_ort": 0.6705704014269444,
+      "ortusme_ort_pct": 34.25468668930087
+    },
+    {
+      "horizon": 126,
+      "fold_mesafesi": 10,
+      "cift": 4,
+      "rho_ort": 0.6583351142796044,
+      "ortusme_ort_pct": 29.835044911798576
+    },
+    {
+      "horizon": 126,
+      "fold_mesafesi": 11,
+      "cift": 3,
+      "rho_ort": 0.6409821596879711,
+      "ortusme_ort_pct": 25.700133510254222
+    },
+    {
+      "horizon": 126,
+      "fold_mesafesi": 12,
+      "cift": 2,
+      "rho_ort": 0.5635060822746458,
+      "ortusme_ort_pct": 21.83146648913144
+    },
+    {
+      "horizon": 126,
+      "fold_mesafesi": 13,
+      "cift": 1,
+      "rho_ort": 0.5266840761490785,
+      "ortusme_ort_pct": 18.156635608159153
+    }
+  ],
+  "runtime_seconds": 70.42
+}

@@ -35,14 +35,18 @@ Outputs: outputs/gap_target_test.csv, outputs/gap_target_test_folds.csv,
 Runtime: a few seconds.
 """
 import importlib.util
+import argparse
 import json
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
+import alignment
+
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "outputs"
+AL = "timestamp"  # set from --gpr-alignment in main()
 HORIZONS = [5, 22, 66, 126]
 KEY = ["horizon", "Date", "test_year", "include_in_main", "y_true"]
 
@@ -67,17 +71,17 @@ def corrected_targets(raw, g):
 
 def load_predictions():
     parts = []
-    bench = pd.read_csv(OUT_DIR / "bench_predictions_all.csv")
+    bench = pd.read_csv(alignment.out("bench_predictions_all.csv", AL))
     for m in ["har", "har_log", "har_x", "har_x_log", "garch"]:
         parts.append(bench[KEY].assign(model=m, pred=bench[f"pred_{m}"]))
-    wf = pd.read_csv(OUT_DIR / "wf_predictions_all.csv")
+    wf = pd.read_csv(alignment.out("wf_predictions_all.csv", AL))
     parts.append(wf[KEY].assign(model="xgboost", pred=wf["pred_xgboost"]))
-    bil = pd.read_csv(OUT_DIR / "bilstm_predictions_all.csv")
+    bil = pd.read_csv(alignment.out("bilstm_predictions_all.csv", AL))
     for m in ["bilstm", "train_mean", "past_vol"]:
         parts.append(bil[KEY].assign(model=m, pred=bil[f"pred_{m}"]))
-    hyb = pd.read_csv(OUT_DIR / "hybrid_predictions_all.csv")
+    hyb = pd.read_csv(alignment.out("hybrid_predictions_all.csv", AL))
     parts.append(hyb[KEY].assign(model="h1_xgb_bilstm", pred=hyb["pred_h1_xgb_bilstm"]))
-    abl = pd.read_csv(OUT_DIR / "ablation_exogenous_predictions.csv")
+    abl = pd.read_csv(alignment.out("ablation_exogenous_predictions.csv", AL))
     for m in ["har_ovx", "har_gpr"]:
         a = abl[abl["variant"] == m]
         parts.append(a[KEY].assign(model=m, pred=a["pred"]))
@@ -94,6 +98,10 @@ def rank(s):
 
 
 def main():
+    global AL
+    ap = argparse.ArgumentParser()
+    alignment.add_argument(ap)
+    AL = ap.parse_args().gpr_alignment
     raw = gapdiag.load_dates()
     g, _, _ = gapdiag.classify_gaps(raw["Date_parsed"])
     tgt = corrected_targets(raw, g)
@@ -128,15 +136,15 @@ def main():
                           "n_targets_changed": int(s["changed"].sum())})
     folds = (p.groupby(["horizon", "model", "test_year"])
               .apply(fold_metrics, include_groups=False).reset_index())
-    folds.to_csv(OUT_DIR / "gap_target_test_folds.csv", index=False)
+    folds.to_csv(alignment.out("gap_target_test_folds.csv", AL), index=False)
 
     agg = folds.groupby(["horizon", "model"])[
         ["rmse_original", "rmse_corrected", "mae_original", "mae_corrected"]].mean()
     agg.insert(0, "n_folds", folds.groupby(["horizon", "model"]).size())
 
     # Sanity: the unmodified fold means reproduce the published tables
-    ref = pd.read_csv(OUT_DIR / "all_models_comparison.csv").set_index(["horizon", "model"])
-    abl = pd.read_csv(OUT_DIR / "ablation_exogenous.csv").rename(
+    ref = pd.read_csv(alignment.out("all_models_comparison.csv", AL)).set_index(["horizon", "model"])
+    abl = pd.read_csv(alignment.out("ablation_exogenous.csv", AL)).rename(
         columns={"variant": "model"}).set_index(["horizon", "model"])
     ref = pd.concat([ref[["rmse_fold_mean", "mae_fold_mean"]],
                      abl.loc[abl.index.get_level_values("model").isin(["har_ovx", "har_gpr"]),
@@ -153,7 +161,7 @@ def main():
     agg["rank_mae_original"] = rank(agg["mae_original"])
     agg["rank_mae_corrected"] = rank(agg["mae_corrected"])
     out = agg.reset_index().sort_values(["horizon", "rank_rmse_original", "model"])
-    out.to_csv(OUT_DIR / "gap_target_test.csv", index=False)
+    out.to_csv(alignment.out("gap_target_test.csv", AL), index=False)
 
     summary = {"correction": "gap return r -> r / sqrt(1 + k), k = skipped trading days",
                "predictions": "held fixed; no refit", "horizons": {}}
@@ -181,7 +189,8 @@ def main():
                  "rank_rmse_original", "rank_rmse_corrected"]]
               .to_string(index=False, float_format=lambda v: f"{v:.6f}"))
 
-    with open(OUT_DIR / "gap_target_test_summary.json", "w", encoding="utf-8") as f:
+    with open(alignment.out("gap_target_test_summary.json", AL), "w", encoding="utf-8") as f:
+        summary["gpr_alignment"] = AL
         json.dump(summary, f, indent=2)
     print("\nYazildi: gap_target_test.csv, gap_target_test_folds.csv, gap_target_test_summary.json")
 

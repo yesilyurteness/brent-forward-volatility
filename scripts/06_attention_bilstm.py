@@ -89,6 +89,8 @@ import torch  # noqa: E402
 import torch.nn as nn  # noqa: E402
 from sklearn.preprocessing import MinMaxScaler  # noqa: E402
 
+import alignment  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[1]
 DATA_PATH = ROOT / "data" / "veriseti.xlsx"
 OUT_DIR = ROOT / "outputs"
@@ -333,7 +335,9 @@ def main():
                          "dususu < %%2, ust sinir 200 epoch). Birincil "
                          "spesifikasyonu DEGISTIRMEZ.")
     ap.add_argument("--suffix", default="")
+    alignment.add_argument(ap)
     args = ap.parse_args()
+    asfx = alignment.suffix(args.gpr_alignment)
 
     t0 = time.time()
     set_all_seeds()
@@ -344,7 +348,8 @@ def main():
     except Exception as exc:  # some LSTM kernels do not support it
         det_mode = f"kapali ({type(exc).__name__})"
 
-    feat = pd.read_csv(OUT_DIR / "features.csv", parse_dates=["Date_parsed"])
+    feat = pd.read_csv(alignment.features_path(args.gpr_alignment),
+                       parse_dates=["Date_parsed"])
     tgt = pd.read_csv(OUT_DIR / "targets.csv", parse_dates=["Date_parsed"])
     raw = pd.read_excel(DATA_PATH)
     assert len(feat) == len(tgt) == len(raw)
@@ -566,7 +571,8 @@ def main():
     print()
 
     combined = None
-    wf, bench = OUT_DIR / "wf_metrics_all.csv", OUT_DIR / "bench_metrics_all.csv"
+    wf = alignment.out("wf_metrics_all.csv", args.gpr_alignment)
+    bench = alignment.out("bench_metrics_all.csv", args.gpr_alignment)
     if wf.exists() and bench.exists():
         parts = [main_m[["horizon", "test_year", "model", "rmse", "mae", "r2_oos"]]]
         w = pd.read_csv(wf)
@@ -606,7 +612,22 @@ def main():
                                             float_format=lambda v: f"{v:+.2f}"))
     print()
 
-    sfx = args.suffix
+    # Publication mode: same sample, same architecture tier per fold, and the GPR-free
+    # baselines bit for bit. The BiLSTM itself sees the GPR columns and may change.
+    if not args.suffix and not args.convergence_mode:
+        covered = lambda d: d["horizon"].isin(args.horizons) & d["test_year"].isin(test_years)
+        alignment.check_equal(preds_all, "bilstm_predictions_all.csv",
+                              ["horizon", "Date", "fold", "test_year"],
+                              ["include_in_main", "y_true", "pred_train_mean",
+                               "pred_past_vol"], args.gpr_alignment, rows=covered,
+                              what="ayni orneklem + GPR'siz baseline tahminleri")
+        alignment.check_equal(fold_all, "bilstm_folds_all.csv",
+                              ["horizon", "test_year"],
+                              ["n_train", "n_test", "n_train_effective", "arch_tier",
+                               "train_mean_target"], args.gpr_alignment, rows=covered,
+                              what="train/test satir sayilari + mimari kademesi")
+
+    sfx = args.suffix + asfx
     preds_all.to_csv(OUT_DIR / f"bilstm_predictions_all{sfx}.csv", index=False)
     metrics_all.to_csv(OUT_DIR / f"bilstm_metrics_all{sfx}.csv", index=False)
     agg_all.to_csv(OUT_DIR / f"bilstm_aggregate_all{sfx}.csv", index=False)
@@ -617,6 +638,7 @@ def main():
     runtime = time.time() - t0
     summary = {
         "horizons": args.horizons, "test_years": test_years, "seed": SEED,
+        "gpr_alignment": args.gpr_alignment,
         "torch_version": torch.__version__,
         "deterministic_algorithms": det_mode,
         "lookback": LOOKBACK,

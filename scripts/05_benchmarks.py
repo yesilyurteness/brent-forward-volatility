@@ -98,6 +98,8 @@ import numpy as np
 import pandas as pd
 from arch import arch_model
 
+import alignment
+
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -185,12 +187,15 @@ def main():
                          "esitleme saglamlik kontrolu). XGBoost'un ilk kullanilabilir "
                          "satiri verilirse tum modeller ayni pencereyi gorur.")
     ap.add_argument("--suffix", default="")
+    alignment.add_argument(ap)
     args = ap.parse_args()
     align_row = args.align_start_row
+    asfx = alignment.suffix(args.gpr_alignment)
 
     t0 = time.time()
 
-    feat = pd.read_csv(OUT_DIR / "features.csv", parse_dates=["Date_parsed"])
+    feat = pd.read_csv(alignment.features_path(args.gpr_alignment),
+                       parse_dates=["Date_parsed"])
     tgt = pd.read_csv(OUT_DIR / "targets.csv", parse_dates=["Date_parsed"])
     raw = pd.read_excel(DATA_PATH)
     assert len(feat) == len(tgt) == len(raw)
@@ -499,7 +504,7 @@ def main():
     print()
 
     # --- The seven-model table, including XGBoost (primary specification) --
-    wf_path = OUT_DIR / "wf_metrics_all.csv"
+    wf_path = alignment.out("wf_metrics_all.csv", args.gpr_alignment)
     seven = None
     if wf_path.exists():
         wf = pd.read_csv(wf_path)
@@ -544,8 +549,34 @@ def main():
         print("(HAR -> HAR-X) ve dogrusal olmayan modelin katkisi (HAR-X -> XGBoost).")
     print()
 
+    # --- Publication mode: same sample, GPR-free models bit for bit --------
+    # HAR, HAR-log, GARCH, train_mean and past_vol use no GPR input, so they must
+    # reproduce the timestamp run exactly; only har_x / har_x_log may change.
+    if not args.suffix and align_row is None:
+        gpr_free = ["har", "har_log", "garch", "train_mean", "past_vol"]
+        covered = lambda d: d["horizon"].isin(args.horizons) & d["test_year"].isin(test_years)
+        alignment.check_equal(preds_all, "bench_predictions_all.csv",
+                              ["horizon", "Date", "fold", "test_year"],
+                              ["include_in_main", "y_true"] + [f"pred_{m}" for m in gpr_free],
+                              args.gpr_alignment, rows=covered,
+                              what="ayni orneklem + GPR'siz model tahminleri")
+        alignment.check_equal(metrics_all, "bench_metrics_all.csv",
+                              ["horizon", "test_year", "model"],
+                              ["n_test", "rmse", "mae", "r2_oos", "r2"],
+                              args.gpr_alignment,
+                              rows=lambda d: covered(d) & d["model"].isin(gpr_free),
+                              what="GPR'siz model metrikleri")
+        alignment.check_equal(fold_all, "bench_folds_all.csv",
+                              ["horizon", "test_year"],
+                              ["n_test", "n_train_garch", "n_train_har", "n_train_harx",
+                               "n_train_xgb_equiv", "har_smearing", "garch_omega",
+                               "garch_alpha", "garch_beta", "garch_nu",
+                               "train_mean_target"],
+                              args.gpr_alignment, rows=covered,
+                              what="train/test satir sayilari + GARCH parametreleri")
+
     # --- Writing -----------------------------------------------------------
-    sfx = args.suffix
+    sfx = args.suffix + asfx
     preds_all.to_csv(OUT_DIR / f"bench_predictions_all{sfx}.csv", index=False)
     metrics_all.to_csv(OUT_DIR / f"bench_metrics_all{sfx}.csv", index=False)
     agg_all.to_csv(OUT_DIR / f"bench_aggregate_all{sfx}.csv", index=False)
@@ -556,6 +587,7 @@ def main():
     runtime = time.time() - t0
     summary = {
         "horizons": args.horizons, "test_years": test_years, "seed": SEED,
+        "gpr_alignment": args.gpr_alignment,
         "specifications": {
             "garch": "sabit ortalama, GARCH(1,1), Student-t; BIRINCIL ekonometrik",
             "har": "Corsi, seviyelerde OLS, |r_{t-1}|+vol5+vol20; BIRINCIL HAR",
