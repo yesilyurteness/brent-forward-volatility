@@ -1659,7 +1659,7 @@ Yayım-hizalı sürüm, süre 69 dakika.
 | kaybı ≥2 kat düşen fold | 14/15 | 9/9 |
 | test RMSE, birincil / k / 200 | 0.013440 / 0.013518 / **0.014493** | 0.012137 / 0.012583 / **0.013170** |
 | test RMSE değişimi, 200 vs k | **+7.21%** | **+4.67%** |
-| 200'ün k'dan iyi olduğu fold (işaret p) | 2/15 (p = 0.007) | 3/9 (p = 0.51) |
+| 200'ün k'dan iyi olduğu fold (işaret p, keşifsel, düzeltmesiz) | 2/15 (p = 0.007) | 3/9 (p = 0.51) |
 | test MAE değişimi, 200 vs k | +5.22% | +3.32% |
 | std(tahmin)/std(gerçek), k → 200 | 1.00 → 1.10 | 1.02 → 1.05 |
 
@@ -1673,6 +1673,13 @@ yüksek kademede; ufuk ortalaması +%7.21.
   düşüş dropout gürültüsü değil, gerçek uyum artışı.
 - Test hatası iyileşmedi, kötüleşti: h=5'te +%7.2 (15 fold'un 13'ünde kötü,
   p = 0.007), h=22'de +%4.7 (9'un 6'sında kötü, p = 0.51).
+
+  **Bu p değerlerinin statüsü:** keşifsel bir teşhisten gelir, **birincil sekizlik
+  hipotez ailesine DAHİL DEĞİLDİR** ve çoklu karşılaştırma için **düzeltilmemiştir**.
+  Statüsü, HAR+OVX vs HAR-X'in düzeltmesiz p = 0.035'iyle aynıdır. Birincil aile
+  (HAR vs HAR-X, HAR-X vs XGBoost × 4 ufuk) önceden sabitlendi; sonradan hiçbir test
+  eklenmez. Bu p değerleri makalede çıkarım kanıtı olarak değil, teşhisin yönünü
+  betimlemek için verilir.
 - Tahmin saçılımı h=5'te arttı (1.00 → 1.10). Bu, modelin eğitim gürültüsünü öğrendiği
   okumasıyla tutarlı.
 
@@ -1753,3 +1760,90 @@ yerine ölçülmüş yayım kuralı ve as-of hizalama anlatıldı.
 
 **Kapsam notu:** `09_power_analysis.py`'nin `--gpr-alignment` seçeneği yok; hâlâ zaman
 damgalı DM sonuçlarını okuyor. Yayım modunda yeniden koşulmadı.
+
+---
+
+# Aşama 18 (2026-09-27): `--gpr-alignment` zorunlu; güç analizi yayım modunda
+
+## Bayrak artık zorunlu — köken notu
+
+**Bu tarihten önceki komutların kaydı olduğu gibi bırakıldı; geçmişe dönük bayrak
+eklenmedi.** Günlük belge değil, köken kaydıdır.
+- **Aşama 1–15:** komutlar bayraksız koşuldu. O dönemde bayrak yoktu; davranış,
+  bugünkü `--gpr-alignment timestamp` ile aynıydı.
+- **Aşama 16.3'ten 2026-09-27'ye kadar:** bayrak vardı ama isteğe bağlıydı, varsayılanı
+  `timestamp` idi. `_publication_aligned` sonekli her çıktı, bayrak açıkça
+  `publication` verilerek üretildi; sonek yalnızca bu şekilde oluşur. Bu dönemde
+  bayraksız bir komut sessizce zaman damgalı sürümü üretirdi.
+- **2026-09-27'den itibaren** (bu aşamanın commit'i): bayrak **zorunlu**, varsayılanı
+  yok (`scripts/alignment.py`, `required=True`). Bayraksız çağrı hata verip durur ve her
+  komutta bayrak açıkça yazılır. Kök README'deki çalıştırma talimatları bu biçime
+  güncellendi.
+
+**Gerekçe.** Birincil spesifikasyon `publication`. Varsayılan `timestamp` iken bayrağı
+vermeyen biri ikincil sürümü üretir ve bunu fark etmez. Depo Zenodo üzerinden atıf
+alacağı için bu sessiz yol kapatıldı.
+
+**Risk kontrolü.**
+- Argümanlar yalnızca `main()` içinde ayrıştırılıyor.
+- 13, 15 ve 19 başka script'leri modül olarak içe aktarıyor, `main()`'lerini çağırmıyor.
+- 17 ve 18 bayrak almıyor, iki sürümü kendileri okuyor.
+- Depoda kabuk betiği veya CI yok.
+
+**Sistematik tarama.** Model, metrik veya DM çıktısı okuyan script'lerin hepsinde
+girdilerin `alignment.out()` / `features_path()` üzerinden okunduğu tek tek kontrol
+edildi. Eksik olan yalnızca `09_power_analysis.py` idi. Bayrak gerekmeyenler:
+- 01 (hedefler) ve 14 (tarih boşlukları): GPR'dan bağımsız.
+- 02: iki özellik dosyasını birden üretir.
+- 16: sürüm arşivi.
+- `validate_data`.
+
+## Güç analizi yayım modunda (`09_power_analysis.py --gpr-alignment publication`)
+
+09'a bayrak eklendi. Yayım modunda okuduğu girdiler:
+- DM sonuçları, yani HAC şişme çarpanları dahil 08'in yayım-hizalı çıktısı;
+- tahmin dosyası.
+
+Önsel DM eğrilerinin kalibrasyon katsayısı k bu DM sonuçlarından yeniden hesaplandı.
+
+**Kırılmama kontrolü:** `--gpr-alignment timestamp` koşusu kayıtlı üç CSV'yi git blob
+düzeyinde birebir yeniden üretti. JSON'da farklı olan yalnızca `gpr_alignment` (yeni
+alan) ve `runtime_seconds`.
+
+**İki sürüm karşılaştırması (Ek A):**
+
+| ufuk | karşılaştırma | DM gerekli yıl (z.d. → yayım) | işaret gerekli yıl (z.d. → yayım) |
+| --- | --- | --- | --- |
+| 5 | HAR vs HAR-X | 927 → 760 | 20 → 37 |
+| 22 | HAR vs HAR-X | 273 → 320 | 15 → 15 |
+| 66 | HAR vs HAR-X | 2 764 → 1 680 | 42 → 42 |
+| 126 | HAR vs HAR-X | 400 → 307 | 94 → 94 |
+| 5 | HAR-X vs XGBoost | 323 → 233 | 72 → 72 |
+| 22 | HAR-X vs XGBoost | 61 → 144 | 15 → 15 |
+| 66 | HAR-X vs XGBoost | 52 → 45 | 25 → 42 |
+| 126 | HAR-X vs XGBoost | 5 582 → 4 639 | 42 → 94 |
+
+- **Önsel işaret testi eğrileri birebir aynı.** Yalnızca fold sayısına bağlılar. Anlamlılık
+  için 15 fold'da en az 12, 14 fold'da en az 12 kazanma gerekiyor.
+- **Önsel DM eğrileri k üzerinden hafifçe kaydı.** k: h=5 0.444 → 0.437, h=22 0.557 →
+  0.542, h=66 1.124 → 1.137, h=126 1.700 → 1.688. %20 RMSE farkında güç h=5, 22, 66 ve
+  126 için 0.989, 0.710, 0.846 ve 0.895 (zaman damgalı: 0.991, 0.733, 0.838, 0.899).
+- **Tespit sınırı değişmedi.** DM için yaklaşık %20 RMSE farkı (h=22'de %20 bile 0.71),
+  işaret testi için yılların %85–90'ını kazanmak.
+- **Gözlenen etkiye dayalı gereksinimler, etkiler değiştiği ölçüde değişti.** DM için
+  gereken uzatma mevcut dönemin 3.1–324 katı (zaman damgalı: 3.6–389). İşaret testi için
+  1.0–6.7 katı (aynı aralık). h=22 HAR-X vs XGBoost'ta DM gereksinimi 61'den 144 yıla
+  çıktı, çünkü o testte DM istatistiği 1.38'den 0.90'a düştü.
+- **HAC şişme çarpanları** (08, birincil aile) iki sürümde neredeyse aynı: h=5 ~2.4,
+  h=22 ~3.8–3.9, h=66 ~4.9–5.5, h=126 ~6.8–12.7.
+
+**Yorum notu.** Aşama 8'deki güç bölümü, h=22'deki işaret testlerinin 0.871'lik
+"gerçekleşen gücünü" o sonuçların "tesadüf olmadığını" destekleyen bir kanıt gibi
+yorumluyor. Bu çıkarım geçerli değil. Gerçekleşen güç p değerinin monoton bir
+dönüşümüdür ve bölüm de bunu kendisi söylüyor. Eski metin köken kaydı olarak bırakıldı.
+Makalede ve sayı paketinde (Bölüm 10) bu çıkarım kullanılmaz. Bilgi taşıyan kısımlar
+gerekli örneklem ve önsel eğrilerdir.
+
+Çıktılar: `power_analysis_publication_aligned.csv`,
+`apriori_power_sign_publication_aligned.csv`, `apriori_power_dm_publication_aligned.csv`,
+`power_analysis_summary_publication_aligned.json`. Sayı paketi Bölüm 10.

@@ -307,6 +307,14 @@ def main():
       "ana metrikten çıkarılır, ayrıca dipnotta verilir). Birim: günlük log getirilerin "
       "standart sapması. Yüzdeler `100 × (RMSE_a / RMSE_b − 1)`; negatif = a daha iyi.")
     w("")
+    w("**p değerleri.** Çıkarım için kullanılan tek test ailesi, önceden sabitlenmiş "
+      "**birincil sekizlik ailedir** (Bölüm 6: HAR vs HAR-X ve HAR-X vs XGBoost, dört "
+      "ufuk); ona sonradan test eklenmez. Bu dosyadaki diğer tüm p değerleri "
+      "(ablasyon, XGBoost-6, iki sürüm karşılaştırması, BiLSTM kontrolleri, 9. bölüm) "
+      "**keşifsel ve çoklu karşılaştırma için düzeltilmemiştir**; betimleyici olarak "
+      "verilir. İkincil DM ailesi (24 test) kendi içinde Holm/BH/BY ile düzeltilir ama "
+      "doğrulayıcı değildir.")
+    w("")
     w("**Tutarlılık kontrolleri (assert):** her fold'un RMSE'si tahmin dosyalarından "
       "yeniden hesaplanıp kayıtlı metrikle karşılaştırıldı; fold ortalamaları "
       "`gpr_alignment_comparison.csv` ile aynı; train-mean R²_oos her fold'da tam 0; "
@@ -799,13 +807,19 @@ def main():
                                                 f"{gx['rmse_k'].mean():.6f} / "
                                                 f"{gx['rmse_200'].mean():.6f}",
                 "RMSE 200 vs k": pct(100 * (gx["rmse_200"].mean() / gx["rmse_k"].mean() - 1)),
-                "200 daha iyi (işaret p)": f"{k}/{len(gx)} (p={fp(sign_p(k, len(gx)))})",
+                "200 daha iyi (işaret p; keşifsel, düzeltmesiz)":
+                    f"{k}/{len(gx)} (p={fp(sign_p(k, len(gx)))})",
                 "MAE 200 vs k": pct(100 * (gx["mae_200"].mean() / gx["mae_k"].mean() - 1)),
                 "sd oranı k→200": f"{gx['pred_std_ratio_k'].mean():.2f} → "
                                   f"{gx['pred_std_ratio_200'].mean():.2f}",
                 "ufuk ortalaması RMSE (tüm fold'lar)":
                     f"{base:.6f} → {full.mean():.6f} ({pct(100 * (full.mean() / base - 1))})"})
         w(md_table(pd.DataFrame(rows)))
+        w("")
+        w("**p değerlerinin statüsü:** buradaki işaret testi p'leri (h=5: 0.007) keşifsel "
+          "bir teşhisten gelir, **birincil sekizlik aileye dahil değildir ve "
+          "düzeltilmemiştir**; statüsü HAR+OVX vs HAR-X'in düzeltmesiz p = 0.035'iyle "
+          "aynıdır. Birincil aile önceden sabitlendi; sonradan test eklenmez.")
         w("")
         w("**Yorum:** eğitim kaybı durdurma kuralı olmadan ciddi düşüyor ve test hatası "
           "iyileşmiyor, kötüleşiyor. \"Yetersiz eğitim değil aşırı uyum\" bulgusu yayım "
@@ -1082,6 +1096,99 @@ def main():
     w("")
     w("\"train-mean'den düşük RMSE'li model\" RMSE üzerinden sayılır (R²_oos referans "
       "farklarından etkilenmez).")
+    w("")
+
+    # ---------------- 10. Power analysis ----------------
+    w("## 10. Güç analizi (birincil aile; `09_power_analysis.py`)")
+    w("")
+    w("%80 güç, %5 iki yönlü. DM: örneklem birimi etkin blok B = n/h. İşaret testi: "
+      "örneklem birimi fold (yıl), tam binom. Kaynak: `power_analysis_publication_"
+      "aligned.csv`, `apriori_power_{sign,dm}_publication_aligned.csv`.")
+    w("")
+    w("**Uyarı:** gözlenen etkiden hesaplanan \"gerçekleşen güç\" p değerinin monoton bir "
+      "dönüşümüdür ve p değerinin ötesinde bilgi taşımaz; bir sonucun tesadüf olup "
+      "olmadığına kanıt olarak kullanılamaz. Bilgi taşıyan kısımlar gerekli örneklem "
+      "(10a) ve gözlenen sonuçlardan bağımsız önsel eğrilerdir (10b).")
+    w("")
+    pw = {al: rd("power_analysis.csv", al) for al in (PUB, TS)}
+    pw_s = json.load(open(alignment.out("power_analysis_summary.json", PUB), encoding="utf-8"))
+    w(f"Yıl başına işlem günü (test döneminden ölçüldü): {pw_s['days_per_year']:.1f}.")
+    w("")
+    w("### 10a. Gözlenen etki gerçek kabul edilirse %80 güç için gereken test dönemi")
+    w("")
+    p_ = pw[PUB].copy()
+    # HAR-X's fold wins, as in Section 6 (isaret_kazanan counts model1's wins)
+    p_["harx_w"] = np.where(p_["karsilastirma"] == "har vs har_x",
+                            p_["isaret_fold"] - p_["isaret_kazanan"], p_["isaret_kazanan"])
+    p_ = p_.sort_values(["karsilastirma", "horizon"])
+    t = pd.DataFrame({
+        "ufuk": [f"h={h}" for h in p_["horizon"]],
+        "karşılaştırma": ["HAR vs HAR-X" if c == "har vs har_x" else "HAR-X vs XGBoost"
+                          for c in p_["karsilastirma"]],
+        "DM: etkin blok": [f"{v:.0f}" for v in p_["dm_etkin_blok"]],
+        "DM: gerçekleşen güç": [f"{v:.3f}" for v in p_["dm_gerceklesen_guc"]],
+        "DM: gerekli yıl": [f"{v:,.0f}" for v in p_["dm_gerekli_yil"]],
+        "DM: kat": [f"{v:.1f}×" for v in p_["dm_kat_artis"]],
+        "işaret: HAR-X kazanır": [f"{k}/{n}" for k, n in zip(p_["harx_w"], p_["isaret_fold"])],
+        "işaret: gerçekleşen güç": [f"{v:.3f}" for v in p_["isaret_gerceklesen_guc"]],
+        "işaret: gerekli yıl": [f"{v:.0f}" for v in p_["isaret_gerekli_fold_yil"]],
+        "işaret: kat": [f"{v:.1f}×" for v in p_["isaret_kat_artis"]],
+    })
+    w(md_table(t))
+    w("")
+    w(f"Aralıklar: DM için gereken uzatma mevcut test döneminin "
+      f"{p_['dm_kat_artis'].min():.1f}–{p_['dm_kat_artis'].max():.0f} katı; işaret testi "
+      f"için {p_['isaret_kat_artis'].min():.1f}–{p_['isaret_kat_artis'].max():.1f} katı.")
+    w("")
+    w("### 10b. Önsel güç eğrileri (gözlenen sonuçları kullanmaz)")
+    w("")
+    ps = rd("apriori_power_sign.csv", PUB)
+    thr = ps.groupby("n_fold")["anlamlilik_icin_gereken_kazanma"].first()
+    w("İşaret testi: %5 iki yönlü anlamlılık için gereken en az kazanma: " + ", ".join(
+        f"n={n}: {int(v)}" for n, v in thr.sort_index(ascending=False).items()) + ".")
+    w("")
+    t = ps.pivot(index="p_gercek", columns="n_fold", values="guc")
+    t = pd.DataFrame({"gerçek kazanma olasılığı": t.index,
+                      **{f"n={n}": [f"{v:.3f}" for v in t[n]] for n in sorted(t.columns)}})
+    w(md_table(t))
+    w("")
+    pdm = rd("apriori_power_dm.csv", PUB)
+    w("DM testi: `δ_blok = k·|r²−1|`, `ncp = √B·δ_blok`; k verinin gürültü yapısından "
+      "(birincil ailedeki iki çiftin ortalaması) kalibre edilir, gözlenen etkiden değil. "
+      "Parantezde k'nın iki çift arasındaki aralığıyla güç.")
+    w("")
+    rows = []
+    for (h, B), gq in pdm.groupby(["horizon", "etkin_blok"], sort=False):
+        row = {"ufuk": f"h={h}", "etkin blok": f"{B:.0f}", "k": f"{gq['k'].iloc[0]:.3f}"}
+        for r in gq.itertuples():
+            row[f"%{r.rmse_farki_pct} RMSE farkı"] = (f"{r.guc:.3f} "
+                                                      f"({r.guc_k_min:.3f}–{r.guc_k_max:.3f})")
+        rows.append(row)
+    w(md_table(pd.DataFrame(rows).iloc[::-1]))
+    w("")
+    w("### 10c. İki sürüm (Ek A)")
+    w("")
+    pt = pw[TS].set_index(["karsilastirma", "horizon"])
+    rows = []
+    for r in p_.itertuples():
+        q = pt.loc[(r.karsilastirma, r.horizon)]
+        rows.append({"ufuk": f"h={r.horizon}",
+                     "karşılaştırma": "HAR vs HAR-X" if r.karsilastirma == "har vs har_x"
+                     else "HAR-X vs XGBoost",
+                     "DM gerekli yıl (z.d. → yayım)":
+                         f"{q['dm_gerekli_yil']:,.0f} → {r.dm_gerekli_yil:,.0f}",
+                     "işaret gerekli yıl (z.d. → yayım)":
+                         f"{q['isaret_gerekli_fold_yil']:.0f} → {r.isaret_gerekli_fold_yil:.0f}"})
+    w(md_table(pd.DataFrame(rows)))
+    w("")
+    pst = rd("apriori_power_sign.csv", TS)
+    assert ps.equals(pst), "a priori sign-test curves depend only on n and must match"
+    pdt = rd("apriori_power_dm.csv", TS).set_index(["horizon", "rmse_farki_pct"])
+    kk = pdm.groupby("horizon")["k"].first()
+    kt = pdt.groupby(level="horizon")["k"].first()
+    w("Önsel işaret testi eğrileri iki sürümde birebir aynıdır (yalnızca fold sayısına "
+      "bağlı; assert). Önsel DM eğrilerinde k: " + ", ".join(
+          f"h={h}: {kt[h]:.3f} → {kk[h]:.3f}" for h in HORIZONS) + ".")
     w("")
 
     path = OUT_DIR / "paper_numbers_publication_aligned.md"

@@ -1,6 +1,9 @@
 """GPR alignment switch shared by the model and analysis scripts.
 
---gpr-alignment timestamp   (default) reads outputs/features.csv and writes the original,
+The flag is REQUIRED and has no default: the primary specification is `publication`, and
+a silent default would let a run without the flag produce the secondary version unnoticed.
+
+--gpr-alignment timestamp   reads outputs/features.csv and writes the original,
                             unsuffixed output names. GPR features use the observation of
                             the previous trading day (timestamp alignment; paper
                             Appendix A).
@@ -32,10 +35,11 @@ _FEATURES = {"timestamp": "features.csv",
 
 
 def add_argument(ap):
-    ap.add_argument("--gpr-alignment", choices=ALIGNMENTS, default="timestamp",
-                    help="timestamp: original GPR alignment, unsuffixed outputs. "
-                         "publication: GPR aligned to its publication dates, outputs "
-                         "and upstream inputs carry the _publication_aligned suffix.")
+    ap.add_argument("--gpr-alignment", choices=ALIGNMENTS, required=True,
+                    help="REQUIRED. publication: GPR aligned to its publication dates "
+                         "(PRIMARY results); outputs and upstream inputs carry the "
+                         "_publication_aligned suffix. timestamp: original GPR "
+                         "alignment, unsuffixed outputs (paper Appendix A).")
 
 
 def suffix(alignment):

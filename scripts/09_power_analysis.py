@@ -52,7 +52,15 @@ ASSUMPTIONS (stated explicitly)
 * The effective block count B = n/h is a rough approximation; with overlapping windows,
   block independence does not hold exactly.
 * "Year" means a TEST PERIOD year (the current test period is 2012-2026).
+
+GPR ALIGNMENT
+-------------
+--gpr-alignment is required (scripts/alignment.py). It selects which DM results and
+prediction files are read (08_dm_test.py / 07_hybrid.py outputs of that version) and
+suffixes every output accordingly. The a priori DM curves are calibrated on those DM
+results, so they belong to the same version.
 """
+import argparse
 import json
 import time
 from pathlib import Path
@@ -60,6 +68,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from scipy import stats
+
+import alignment
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "outputs"
@@ -102,13 +112,16 @@ def sign_required_n(p_true, n_start):
 
 
 def main():
+    ap = argparse.ArgumentParser()
+    alignment.add_argument(ap)
+    al = ap.parse_args().gpr_alignment
     t0 = time.time()
-    res = pd.read_csv(OUT_DIR / "dm_test_results.csv")
+    res = pd.read_csv(alignment.out("dm_test_results.csv", al))
     prim = res[res["aile"] == "birincil"].copy()
     assert len(prim) == 8, f"Birincil aile 8 test olmali, bulunan {len(prim)}"
 
     # Trading days per year: measured from the test period
-    pred = pd.read_csv(OUT_DIR / "hybrid_predictions_all.csv")
+    pred = pd.read_csv(alignment.out("hybrid_predictions_all.csv", al))
     pred = pred[pred["include_in_main"]]
     days_per_year = float(
         pred[pred["horizon"] == 5].groupby("test_year").size().mean())
@@ -161,7 +174,7 @@ def main():
         })
 
     out = pd.DataFrame(rows).sort_values(["karsilastirma", "horizon"])
-    out.to_csv(OUT_DIR / "power_analysis.csv", index=False)
+    out.to_csv(alignment.out("power_analysis.csv", al), index=False)
 
     pd.set_option("display.width", 250)
     print("=== GUC ANALIZI: birincil aile (2 karsilastirma x 4 ufuk) ===")
@@ -237,7 +250,7 @@ def main():
     # models and the loss distribution), not from the observed EFFECT size. It is
     # averaged over the two pairs in the primary family per horizon, and the range is
     # reported as well.
-    res_all = pd.read_csv(OUT_DIR / "dm_test_results.csv")
+    res_all = pd.read_csv(alignment.out("dm_test_results.csv", al))
     res_all["B"] = res_all["n"] / res_all["horizon"]
     res_all["k"] = (res_all["DM_HLN"] / np.sqrt(res_all["B"])) / (
         res_all["rmse_orani"] ** 2 - 1)
@@ -277,11 +290,13 @@ def main():
     print("olmadigi degil, tasarimin onu goremeyecegi anlamina gelir.")
     print()
 
-    sdf.to_csv(OUT_DIR / "apriori_power_sign.csv", index=False)
-    ddf.to_csv(OUT_DIR / "apriori_power_dm.csv", index=False)
+    sdf.to_csv(alignment.out("apriori_power_sign.csv", al), index=False)
+    ddf.to_csv(alignment.out("apriori_power_dm.csv", al), index=False)
 
-    with open(OUT_DIR / "power_analysis_summary.json", "w", encoding="utf-8") as f:
+    with open(alignment.out("power_analysis_summary.json", al), "w",
+              encoding="utf-8") as f:
         json.dump({
+            "gpr_alignment": al,
             "alpha": ALPHA, "target_power": TARGET_POWER,
             "days_per_year": days_per_year,
             "method_dm": ("Orneklem = etkin blok B = n/h. delta = |DM|/sqrt(B). "
@@ -311,8 +326,9 @@ def main():
             "runtime_seconds": round(time.time() - t0, 2),
         }, f, ensure_ascii=False, indent=2, default=str)
 
-    print(f"Yazildi: power_analysis.csv ({len(out)} satir)")
-    print("Rapor  : power_analysis_summary.json")
+    print(f"Yazildi: power_analysis{alignment.suffix(al)}.csv ({len(out)} satir) ve "
+          f"apriori_power_*/power_analysis_summary{alignment.suffix(al)}")
+    print(f"Rapor  : power_analysis_summary{alignment.suffix(al)}.json")
     print(f"Sure   : {time.time() - t0:.1f} saniye")
 
 
