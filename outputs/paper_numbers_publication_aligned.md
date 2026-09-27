@@ -1,7 +1,7 @@
 # Makale sayıları — yayım-hizalı GPR sürümü (BİRİNCİL)
 
-- **Üretildiği commit:** `edb957ec1d787c484b2630450637d0b9f8b0ca54` (Add methodology numbers to the package; correct two statements)
-- **Üretim tarihi:** 2026-09-27T17:46:31+03:00
+- **Üretildiği commit:** `0840a5434e80426b4852f0acf7050d8c2d8ebd80` (Qualify the fold-RMSE correlation; describe the code audit as AI-assisted)
+- **Üretim tarihi:** 2026-09-27T17:52:59+03:00
 - **Çalışma ağacı:** temiz — girdiler bu commit'teki dosyalarla birebir aynı.
 - Doğrulama: `git checkout <commit> && python scripts/18_paper_numbers.py` aynı sayıları üretmelidir (yalnızca bu başlık değişir).
 
@@ -591,7 +591,18 @@ Yayım-hizalı, işlem gününe göre takvim günü (medyan / ortalama / en fazl
 ### 11d. h=22'deki iki işaret testinin bağımlılığı
 
 - Fold farkı vektörleri (HAR − HAR-X, XGBoost − HAR-X): Pearson **0.94**; HAR-X RMSE'sine bölünmüş göreli farklarla 0.90; Spearman 0.90. İşaret aynı olan yıl: 13/15.
-- Mekanizma: HAR ve XGBoost'un fold RMSE profilleri neredeyse aynı (fold'lar arası korelasyon **0.995**). İki fark da aynı HAR-X RMSE'sini içerdiğinden, iki test büyük ölçüde HAR-X'i aynı ölçüte karşı sınıyor: HAR-X'in iyi geçirdiği yıl iki karşılaştırmada birden kazanç, kötü geçirdiği yıl (2020) iki karşılaştırmada birden kayıp olarak görünüyor. Korelasyon yıl bazlı ölçek farkından ibaret değil; göreli farklarda ve sıralamada da sürüyor.
+- Mekanizma: HAR ve XGBoost'un fold RMSE profilleri neredeyse aynı (fold'lar arası korelasyon **0.995**). İki fark da aynı HAR-X RMSE'sini içerdiğinden, iki test büyük ölçüde HAR-X'i aynı ölçüte karşı sınıyor: HAR-X'in iyi geçirdiği yıl iki karşılaştırmada birden kazanç, kötü geçirdiği yıl (2020) iki karşılaştırmada birden kayıp olarak görünüyor. İki fark vektörü arasındaki korelasyon yıl bazlı ölçek farkından ibaret değil; göreli farklarda ve sıralamada da sürüyor.
+
+**0.995 kendi başına bir bulgu değildir.** Fold RMSE, yılın volatilite düzeyiyle birlikte ölçeklenir; bu yüzden hemen her model çiftinin fold RMSE'leri yüksek korelasyonludur. Aşağıdaki tablo bunun karşılaştırma değerlerini veriyor. Ölçekten arındırılmış ölçüler: fold RMSE'nin train-mean RMSE'sine oranı üzerinden korelasyon ve günlük hata korelasyonu. Keşifsel, çıkarım için değil.
+
+| ufuk | fold RMSE: HAR~XGB | fold RMSE: HAR~past-vol | fold RMSE: HAR~train-mean | göreli: HAR~XGB | göreli: HAR~HAR-X | göreli: HAR~BiLSTM | günlük hata: HAR~XGB | günlük hata: HAR-X~XGB | günlük hata: HAR~HAR-X |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| h=5 | 0.981 | 0.997 | 0.928 | 0.919 | 0.925 | 0.501 | 0.914 | 0.873 | 0.890 |
+| h=22 | 0.995 | 0.996 | 0.893 | 0.973 | 0.937 | 0.608 | 0.914 | 0.827 | 0.857 |
+| h=66 | 0.932 | 0.981 | 0.894 | 0.722 | 0.917 | 0.261 | 0.836 | 0.819 | 0.907 |
+| h=126 | 0.931 | 0.868 | 0.934 | 0.836 | 0.866 | 0.332 | 0.867 | 0.863 | 0.942 |
+
+Okuma: h=22'de HAR ile naif past-volatility baseline'ının fold RMSE korelasyonu da HAR~XGB kadar yüksek. Yani 0.995, XGBoost'un HAR'ı özel olarak izlediğini değil, yılların zorluk düzeyinin bütün modellere ortak olduğunu gösteriyor; üstelik yalnızca h=22 değeri. Ölçekten arındırılmış ölçüler daha bilgilendirici ama keşifseldir ve ufka göre değişir.
 
 ### 11e. İşaret testi eşikleri (tam binom, %5 iki yönlü)
 

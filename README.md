@@ -141,7 +141,7 @@ trial.
 > **Numbers in this README.** Every number below is taken from
 > [`outputs/paper_numbers_publication_aligned.md`](outputs/paper_numbers_publication_aligned.md),
 > which `18_paper_numbers.py` generates from the saved outputs of commit
-> `edb957e` (the file header records the full hash and the generation time).
+> `0840a54` (the file header records the full hash and the generation time).
 > All numbers are from the **publication-aligned** GPR version, the primary results; see
 > [GPR publication-date alignment](#gpr-publication-date-alignment).
 
