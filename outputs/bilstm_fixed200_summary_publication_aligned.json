@@ -1,0 +1,57 @@
+{
+  "status": "exploratory, post hoc: designed after the convergence-mode result (experiment_log.md Stage 16.4); does not change the primary specification",
+  "gpr_alignment": "publication",
+  "tier": "yuksek",
+  "horizons": [
+    5,
+    22
+  ],
+  "n_epochs": 200,
+  "lr_schedule": "cosine, T_max=200 (same as the convergence run; primary run T_max=60)",
+  "replication": "per fold: loss at epoch k and test predictions at epoch k equal the convergence run bit for bit (asserted)",
+  "loss_definitions": {
+    "loss_ep*": "epoch-average training MSE in train mode (dropout on), log-ratio target space",
+    "train_mse_eval": "MSE on the full training set in eval mode at that epoch"
+  },
+  "aggregate": [
+    {
+      "horizon": 5,
+      "n_folds": 15,
+      "k_mean": 72.06666666666666,
+      "loss_ratio_k_to_200_median": 2.483282592968241,
+      "loss_ratio_k_to_200_min": 1.5083629441952389,
+      "loss_ratio_k_to_200_max": 4.651154306083605,
+      "loss_ratio_primary_to_200_median": 3.634663857232525,
+      "train_mse_eval_ratio_median": 2.40201608054585,
+      "rmse_primary_mean": 0.013439774652626805,
+      "rmse_k_mean": 0.013518095253185812,
+      "rmse_200_mean": 0.014493360043724045,
+      "rmse_pct_200_vs_k": 7.214513378342957,
+      "rmse_pct_200_vs_primary": 7.8393084581318995,
+      "folds_200_better_than_k": 2,
+      "mae_pct_200_vs_k": 5.218557549356562,
+      "pred_std_ratio_k_mean": 0.9953436096759903,
+      "pred_std_ratio_200_mean": 1.1000129164608565
+    },
+    {
+      "horizon": 22,
+      "n_folds": 9,
+      "k_mean": 62.111111111111114,
+      "loss_ratio_k_to_200_median": 3.093904452987209,
+      "loss_ratio_k_to_200_min": 2.5846831598383124,
+      "loss_ratio_k_to_200_max": 3.501395999348393,
+      "loss_ratio_primary_to_200_median": 2.2102204392517266,
+      "train_mse_eval_ratio_median": 3.0789910235137743,
+      "rmse_primary_mean": 0.012137140850755707,
+      "rmse_k_mean": 0.012583407048822654,
+      "rmse_200_mean": 0.013170438078759152,
+      "rmse_pct_200_vs_k": 4.665119928639849,
+      "rmse_pct_200_vs_primary": 8.513514349955887,
+      "folds_200_better_than_k": 3,
+      "mae_pct_200_vs_k": 3.3157741631655524,
+      "pred_std_ratio_k_mean": 1.0217976754964042,
+      "pred_std_ratio_200_mean": 1.0529034095630503
+    }
+  ],
+  "runtime_minutes": 69.3
+}

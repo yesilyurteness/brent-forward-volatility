@@ -1624,7 +1624,70 @@ yalnızca eğitim kaybından türemeli, test performansına bakılmamalı.
 
 ## 16.5 Keşifsel kontrol: BiLSTM sabit 200 epoch (`scripts/19_bilstm_fixed_epochs.py`)
 
-_Koşu sürüyor; sonuç eklenecek._
+**Statü: keşifsel ve post hoc.** 16.4'teki yakınsama sonucu görüldükten sonra
+tasarlandı. Birincil spesifikasyonu değiştirmez, model seçiminde kullanılmaz. Epoch sayısı
+(200), 06'da önceden ilan edilmiş üst sınırdır; test performansına bakılarak seçilmedi.
+Yayım-hizalı sürüm, süre 69 dakika.
+
+**Tasarım:**
+- Erken durdurma tümüyle kapalı; sabit 200 epoch.
+- Kapsam: yüksek kademe fold'lar, h=5'te 15, h=22'de 9 fold. h=66 ve h=126'da yüksek
+  kademe yok.
+- Kosinüs lr programı yakınsama koşusuyla aynı (`T_max=200`). Dolayısıyla bu koşunun
+  k'ıncı epoch'u, k'da durmuş yakınsama koşusunun kendisi. Her fold'da assert edildi:
+  k'daki eğitim kaybı ve k'daki test tahminleri bit düzeyinde aynı (24/24).
+  "k epoch vs 200 epoch" karşılaştırması tek bir eğitim yolunun iki noktası; durdurma
+  kuralı karışmıyor. Birincil koşu (60 epoch, `T_max=60`) ayrı bir yol, yan yana
+  veriliyor.
+- Epoch bazında eğitim kaybı kaydedildi (`bilstm_fixed200_loss_history`). Ayrıca k'da ve
+  200'de, eval modunda (dropout kapalı) tüm eğitim setindeki MSE hesaplandı; bu daha temiz
+  bir uyum ölçüsü.
+
+**Önceden yazılmış yorum kuralı (sonuç görülmeden):**
+- Kayıp ciddi düşer ve test hatası iyileşmezse, aşırı uyum argümanı durdurma kuralı
+  karışmadan kurulur.
+- Kayıp yine düşmezse, model epoch-kısıtlı değil kapasite-kısıtlıdır.
+
+**Sonuç (ana fold'lar, yüksek kademe):**
+
+| | h=5 (15 fold) | h=22 (9 fold) |
+| --- | --- | --- |
+| k (durdurma epoch'u), ortalama | 72 | 62 |
+| eğitim kaybı k → 200, medyan kat | **2.48×** (1.51–4.65) | **3.09×** (2.58–3.50) |
+| eval-modu eğitim MSE k → 200, medyan kat | 2.40× (1.41–6.29) | 3.08× (2.52–4.94) |
+| eğitim kaybı birincil (60 ep) → 200, medyan kat | 3.63× | 2.21× |
+| kaybı ≥2 kat düşen fold | 14/15 | 9/9 |
+| test RMSE, birincil / k / 200 | 0.013440 / 0.013518 / **0.014493** | 0.012137 / 0.012583 / **0.013170** |
+| test RMSE değişimi, 200 vs k | **+7.21%** | **+4.67%** |
+| 200'ün k'dan iyi olduğu fold (işaret p) | 2/15 (p = 0.007) | 3/9 (p = 0.51) |
+| test MAE değişimi, 200 vs k | +5.22% | +3.32% |
+| std(tahmin)/std(gerçek), k → 200 | 1.00 → 1.10 | 1.02 → 1.05 |
+
+h=22'de 9 yüksek kademe fold'unun 200-epoch sonuçları diğer 6 fold'la birleştirildiğinde,
+ufuk ortalaması RMSE 0.010653'ten 0.011006'ya çıkıyor (+%3.31). h=5'te tüm fold'lar
+yüksek kademede; ufuk ortalaması +%7.21.
+
+**Yorum.** Yorum kuralının ilk dalı gerçekleşti:
+- Eğitim kaybı durdurma kuralı olmadan ciddi düştü: medyan 2.5× (h=5) ve 3.1× (h=22).
+  Kayıp 24 fold'un 23'ünde en az 2 kat düştü. Eval-modu MSE de aynı ölçüde düştü; yani
+  düşüş dropout gürültüsü değil, gerçek uyum artışı.
+- Test hatası iyileşmedi, kötüleşti: h=5'te +%7.2 (15 fold'un 13'ünde kötü,
+  p = 0.007), h=22'de +%4.7 (9'un 6'sında kötü, p = 0.51).
+- Tahmin saçılımı h=5'te arttı (1.00 → 1.10). Bu, modelin eğitim gürültüsünü öğrendiği
+  okumasıyla tutarlı.
+
+**"Yetersiz eğitim değil aşırı uyum" bulgusu yayım-hizalı sürümde bu kontrolle
+destekleniyor**, ve erken durdurma karışması olmadan. Zaman damgalı sürümdeki "~4×"
+düşüş burada medyan 2.5–3.1× (fold aralığı 1.5–4.7×). Makalede sayı bu dosyadan
+verilmeli; zaman damgalı sürümün 4× rakamı Ek A'ya aittir.
+
+Bu kontrol birincil spesifikasyonu değiştirmez; birincil BiLSTM 60/40/30 epoch'luk
+ilan edilmiş kademe kuralıyla kalır.
+
+Çıktılar: `bilstm_fixed200_folds_publication_aligned.csv`,
+`bilstm_fixed200_loss_history_publication_aligned.csv`,
+`bilstm_fixed200_predictions_publication_aligned.csv`,
+`bilstm_fixed200_summary_publication_aligned.json`.
 
 ---
 

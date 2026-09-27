@@ -762,11 +762,57 @@ def main():
         w("")
         w("**Yorum sınırı (bkz. deney günlüğü 16.4):** yayım sürümünde durdurma kriteri "
           "erken tetiklendi, eğitim kaybı yalnızca ~1.4 kat düştü (zaman damgalı "
-          "sürümde geç fold'larda 4–6 kat). Bu kontrol yayım sürümünde \"yetersiz eğitim "
-          "değil aşırı uyum\" iddiasını desteklemez; yalnızca ek eğitimin test hatasını "
-          "iyileştirmediğini gösterir. İddianın makaledeki biçimi açık karar.")
+          "sürümde geç fold'larda 4–6 kat). Bu kontrol tek başına \"yetersiz eğitim "
+          "değil aşırı uyum\" iddiasını desteklemez; iddianın dayanağı 7c'deki sabit "
+          "200 epoch kontrolüdür.")
     else:
         w("_`bilstm_*_conv_publication_aligned` henüz üretilmedi._")
+    w("")
+    fx_path = alignment.out("bilstm_fixed200_folds.csv", PUB)
+    w("### 7c. BiLSTM sabit 200 epoch (keşifsel, post hoc; erken durdurma yok)")
+    w("")
+    if fx_path.exists():
+        fx = rd("bilstm_fixed200_folds.csv", PUB)
+        fx = fx[fx["include_in_main"]]
+        w("Yüksek kademe fold'lar, h=5 ve h=22. Kosinüs programı yakınsama koşusuyla aynı "
+          "(`T_max=200`); k'ıncı epoch yakınsama koşusunun kendisidir (kayıp ve test "
+          "tahminleri bit düzeyinde aynı, assert). k = yakınsama kuralının durduğu "
+          "epoch. Kaynak: `bilstm_fixed200_folds_publication_aligned.csv`; epoch bazında "
+          "kayıp `bilstm_fixed200_loss_history_publication_aligned.csv`. Günlük 16.5.")
+        w("")
+        rows = []
+        cmv = rd("bilstm_metrics_all_conv.csv", PUB)
+        for h, gx in fx.groupby("horizon"):
+            k = int((gx["rmse_200"] < gx["rmse_k"]).sum())
+            full = cmv[(cmv["model"] == "bilstm") & (cmv["horizon"] == h)
+                       & cmv["include_in_main"]].set_index("test_year")["rmse"]
+            base = full.mean()
+            full.loc[gx["test_year"]] = gx.set_index("test_year")["rmse_200"]
+            rng = lambda c: f"{gx[c].median():.2f}× ({gx[c].min():.2f}–{gx[c].max():.2f})"
+            rows.append({
+                "ufuk": f"h={h}", "fold": len(gx), "ort. k": f"{gx['k_conv'].mean():.0f}",
+                "eğitim kaybı k→200, medyan (aralık)": rng("loss_ratio_k_to_200"),
+                "eval-modu eğitim MSE k→200": rng("train_mse_eval_ratio_k_to_200"),
+                "kayıp birincil(60)→200, medyan":
+                    f"{gx['loss_ratio_primary_to_200'].median():.2f}×",
+                "test RMSE birincil / k / 200": f"{gx['rmse_primary'].mean():.6f} / "
+                                                f"{gx['rmse_k'].mean():.6f} / "
+                                                f"{gx['rmse_200'].mean():.6f}",
+                "RMSE 200 vs k": pct(100 * (gx["rmse_200"].mean() / gx["rmse_k"].mean() - 1)),
+                "200 daha iyi (işaret p)": f"{k}/{len(gx)} (p={fp(sign_p(k, len(gx)))})",
+                "MAE 200 vs k": pct(100 * (gx["mae_200"].mean() / gx["mae_k"].mean() - 1)),
+                "sd oranı k→200": f"{gx['pred_std_ratio_k'].mean():.2f} → "
+                                  f"{gx['pred_std_ratio_200'].mean():.2f}",
+                "ufuk ortalaması RMSE (tüm fold'lar)":
+                    f"{base:.6f} → {full.mean():.6f} ({pct(100 * (full.mean() / base - 1))})"})
+        w(md_table(pd.DataFrame(rows)))
+        w("")
+        w("**Yorum:** eğitim kaybı durdurma kuralı olmadan ciddi düşüyor ve test hatası "
+          "iyileşmiyor, kötüleşiyor. \"Yetersiz eğitim değil aşırı uyum\" bulgusu yayım "
+          "sürümünde bu kontrolle destekleniyor. Zaman damgalı sürümdeki \"~4×\" rakamı "
+          "Ek A'ya aittir; yayım sürümünün rakamı yukarıdaki medyanlardır.")
+    else:
+        w("_`bilstm_fixed200_*_publication_aligned` henüz üretilmedi._")
     w("")
 
     # ---------------- 8. Two-version comparison ----------------
