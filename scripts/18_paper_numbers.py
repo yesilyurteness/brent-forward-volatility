@@ -205,6 +205,18 @@ def aggregate(fm, pr):
                      validate="1:1")
 
 
+def step_up(p, c=1.0):
+    """Benjamini-Hochberg adjusted p-values; with c = sum_{i<=m} 1/i this is
+    Benjamini-Yekutieli, valid under arbitrary dependence."""
+    p = np.asarray(p, dtype="float64")
+    m = len(p)
+    o = np.argsort(p)
+    adj = np.minimum.accumulate((p[o] * m * c / np.arange(1, m + 1))[::-1])[::-1]
+    out = np.empty(m)
+    out[o] = np.minimum(adj, 1.0)
+    return out
+
+
 def sign_p(k, n):
     k = min(k, n - k)
     return float(min(1.0, 2 * sum(comb(n, i) for i in range(k + 1)) / 2 ** n))
@@ -544,8 +556,31 @@ def main():
     # ---------------- 6. Primary family ----------------
     dm = {al: pd.read_csv(alignment.out("dm_test_results.csv", al)) for al in (TS, PUB)}
     dms = json.load(open(alignment.out("dm_summary.json", PUB), encoding="utf-8"))
+    # Benjamini-Yekutieli within each family. BH (as stored by 08) is recomputed with the
+    # same step-up function first, so BY differs from it only by the factor c(m).
+    for al in (TS, PUB):
+        for fam, idx in dm[al].groupby("aile").groups.items():
+            m = len(idx)
+            c_m = sum(1 / i for i in range(1, m + 1))
+            for p, col in (("p_HLN", "p_HLN"), ("p_isaret", "p_isaret")):
+                bh = step_up(dm[al].loc[idx, p])
+                assert np.allclose(bh, dm[al].loc[idx, f"{col}_bh"], rtol=1e-12, atol=0), \
+                    (al, fam, p, "BH reimplementation differs from 08")
+                dm[al].loc[idx, f"{col}_by"] = step_up(dm[al].loc[idx, p], c_m)
+    C8 = sum(1 / i for i in range(1, 9))
     d = dm[PUB][dm[PUB]["aile"] == "birincil"].copy()
     assert len(d) == 8
+    # Fold-level RMSE differences behind the two h=22 sign tests (HAR-X better > 0)
+    hp = rd("hybrid_predictions_all.csv", PUB)
+    hp = hp[(hp["horizon"] == 22) & hp["include_in_main"]]
+    fr = hp.groupby("test_year").apply(lambda x: pd.Series(
+        {m: np.sqrt(((x["y_true"] - x[f"pred_{m}"]) ** 2).mean())
+         for m in ("har", "har_x", "xgboost")}), include_groups=False)
+    d1, d2 = fr["har"] - fr["har_x"], fr["xgboost"] - fr["har_x"]
+    assert not np.allclose(d1, d2) and (d1 != 0).all() and (d2 != 0).all()
+    rho22 = float(np.corrcoef(d1, d2)[0, 1])
+    lose1 = [int(y) for y in fr.index[d1 < 0]]
+    lose2 = [int(y) for y in fr.index[d2 < 0]]
     d["claim"] = np.where(d["model1"] == "har", "HAR-X, HAR'ı geçer",
                           "HAR-X, XGBoost'u geçer")
     # HAR-X fold wins (isaret_kazanan counts model1's wins)
@@ -560,19 +595,25 @@ def main():
         "rmse_model1_pooled": d["rmse1"], "rmse_model2_pooled": d["rmse2"],
         "diff_pct_pooled": d["fark_pct"], "DM": d["DM_ham"], "p_raw": d["p_ham"],
         "DM_HLN": d["DM_HLN"], "p_HLN": d["p_HLN"], "p_HLN_holm": d["p_HLN_holm"],
-        "p_HLN_bh": d["p_HLN_bh"], "harx_fold_wins": d["harx_wins"],
+        "p_HLN_bh": d["p_HLN_bh"], "p_HLN_by": d["p_HLN_by"],
+        "harx_fold_wins": d["harx_wins"],
         "n_folds": d["isaret_fold"], "p_sign": d["p_isaret"],
-        "p_sign_holm": d["p_isaret_holm"], "p_sign_bh": d["p_isaret_bh"]})
+        "p_sign_holm": d["p_isaret_holm"], "p_sign_bh": d["p_isaret_bh"],
+        "p_sign_by": d["p_isaret_by"]})
     out.to_csv(OUT_DIR / "primary_family_tests_publication_aligned.csv", index=False)
 
     w("## 6. Birincil hipotez ailesi (8 test) — merkez çıkarım sonucu")
     w("")
     w("İki iddia × dört ufuk: **HAR vs HAR-X** (dışsal değişkenler katkı sağlar mı) ve "
-      "**HAR-X vs XGBoost** (doğrusal olmayan model katkı sağlar mı). Holm (FWER) ve "
-      "Benjamini-Hochberg (FDR) aile içinde, 8 test üzerinden. "
+      "**HAR-X vs XGBoost** (doğrusal olmayan model katkı sağlar mı). Holm (FWER), "
+      "Benjamini-Hochberg (FDR, pozitif bağımlılık/PRDS altında geçerli) ve "
+      "Benjamini-Yekutieli (FDR, her bağımlılık yapısında geçerli; BH × c(m), "
+      f"c(8) = {C8:.3f}) aile içinde, 8 test üzerinden. "
       f"Kayıp: {dms['loss']}. HAC: {dms['hac']}. HLN: `{dms['hln']}`. "
-      "DM işareti: negatif = ilk model daha iyi. **Holm ve BH düzeltmeleri HLN p "
-      "değerine uygulanır** (ham DM p'sine değil). İşaret testi fold düzeyinde "
+      "DM işareti: negatif = ilk model daha iyi. **Holm, BH ve BY düzeltmeleri HLN p "
+      "değerine uygulanır** (ham DM p'sine değil). BY bu dosyada hesaplanır; BH, "
+      "`08_dm_test.py`'nin kayıtlı değeriyle aynı fonksiyonla yeniden üretilip "
+      "doğrulanır (assert). İşaret testi fold düzeyinde "
       "binom (H0: p=0.5, iki yönlü); HAC/normallik varsayımı kullanmaz. DM havuzlanmış "
       "seri üzerindedir (her yıl yeniden eğitilmiş modellerin tahminleri), fold "
       "ortalaması değil; bu yüzden havuzlanmış RMSE farkı Bölüm 1'deki fold ortalaması "
@@ -593,6 +634,7 @@ def main():
         "HLN p": [fp(v) for v in d["p_HLN"]],
         "Holm p": [fp(v) for v in d["p_HLN_holm"]],
         "BH p": [(f"**{fp(v)}**" if v < 0.05 else fp(v)) for v in d["p_HLN_bh"]],
+        "BY p": [(f"**{fp(v)}**" if v < 0.05 else fp(v)) for v in d["p_HLN_by"]],
         "işaret: HAR-X kazanır": [f"{k}/{n}" for k, n in zip(d["harx_wins"],
                                                              d["isaret_fold"])],
         "işaret ham p": [fp(v) for v in d["p_isaret"]],
@@ -600,6 +642,8 @@ def main():
                           for v in d["p_isaret_holm"]],
         "işaret BH p": [(f"**{fp(v)}**" if v < 0.05 else fp(v))
                         for v in d["p_isaret_bh"]],
+        "işaret BY p": [(f"**{fp(v)}**" if v < 0.05 else fp(v))
+                        for v in d["p_isaret_by"]],
     })
     w(md_table(t))
     w("")
@@ -609,8 +653,10 @@ def main():
     def survivors(x):
         return {"DM Holm": int((x["p_HLN_holm"] < .05).sum()),
                 "DM BH": int((x["p_HLN_bh"] < .05).sum()),
+                "DM BY": int((x["p_HLN_by"] < .05).sum()),
                 "işaret Holm": int((x["p_isaret_holm"] < .05).sum()),
-                "işaret BH": int((x["p_isaret_bh"] < .05).sum())}
+                "işaret BH": int((x["p_isaret_bh"] < .05).sum()),
+                "işaret BY": int((x["p_isaret_by"] < .05).sum())}
 
     rows = []
     for al, name in ((PUB, "yayım-hizalı (birincil)"), (TS, "zaman damgalı (Ek A)")):
@@ -623,11 +669,25 @@ def main():
     w(md_table(pd.DataFrame(rows)))
     w("")
     surv = d[d["p_isaret_bh"] < .05]
-    w("Birincil ailede BH altında ayakta kalanlar (yayım-hizalı): " + (
-        "; ".join(f"h={r.horizon} {r.claim}, işaret {r.harx_wins}/{r.isaret_fold}, "
-                  f"BH p = {r.p_isaret_bh:.3f}" for r in surv.itertuples())
-        if len(surv) else "yok") + ". DM testi hiçbir düzeltmede anlamlılık üretmiyor "
-      f"(HLN p aralığı {d['p_HLN'].min():.3f}–{d['p_HLN'].max():.3f}).")
+    assert list(surv["horizon"]) == [22, 22], "survivor text below assumes the two h=22 tests"
+    assert (d["p_isaret_by"] >= .05).all() and (d["p_HLN_by"] >= .05).all()
+    w("**Birincil aile sonucu (yayım-hizalı):**")
+    w("")
+    w("- **Holm (FWER):** hiçbir test ayakta kalmıyor.")
+    w("- **BH (FDR, PRDS varsayımıyla):** h=22'de iki hipotez reddediliyor: " + "; ".join(
+        f"{r.claim} (işaret {r.harx_wins}/{r.isaret_fold}, BH p = {r.p_isaret_bh:.3f})"
+        for r in surv.itertuples()) + ". **Bunlar iki ayrı hipotez, ama birbirinden "
+      "bağımsız iki kanıt değil:** iki fold farkı vektörü (HAR − HAR-X ve XGBoost − "
+      f"HAR-X) {rho22:.2f} korelasyonlu. İkisi de HAR-X'i içeriyor ve 2020 ortak kayıp "
+      f"yılı (HAR-X'in kaybettiği yıllar: HAR'a karşı {', '.join(map(str, lose1))}; "
+      f"XGBoost'a karşı {', '.join(map(str, lose2))}). Aynı 13/15 ve aynı ham p, binom "
+      "testinin yalnızca kazanma sayısına bağlı olmasından geliyor; vektörler farklı "
+      "(assert).")
+    w("- **BY (FDR, bağımlılık yapısından bağımsız geçerli):** hiçbir test ayakta "
+      f"kalmıyor. En küçük BY p = {d['p_isaret_by'].min():.3f} (h=22 işaret testleri; "
+      f"BH p {surv['p_isaret_bh'].iloc[0]:.4f} × c(8) = {C8:.3f}).")
+    w(f"- **DM:** hiçbir düzeltmede anlamlılık yok (HLN p aralığı "
+      f"{d['p_HLN'].min():.3f}–{d['p_HLN'].max():.3f}).")
     w("")
     ok = (d["dm_yon"] == d["isaret_yon"])
     w(f"Yön uyumu: DM (havuz) ve işaret testi {int(ok.sum())}/8 testte aynı modeli "
@@ -817,6 +877,165 @@ def main():
         t[f"h={h} RMSE z.d. → yayım"] = [f"{f6(a)} → {f6(b)} ({pct(c)})" for a, b, c in
                                          zip(s["rmse_ts"], s["rmse_pub"], s["rmse_pct"])]
     w(md_table(t))
+    w("")
+
+    # ---------------- 9. Additional numbers used in the root README ----------------
+    w("## 9. README'de kullanılan ek sayılar (yayım-hizalı)")
+    w("")
+    w("Kök `README.md`'deki her sayı ya Bölüm 1–8'den ya da bu bölümden gelir.")
+    w("")
+    R = A.set_index(["model", "horizon"])
+    rr = lambda a, b, h: 100 * (R.loc[(a, h), "rmse"] / R.loc[(b, h), "rmse"] - 1)
+    w("### 9a. Başlıca RMSE karşılaştırmaları (fold ortalaması, %)")
+    w("")
+    rows = []
+    for lab, a, b in (("XGBoost vs past-volatility", "xgboost", "past_vol"),
+                      ("XGBoost vs HAR", "xgboost", "har"),
+                      ("XGBoost (Optuna) vs HAR", "xgboost_optuna", "har"),
+                      ("BiLSTM vs HAR", "bilstm", "har"),
+                      ("XGBoost vs HAR-X", "xgboost", "har_x"),
+                      ("BiLSTM vs HAR-X", "bilstm", "har_x"),
+                      ("H1 (XGB+BiLSTM) vs HAR-X", "h1_xgb_bilstm", "har_x"),
+                      ("H2 (HAR-X+XGB) vs HAR-X", "h2_harx_xgb", "har_x"),
+                      ("H3 (HAR-X+artık) vs HAR-X", "h3_harx_resid", "har_x"),
+                      ("HAR-X-log vs HAR-X", "har_x_log", "har_x"),
+                      ("HAR+OVX vs HAR-X", "har_ovx", "har_x")):
+        rows.append({"karşılaştırma": lab, **{f"h={h}": pct(rr(a, b, h)) for h in HORIZONS}})
+    har_family = ["har", "har_log", "har_x", "har_x_log", "har_ovx", "har_gpr"]
+    best = {h: A[(A["horizon"] == h) & A["model"].isin(har_family)]
+            .sort_values("rmse").iloc[0]["model"] for h in HORIZONS}
+    for lab, ms in (("en iyi hibrit vs en iyi HAR-ailesi",
+                     ["h1_xgb_bilstm", "h2_harx_xgb", "h3_harx_resid"]),
+                    ("en iyi birincil doğrusal olmayan (XGB, XGB-Optuna, BiLSTM) vs HAR",
+                     ["xgboost", "xgboost_optuna", "bilstm"]),
+                    ("XGBoost-6 (keşifsel; HAR-X'in girdileri, OVX dahil) vs HAR",
+                     ["xgb6"])):
+        row = {"karşılaştırma": lab}
+        for h in HORIZONS:
+            s = A[(A["horizon"] == h) & A["model"].isin(ms)].sort_values("rmse").iloc[0]
+            ref = best[h] if "HAR-ailesi" in lab else "har"
+            row[f"h={h}"] = f"{pct(rr(s['model'], ref, h))} ({s['model']} vs {ref})"
+        rows.append(row)
+    w(md_table(pd.DataFrame(rows)))
+    w("")
+    w("En iyi HAR-ailesi modeli (RMSE): " + ", ".join(f"h={h}: {LABEL[m]}"
+                                                     for h, m in best.items()) + ".")
+    w("")
+    rows = []
+    for h in HORIZONS:
+        x = abf.loc[h]
+        k = int((x["har_ovx"] < x["har_x"]).sum())
+        rows.append({"ufuk": f"h={h}", "HAR+OVX, HAR-X'i geçer": f"{k}/{len(x)}",
+                     "işaret p": fp(sign_p(k, len(x)))})
+    w("HAR+OVX vs HAR-X, fold bazında (düzeltmesiz iki yönlü işaret testi):")
+    w("")
+    w(md_table(pd.DataFrame(rows)))
+    w("")
+    gpr_b = sb.loc[[i for i in sb.index if i[0] in ("har_x", "har_gpr")
+                    and i[2] in ("gprd_lag1", "gprd_threat_lag1")], "mean"]
+    ovx_b = sb.loc[[i for i in sb.index if i[0] in ("har_x", "har_ovx")
+                    and i[2] == "ovx_lag1"], "mean"]
+    w(f"Standartlaştırılmış beta aralığı (fold ortalamaları, HAR-X ve ablasyon, dört ufuk): "
+      f"GPR {signed(gpr_b.min())} ile {signed(gpr_b.max())} arası; OVX "
+      f"{signed(ovx_b.min())} ile {signed(ovx_b.max())} arası.")
+    w("")
+    w("### 9b. DM ikincil aile (24 test), yayım-hizalı: ayakta kalanlar")
+    w("")
+    sec = dm[PUB][dm[PUB]["aile"] == "ikincil"]
+    rows = []
+    for r in sec.itertuples():
+        if min(r.p_HLN_bh, r.p_isaret_bh) < .05:
+            rows.append({"ufuk": f"h={r.horizon}", "karşılaştırma": f"{r.model1} vs {r.model2}",
+                         "havuz RMSE farkı": pct(r.fark_pct),
+                         "DM Holm / BH / BY": f"{fp(r.p_HLN_holm)} / {fp(r.p_HLN_bh)} / "
+                                              f"{fp(r.p_HLN_by)}",
+                         "işaret": f"{r.isaret_kazanan}/{r.isaret_fold}",
+                         "işaret Holm / BH / BY": f"{fp(r.p_isaret_holm)} / "
+                                                  f"{fp(r.p_isaret_bh)} / {fp(r.p_isaret_by)}"})
+    w(md_table(pd.DataFrame(rows)))
+    w("")
+    w("İşaret: model1'in kazandığı fold / toplam. Uzun ufuklarda (h=66, h=126) naif "
+      "baseline'a karşı DM anlamlılığı: " + (", ".join(
+          f"h={r.horizon} {r.model1} vs {r.model2} (BH {fp(r.p_HLN_bh)})"
+          for r in sec[(sec["horizon"] >= 66) & (sec["model2"] == "past_vol")
+                       & (sec["p_HLN_bh"] < .05)].itertuples()) or "yok") + ".")
+    w("")
+    w("### 9c. SHAP ek ölçüler")
+    w("")
+    sa = rd("shap_sign_agreement.csv", PUB)
+    unused = sa.groupby("horizon")["kullanilmadi"].mean() * 100
+    used = sa[~sa["kullanilmadi"]]
+    ovx_ag = used[used["regresor"] == "ovx_lag1"]
+    stab = {r["horizon"]: r for r in sh["stability"]}
+    t = pd.DataFrame({"ölçü": [
+        "HAR-X: OVX'in |std beta| payı",
+        "XGBoost: HAR-X'in altı regresörü dışındaki SHAP payı",
+        "kullanılmayan karşılaştırma oranı (5 ortak regresör × fold; SHAP özdeş sıfır)",
+        "OVX işaret uyumu (XGBoost SHAP yönü vs HAR-X beta; kullanılan karşılaştırmalar)",
+        "atıf sıralaması kararlılığı: ilk-son fold Spearman ρ"]})
+    for h in HORIZONS:
+        oh = ovx_ag[ovx_ag["horizon"] == h]
+        t[f"h={h}"] = [f"{gh.loc['ovx', h]:.1f}%",
+                       f"{sh['outside_harx_share_pct'][str(h)]:.1f}%",
+                       f"{unused[h]:.1f}%",
+                       f"{100 * oh['uyum'].mean():.0f}% ({int(oh['uyum'].sum())}/{len(oh)})",
+                       f"{stab[h]['ilk_son_rho']:.2f}"]
+    w(md_table(t))
+    w("")
+    w(f"OVX işaret uyumu, dört ufuk birlikte: {100 * ovx_ag['uyum'].mean():.0f}% "
+      f"({int(ovx_ag['uyum'].sum())}/{len(ovx_ag)}). Tüm fold'lar (2026 dahil), "
+      "`shap_sign_agreement_publication_aligned.csv`.")
+    w("")
+    w("### 9d. Tarih boşluğu: doğrudan hedef düzeltme testi (tahminler sabit)")
+    w("")
+    gt_ = rd("gap_target_test.csv", PUB).set_index(["horizon", "model"])
+    gs = json.load(open(alignment.out("gap_target_test_summary.json", PUB),
+                        encoding="utf-8"))["horizons"]
+    rows = []
+    for h in HORIZONS:
+        x = gt_.loc[h]
+        s = gs[str(h)]
+        rows.append({
+            "ufuk": f"h={h}", "model": len(x),
+            "en büyük |RMSE değişimi|": f"{x['rmse_change_pct'].abs().max():.2f}%",
+            "RMSE sıra değişimi": s["n_rmse_rank_changes"],
+            "MAE sıra değişimi": f"{s['n_mae_rank_changes']}"
+                                 + (f" ({' ↔ '.join(s['mae_rank_swaps'])})"
+                                    if s["mae_rank_swaps"] else ""),
+            "HAR+OVX < HAR-X (düzeltilmiş)":
+                "evet" if x.loc["har_ovx", "rmse_corrected"] < x.loc["har_x", "rmse_corrected"]
+                else "hayır",
+            "HAR < HAR+GPR (düzeltilmiş)":
+                "evet" if x.loc["har", "rmse_corrected"] < x.loc["har_gpr", "rmse_corrected"]
+                else "hayır"})
+    w(md_table(pd.DataFrame(rows)))
+    w("")
+    w("### 9e. Boşluksuz alt örneklem (2017–2026 fold'ları)")
+    w("")
+    gf = rd("robustness_gapfree_2017plus.csv", PUB).set_index(["horizon", "model"])
+    gfs = json.load(open(alignment.out("robustness_gapfree_2017plus_summary.json", PUB),
+                         encoding="utf-8"))["horizons"]
+    rows = []
+    for h in HORIZONS:
+        x = gf.loc[h]
+        r17 = x["rmse_fold_mean_2017plus"]
+        fam = r17[[m for m in har_family if m in r17.index]].min()
+        top5 = r17.sort_values().iloc[:5]
+        rows.append({
+            "ufuk": f"h={h}", "fold (2017+)": int(x["n_folds_2017plus"].iloc[0]),
+            "Spearman RMSE sırası, tüm vs 2017+":
+                f"{gfs[str(h)]['spearman_rmse_full_vs_2017plus']:.2f}",
+            "Spearman, tüm vs 2012–2016":
+                f"{gfs[str(h)]['spearman_rmse_full_vs_2012_2016']:.2f}",
+            "en iyi HAR-ailesi < XGBoost ve BiLSTM":
+                "evet" if fam < min(r17["xgboost"], r17["bilstm"]) else "hayır",
+            "train-mean'den düşük RMSE'li model": f"{int((r17 < r17['train_mean']).sum())}"
+                                                  f"/{len(r17) - 1}",
+            "ilk beş RMSE aralığı": f"{100 * (top5.max() / top5.min() - 1):.1f}%"})
+    w(md_table(pd.DataFrame(rows)))
+    w("")
+    w("\"train-mean'den düşük RMSE'li model\" RMSE üzerinden sayılır (R²_oos referans "
+      "farklarından etkilenmez).")
     w("")
 
     path = OUT_DIR / "paper_numbers_publication_aligned.md"

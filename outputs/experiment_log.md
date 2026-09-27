@@ -1619,3 +1619,74 @@ yalnızca uzun ufuklarda geçerli.
 epoch ile yapılabilir; tahmini süre ~70 dakika. Bu, sonuç görüldükten sonra tasarlanmış
 bir kontrol olur ve öyle kaydedilmelidir; birincil spesifikasyonu değiştirmez. Kriter yine
 yalnızca eğitim kaybından türemeli, test performansına bakılmamalı.
+
+**Karar: (b) seçildi.** Sonuç 16.5'te.
+
+## 16.5 Keşifsel kontrol: BiLSTM sabit 200 epoch (`scripts/19_bilstm_fixed_epochs.py`)
+
+_Koşu sürüyor; sonuç eklenecek._
+
+---
+
+# Aşama 17: Sayı paketi (`scripts/18_paper_numbers.py`)
+
+`outputs/paper_numbers_publication_aligned.md`, makalede ve kök README'de kullanılan tüm
+sayıların tek kaynağı. Yalnızca kayıtlı çıktılardan üretilir; model eğitilmez. Başlığında
+üretildiği commit, üretim tarihi ve çalışma ağacının temiz olup olmadığı yazar.
+
+**Tutarlılık kontrolleri (assert):**
+- Her fold'un RMSE'si tahmin dosyalarından yeniden hesaplanıp kayıtlı metrikle
+  karşılaştırılır (iki sürümde 960 ve 1020 satır).
+- Fold ortalamaları `gpr_alignment_comparison.csv` ile aynıdır.
+- Train-mean R²_oos her fold'da tam 0'dır.
+- 08'in kayıtlı BH değerleri pakette yeniden üretilir.
+
+**Bulgu 1: R²_oos referansı kaynaklar arasında karışıyordu.** `hybrid_metrics_all`,
+R²_oos'u XGBoost train penceresinin hedef ortalamasına göre hesaplıyor. `bench`,
+`ablation`, `exploratory_xgb6` ve `opt_*` ise her modelin kendi train penceresine göre
+hesaplıyor. HAR ailesi satır 21'den, XGBoost 127'den başladığı için bu referanslar farklı.
+Aynı tabloda ikisi karışınca, modeller farklı sabit tahminlere karşı ölçülmüş oluyordu.
+
+- **Düzeltme:** pakette tüm modellerin R²_oos'u fold başına tek bir ortak referansla
+  (train-mean baseline'ının tahmini) tahminlerden yeniden hesaplanıyor. Hibrit kaynaklı
+  modellerde kayıtlı değerle aynı çıkıyor (assert).
+- **Etkisi:** tek işaret değişimi XGBoost-6'da, h=126'da +0.010 → −0.018. Diğer
+  değişimler en fazla ~0.09, işaret değiştirmiyor.
+- RMSE/MAE bundan etkilenmiyor. Kaynak dosyalar değiştirilmedi; pakette ayrı notla
+  veriliyor.
+
+**Bulgu 2: h=22'deki iki işaret testi bağımsız değil; Benjamini-Yekutieli eklendi.**
+Birincil ailede BH altında ayakta kalan iki test (h=22: HAR-X > HAR ve HAR-X > XGBoost,
+ikisi de 13/15, ham p 0.007) incelendi.
+
+- **Sütun yeniden kullanımı yok.** İki fold farkı vektörü farklı (assert). HAR-X'in
+  kaybettiği yıllar HAR'a karşı 2020 ve 2024, XGBoost'a karşı 2014 ve 2020. Beraberlik
+  yok. Aynı p değeri, binom testinin yalnızca kazanma sayısına bağlı olmasından geliyor.
+- **Ancak iki vektör 0.94 korelasyonlu.** İkisi de HAR-X'i içeriyor ve 2020 ortak kayıp
+  yılı.
+- **BY eklendi.** BH'nin FDR garantisi pozitif bağımlılık (PRDS) varsayımına dayanıyor.
+  BY her bağımlılık yapısında geçerli: BH × c(m), c(8) = 2.718. Pakette Holm, BH ve BY
+  yan yana, iki aile için de veriliyor.
+
+**Birincil aile sonucu (yayım-hizalı):**
+- **Holm:** hiçbir test ayakta kalmıyor.
+- **BH:** h=22'de iki hipotez reddediliyor (p = 0.030). Bunlar iki ayrı hipotez, ama
+  birbirinden bağımsız iki kanıt değil.
+- **BY:** hiçbir test ayakta kalmıyor (en küçük p = 0.080).
+- **DM:** hiçbir düzeltmede anlamlı değil.
+
+İkincil ailede BY altında ayakta kalan: DM 4/24, işaret 6/24. BH altında DM 6/24, işaret
+8/24.
+
+**Kök README yayım-hizalı sayılarla güncellendi.** README'deki her sayı paketten gelir
+(README'nin ihtiyaç duyduğu ek sayılar paketin Bölüm 9'unda). Değişen iki ifade:
+- BiLSTM artık "tüm ufuklarda en kötü model" değil, "en kötü naif olmayan model"; h=5'te
+  train-mean ile başa baş.
+- HAR+OVX vs HAR-X işaret testi h=22'de düzeltmesiz p = 0.035 veriyor. Keşifsel ve
+  düzeltmesiz olarak yazıldı.
+
+GPR ile ilgili eski paragraf ("bir günlük gecikme varsayımı GPR lehine") kaldırıldı;
+yerine ölçülmüş yayım kuralı ve as-of hizalama anlatıldı.
+
+**Kapsam notu:** `09_power_analysis.py`'nin `--gpr-alignment` seçeneği yok; hâlâ zaman
+damgalı DM sonuçlarını okuyor. Yayım modunda yeniden koşulmadı.

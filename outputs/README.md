@@ -927,9 +927,10 @@ from those files, which use each model's own training window. The text is in Tur
 
 ### `primary_family_tests_publication_aligned.csv` — `18_paper_numbers.py`
 The eight tests of the primary family (HAR vs HAR-X and HAR-X vs XGBoost, four horizons),
-publication-aligned: DM and HLN statistics, raw and HLN p-values, Holm and BH p-values
-(applied to the HLN p-value), HAR-X fold wins, and the sign test with its Holm and BH
-p-values.
+publication-aligned: DM and HLN statistics, raw and HLN p-values, Holm, Benjamini-Hochberg
+and Benjamini-Yekutieli p-values (applied to the HLN p-value; `_by` = BH × c(8), valid
+under arbitrary dependence), HAR-X fold wins, and the sign test with its Holm, BH and BY
+p-values. BY is computed in `18_paper_numbers.py`; Holm and BH come from `08_dm_test.py`.
 
 ---
 
