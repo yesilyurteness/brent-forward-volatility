@@ -1835,7 +1835,7 @@ alan) ve `runtime_seconds`.
   1.0–6.7 katı (aynı aralık). h=22 HAR-X vs XGBoost'ta DM gereksinimi 61'den 144 yıla
   çıktı, çünkü o testte DM istatistiği 1.38'den 0.90'a düştü.
 - **HAC şişme çarpanları** (08, birincil aile) iki sürümde neredeyse aynı: h=5 ~2.4,
-  h=22 ~3.8–3.9, h=66 ~4.9–5.5, h=126 ~6.8–12.7.
+  h=22 ~3.8–4.0, h=66 ~4.9–5.5, h=126 ~6.8–12.7.
 
 **Yorum notu.** Aşama 8'deki güç bölümü, h=22'deki işaret testlerinin 0.871'lik
 "gerçekleşen gücünü" o sonuçların "tesadüf olmadığını" destekleyen bir kanıt gibi
