@@ -1,7 +1,7 @@
 # Makale sayıları — yayım-hizalı GPR sürümü (BİRİNCİL)
 
-- **Üretildiği commit:** `fbf20724ffa94db0ec5d9708fa1d815721b0f683` (Make --gpr-alignment required; power analysis in publication mode)
-- **Üretim tarihi:** 2026-09-27T17:37:08+03:00
+- **Üretildiği commit:** `edb957ec1d787c484b2630450637d0b9f8b0ca54` (Add methodology numbers to the package; correct two statements)
+- **Üretim tarihi:** 2026-09-27T17:46:31+03:00
 - **Çalışma ağacı:** temiz — girdiler bu commit'teki dosyalarla birebir aynı.
 - Doğrulama: `git checkout <commit> && python scripts/18_paper_numbers.py` aynı sayıları üretmelidir (yalnızca bu başlık değişir).
 
@@ -9,7 +9,7 @@
 
 **Genel kurallar.** Ana metrik fold ortalaması RMSE ve MAE; R²_oos ikincil (referans: o fold'un train hedef ortalaması); standart R² dipnot metriği. h=5 ve h=22'de 15 fold (2012–2026), h=66 ve h=126'da 14 fold (2026 kısmi yıl ana metrikten çıkarılır, ayrıca dipnotta verilir). Birim: günlük log getirilerin standart sapması. Yüzdeler `100 × (RMSE_a / RMSE_b − 1)`; negatif = a daha iyi.
 
-**p değerleri.** Çıkarım için kullanılan tek test ailesi, önceden sabitlenmiş **birincil sekizlik ailedir** (Bölüm 6: HAR vs HAR-X ve HAR-X vs XGBoost, dört ufuk); ona sonradan test eklenmez. Bu dosyadaki diğer tüm p değerleri (ablasyon, XGBoost-6, iki sürüm karşılaştırması, BiLSTM kontrolleri, 9. bölüm) **keşifsel ve çoklu karşılaştırma için düzeltilmemiştir**; betimleyici olarak verilir. İkincil DM ailesi (24 test) kendi içinde Holm/BH/BY ile düzeltilir ama doğrulayıcı değildir.
+**p değerleri.** Çıkarım için kullanılan tek test ailesi **birincil sekizlik ailedir** (Bölüm 6: HAR vs HAR-X ve HAR-X vs XGBoost, dört ufuk). Aile **testlerden sonra resmileştirildi, ön-kayıt değildir**; ancak p değerlerine bakılarak değil, Aşama 5–6'da ilan edilmiş iki iddiaya göre seçildi ve o tarihten beri sabittir: sonradan test eklenmez. Bu dosyadaki diğer tüm p değerleri (ablasyon, XGBoost-6, iki sürüm karşılaştırması, BiLSTM kontrolleri, 9. bölüm) **keşifsel ve çoklu karşılaştırma için düzeltilmemiştir**; betimleyici olarak verilir. İkincil DM ailesi (24 test) kendi içinde Holm/BH/BY ile düzeltilir ama doğrulayıcı değildir.
 
 **Tutarlılık kontrolleri (assert):** her fold'un RMSE'si tahmin dosyalarından yeniden hesaplanıp kayıtlı metrikle karşılaştırıldı; fold ortalamaları `gpr_alignment_comparison.csv` ile aynı; train-mean R²_oos her fold'da tam 0; ana metrikten yalnızca 2026 fold'u h=66/126'da dışlanıyor.
 
@@ -325,7 +325,7 @@ Yüksek kademe fold'lar, h=5 ve h=22. Kosinüs programı yakınsama koşusuyla a
 | h=5 | 15 | 72 | 2.48× (1.51–4.65) | 2.40× (1.41–6.29) | 3.63× | 0.013440 / 0.013518 / 0.014493 | +7.21% | 2/15 (p=0.007) | +5.22% | 1.00 → 1.10 | 0.013518 → 0.014493 (+7.21%) |
 | h=22 | 9 | 62 | 3.09× (2.58–3.50) | 3.08× (2.52–4.94) | 2.21× | 0.012137 / 0.012583 / 0.013170 | +4.67% | 3/9 (p=0.508) | +3.32% | 1.02 → 1.05 | 0.010653 → 0.011006 (+3.31%) |
 
-**p değerlerinin statüsü:** buradaki işaret testi p'leri (h=5: 0.007) keşifsel bir teşhisten gelir, **birincil sekizlik aileye dahil değildir ve düzeltilmemiştir**; statüsü HAR+OVX vs HAR-X'in düzeltmesiz p = 0.035'iyle aynıdır. Birincil aile önceden sabitlendi; sonradan test eklenmez.
+**p değerlerinin statüsü:** buradaki işaret testi p'leri (h=5: 0.007) keşifsel bir teşhisten gelir, **birincil sekizlik aileye dahil değildir ve düzeltilmemiştir**; statüsü HAR+OVX vs HAR-X'in düzeltmesiz p = 0.035'iyle aynıdır. Birincil aile sabittir (testlerden sonra resmileştirildi, ön-kayıt değil; bkz. Bölüm 6); sonradan test eklenmez.
 
 **Yorum:** eğitim kaybı durdurma kuralı olmadan ciddi düşüyor ve test hatası iyileşmiyor, kötüleşiyor. "Yetersiz eğitim değil aşırı uyum" bulgusu yayım sürümünde bu kontrolle destekleniyor. Zaman damgalı sürümdeki "~4×" rakamı Ek A'ya aittir; yayım sürümünün rakamı yukarıdaki medyanlardır.
 
@@ -555,4 +555,51 @@ DM testi: `δ_blok = k·|r²−1|`, `ncp = √B·δ_blok`; k verinin gürültü 
 | h=126 | HAR-X vs XGBoost | 5,582 → 4,639 | 42 → 94 |
 
 Önsel işaret testi eğrileri iki sürümde birebir aynıdır (yalnızca fold sayısına bağlı; assert). Önsel DM eğrilerinde k: h=5: 0.444 → 0.437, h=22: 0.557 → 0.542, h=66: 1.124 → 1.137, h=126: 1.700 → 1.688.
+
+## 11. Yöntem ve sınırlılık sayıları (GPR yayım hizalaması, test ailesi)
+
+### 11a. Yayım kuralı (`16_gpr_vintages.py`, erişim 2026-09-24)
+
+- Arşivlenmiş sürüm: **289** (2022-02-24 – 2026-09-21).
+- Kural "D günü yayımlanan dosya D dahil D'ye kadarki gözlemleri içerir": **279/289** sürüm destekliyor. İstisnalar: 7 sürüm 1 gün geride, 1 sürüm 2 gün geride, 1 sürüm 3 gün geride, 1 sürüm 124 gün geride. İstisnaların dökümü: **6** ay başı dosyası bir önceki ayın son gününde duruyor; **1** bayat yükleme (2023-01-02 dosyası, son gözlem 2022-08-31); **3** diğer (2023-11-01 dosyası, son gözlem 2023-10-30, 2024-03-12 dosyası, son gözlem 2024-03-11, 2025-12-02 dosyası, son gözlem 2025-12-01).
+- Sürüm günleri: Monday 207, Tuesday 42, Friday 14, Wednesday 14, Thursday 12.
+- Gözlem başına yayım gecikmesi (takvim günü): medyan 3, ortalama 2.84, en fazla 10. Gözlemin haftanın gününe göre medyan: Friday 3, Monday 0, Saturday 2, Sunday 1, Thursday 4, Tuesday 6, Wednesday 5.
+- Revizyon, GPRD (ilk yayım vs güncel, göreli): ortalama -5.2%, ortalama mutlak 12.7%, medyan mutlak 10.0% (n = 1664). Revizyonlar modellenmedi; değerler güncel sürümden.
+- Revizyon, GPRD_THREAT (ilk yayım vs güncel, göreli): ortalama -3.7%, ortalama mutlak 14.6%, medyan mutlak 11.3% (n = 1661). Revizyonlar modellenmedi; değerler güncel sürümden.
+- 2022-02-24 öncesi: arşiv yok, kural karşı-olgusal uygulanır (first Monday on/after d, next business day if federal holiday (COUNTERFACTUAL)).
+- Forward-fill reddi: düzey seriyi işlem takvimine ileri doldurmak yayımlanan gözlemlerin **%78**'ini atardı.
+- Zaman damgalı hizalamada satırların **%80.3**'i tahmin anında henüz yayımlanmamış bir gözlem kullanıyordu.
+- Değişen özellik: 27/65; ilk tam dolu satır iki sürümde de 127.
+
+### 11b. Etkin gecikme (işlem günü t ile kullanılan GPR gözleminin tarihi arası)
+
+| ölçü | zaman damgalı | yayım-hizalı |
+| --- | --- | --- |
+| takvim günü, medyan | 1 | 3 |
+| takvim günü, ortalama | 1.47 | 3.69 |
+| takvim günü, en fazla | 17 | 20 |
+| işlem satırı, medyan / ortalama / en fazla | — | 3 / 2.97 / 8 |
+
+Yayım-hizalı, işlem gününe göre takvim günü (medyan / ortalama / en fazla): Monday 7 / 7.15 / 20; Tuesday 1 / 1.92 / 11; Wednesday 2 / 2.27 / 9; Thursday 3 / 3.20 / 7; Friday 4 / 4.20 / 18.
+
+### 11c. Nedensellik doğrulamaları
+
+- **Prefix-invariance:** özellikler veri 3000 ve 4000. satırda kesilerek yeniden hesaplandı; kesim öncesi tüm satırlar tam veriyle hesaplananla **sıfır toleransta** aynı (2/2 geçti).
+- **Yayım duyarlılığı:** rastgele 40 satırda, o satırın tarihinde henüz yayımlanmamış tüm GPR gözlemleri bozuldu (satır başına 136–4065 gözlem). Yayım-hizalı kol: **40/40 değişmedi**. Kontrol kolu (zaman damgalı): **33/40 değişti**.
+- **Kontrol kolunda değişmeyen 7 satırın mekanizması:** zaman damgalı kol satır t'de t−1 tarihli gözlemi kullanır ve bozulma yalnızca t−1'e kadar yayımlanmamış gözlemlere uygulanır. Değişmeyen satırlar tam olarak t−1 gözleminin t−1'e kadar zaten yayımlanmış olduğu satırlardır (6 Tuesday, 1 Wednesday; Salı satırlarının t−1'i aynı gün yayımlanan Pazartesi gözlemi, Çarşamba satırı İşçi Bayramı haftası). Yayım takvimi kontrol kolunun sonucunu **40/40** satırda doğru öngörüyor.
+
+### 11d. h=22'deki iki işaret testinin bağımlılığı
+
+- Fold farkı vektörleri (HAR − HAR-X, XGBoost − HAR-X): Pearson **0.94**; HAR-X RMSE'sine bölünmüş göreli farklarla 0.90; Spearman 0.90. İşaret aynı olan yıl: 13/15.
+- Mekanizma: HAR ve XGBoost'un fold RMSE profilleri neredeyse aynı (fold'lar arası korelasyon **0.995**). İki fark da aynı HAR-X RMSE'sini içerdiğinden, iki test büyük ölçüde HAR-X'i aynı ölçüte karşı sınıyor: HAR-X'in iyi geçirdiği yıl iki karşılaştırmada birden kazanç, kötü geçirdiği yıl (2020) iki karşılaştırmada birden kayıp olarak görünüyor. Korelasyon yıl bazlı ölçek farkından ibaret değil; göreli farklarda ve sıralamada da sürüyor.
+
+### 11e. İşaret testi eşikleri (tam binom, %5 iki yönlü)
+
+| fold | anlamlılık için en az kazanma | o eşikte p | bir eksiğinde p |
+| --- | --- | --- | --- |
+| 9 | 8/9 | 0.0391 | 0.1797 |
+| 14 | 12/14 | 0.0129 | 0.0574 |
+| 15 | 12/15 | 0.0352 | 0.1185 |
+
+n=9 (Bölüm 7c, h=22 yüksek kademe) için anlamlılık mümkündür ama 9 fold'un en az 8'inde aynı yön gerekir; gözlenen 6/9 bu eşiğin iki fold altındadır.
 

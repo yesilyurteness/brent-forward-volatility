@@ -141,7 +141,7 @@ trial.
 > **Numbers in this README.** Every number below is taken from
 > [`outputs/paper_numbers_publication_aligned.md`](outputs/paper_numbers_publication_aligned.md),
 > which `18_paper_numbers.py` generates from the saved outputs of commit
-> `fbf2072` (the file header records the full hash and the generation time).
+> `edb957e` (the file header records the full hash and the generation time).
 > All numbers are from the **publication-aligned** GPR version, the primary results; see
 > [GPR publication-date alignment](#gpr-publication-date-alignment).
 
@@ -203,8 +203,9 @@ not yet been published. This was found by an independent external code review.
 
 The publication rule was measured from the authors' own vintage archive: 289 archived
 releases from 2022-02-24 to 2026-09-21 (`16_gpr_vintages.py`). A file released on day D
-contains the observations through D itself (279 of 289 vintages; the exceptions are
-month-start updates that stop at the previous month's end, plus one stale upload). Most
+contains the observations through D itself (279 of 289 vintages; of the ten exceptions,
+six are month-start updates that stop at the previous month's end, one is a stale upload,
+and three stop one or two days short). Most
 releases fall on Mondays, and the median delay from an observation to its first release
 is 3 days (0 for a Monday observation, 6 for a Tuesday one). Before 2022-02-24 no
 archive exists, and the same rule is applied counterfactually (first Monday on or after
