@@ -1,13 +1,15 @@
 # Makale sayıları — yayım-hizalı GPR sürümü (BİRİNCİL)
 
-- **Üretildiği commit:** `c57c59305ed8447d582d301ffe3f5f9de8fd2024` (Add the fixed-200-epoch BiLSTM check (exploratory, post hoc))
-- **Üretim tarihi:** 2026-09-27T16:56:14+03:00
+- **Üretildiği commit:** `fbf20724ffa94db0ec5d9708fa1d815721b0f683` (Make --gpr-alignment required; power analysis in publication mode)
+- **Üretim tarihi:** 2026-09-27T17:37:08+03:00
 - **Çalışma ağacı:** temiz — girdiler bu commit'teki dosyalarla birebir aynı.
 - Doğrulama: `git checkout <commit> && python scripts/18_paper_numbers.py` aynı sayıları üretmelidir (yalnızca bu başlık değişir).
 
 > Bu dosya `scripts/18_paper_numbers.py` tarafından kayıtlı çıktılardan üretilir; elle düzenlenmez. Makale yazımında sayılar **yalnızca bu dosyadan** alınır. Zaman damgalı (eski) sürümün sayıları yalnızca Bölüm 8'de, Ek A için yer alır.
 
 **Genel kurallar.** Ana metrik fold ortalaması RMSE ve MAE; R²_oos ikincil (referans: o fold'un train hedef ortalaması); standart R² dipnot metriği. h=5 ve h=22'de 15 fold (2012–2026), h=66 ve h=126'da 14 fold (2026 kısmi yıl ana metrikten çıkarılır, ayrıca dipnotta verilir). Birim: günlük log getirilerin standart sapması. Yüzdeler `100 × (RMSE_a / RMSE_b − 1)`; negatif = a daha iyi.
+
+**p değerleri.** Çıkarım için kullanılan tek test ailesi, önceden sabitlenmiş **birincil sekizlik ailedir** (Bölüm 6: HAR vs HAR-X ve HAR-X vs XGBoost, dört ufuk); ona sonradan test eklenmez. Bu dosyadaki diğer tüm p değerleri (ablasyon, XGBoost-6, iki sürüm karşılaştırması, BiLSTM kontrolleri, 9. bölüm) **keşifsel ve çoklu karşılaştırma için düzeltilmemiştir**; betimleyici olarak verilir. İkincil DM ailesi (24 test) kendi içinde Holm/BH/BY ile düzeltilir ama doğrulayıcı değildir.
 
 **Tutarlılık kontrolleri (assert):** her fold'un RMSE'si tahmin dosyalarından yeniden hesaplanıp kayıtlı metrikle karşılaştırıldı; fold ortalamaları `gpr_alignment_comparison.csv` ile aynı; train-mean R²_oos her fold'da tam 0; ana metrikten yalnızca 2026 fold'u h=66/126'da dışlanıyor.
 
@@ -318,10 +320,12 @@ Değişim = yakınsama / birincil − 1 (fold ortalaması RMSE, ana fold'lar). h
 
 Yüksek kademe fold'lar, h=5 ve h=22. Kosinüs programı yakınsama koşusuyla aynı (`T_max=200`); k'ıncı epoch yakınsama koşusunun kendisidir (kayıp ve test tahminleri bit düzeyinde aynı, assert). k = yakınsama kuralının durduğu epoch. Kaynak: `bilstm_fixed200_folds_publication_aligned.csv`; epoch bazında kayıp `bilstm_fixed200_loss_history_publication_aligned.csv`. Günlük 16.5.
 
-| ufuk | fold | ort. k | eğitim kaybı k→200, medyan (aralık) | eval-modu eğitim MSE k→200 | kayıp birincil(60)→200, medyan | test RMSE birincil / k / 200 | RMSE 200 vs k | 200 daha iyi (işaret p) | MAE 200 vs k | sd oranı k→200 | ufuk ortalaması RMSE (tüm fold'lar) |
+| ufuk | fold | ort. k | eğitim kaybı k→200, medyan (aralık) | eval-modu eğitim MSE k→200 | kayıp birincil(60)→200, medyan | test RMSE birincil / k / 200 | RMSE 200 vs k | 200 daha iyi (işaret p; keşifsel, düzeltmesiz) | MAE 200 vs k | sd oranı k→200 | ufuk ortalaması RMSE (tüm fold'lar) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | h=5 | 15 | 72 | 2.48× (1.51–4.65) | 2.40× (1.41–6.29) | 3.63× | 0.013440 / 0.013518 / 0.014493 | +7.21% | 2/15 (p=0.007) | +5.22% | 1.00 → 1.10 | 0.013518 → 0.014493 (+7.21%) |
 | h=22 | 9 | 62 | 3.09× (2.58–3.50) | 3.08× (2.52–4.94) | 2.21× | 0.012137 / 0.012583 / 0.013170 | +4.67% | 3/9 (p=0.508) | +3.32% | 1.02 → 1.05 | 0.010653 → 0.011006 (+3.31%) |
+
+**p değerlerinin statüsü:** buradaki işaret testi p'leri (h=5: 0.007) keşifsel bir teşhisten gelir, **birincil sekizlik aileye dahil değildir ve düzeltilmemiştir**; statüsü HAR+OVX vs HAR-X'in düzeltmesiz p = 0.035'iyle aynıdır. Birincil aile önceden sabitlendi; sonradan test eklenmez.
 
 **Yorum:** eğitim kaybı durdurma kuralı olmadan ciddi düşüyor ve test hatası iyileşmiyor, kötüleşiyor. "Yetersiz eğitim değil aşırı uyum" bulgusu yayım sürümünde bu kontrolle destekleniyor. Zaman damgalı sürümdeki "~4×" rakamı Ek A'ya aittir; yayım sürümünün rakamı yukarıdaki medyanlardır.
 
@@ -490,4 +494,65 @@ OVX işaret uyumu, dört ufuk birlikte: 74% (37/52). Tüm fold'lar (2026 dahil),
 | h=126 | 9 | 0.68 | 0.77 | evet | 0/10 | 2.4% |
 
 "train-mean'den düşük RMSE'li model" RMSE üzerinden sayılır (R²_oos referans farklarından etkilenmez).
+
+## 10. Güç analizi (birincil aile; `09_power_analysis.py`)
+
+%80 güç, %5 iki yönlü. DM: örneklem birimi etkin blok B = n/h. İşaret testi: örneklem birimi fold (yıl), tam binom. Kaynak: `power_analysis_publication_aligned.csv`, `apriori_power_{sign,dm}_publication_aligned.csv`.
+
+**Uyarı:** gözlenen etkiden hesaplanan "gerçekleşen güç" p değerinin monoton bir dönüşümüdür ve p değerinin ötesinde bilgi taşımaz; bir sonucun tesadüf olup olmadığına kanıt olarak kullanılamaz. Bilgi taşıyan kısımlar gerekli örneklem (10a) ve gözlenen sonuçlardan bağımsız önsel eğrilerdir (10b).
+
+Yıl başına işlem günü (test döneminden ölçüldü): 244.1.
+
+### 10a. Gözlenen etki gerçek kabul edilirse %80 güç için gereken test dönemi
+
+| ufuk | karşılaştırma | DM: etkin blok | DM: gerçekleşen güç | DM: gerekli yıl | DM: kat | işaret: HAR-X kazanır | işaret: gerçekleşen güç | işaret: gerekli yıl | işaret: kat |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| h=5 | HAR vs HAR-X | 732 | 0.068 | 760 | 50.7× | 11/15 | 0.403 | 37 | 2.5× |
+| h=22 | HAR vs HAR-X | 166 | 0.093 | 320 | 21.4× | 13/15 | 0.871 | 15 | 1.0× |
+| h=66 | HAR vs HAR-X | 53 | 0.058 | 1,680 | 117.2× | 10/14 | 0.190 | 42 | 3.0× |
+| h=126 | HAR vs HAR-X | 28 | 0.093 | 307 | 21.4× | 9/14 | 0.076 | 94 | 6.7× |
+| h=5 | HAR-X vs XGBoost | 732 | 0.110 | 233 | 15.5× | 10/15 | 0.209 | 72 | 4.8× |
+| h=22 | HAR-X vs XGBoost | 166 | 0.147 | 144 | 9.6× | 13/15 | 0.871 | 15 | 1.0× |
+| h=66 | HAR-X vs XGBoost | 53 | 0.355 | 45 | 3.1× | 10/14 | 0.190 | 42 | 3.0× |
+| h=126 | HAR-X vs XGBoost | 28 | 0.053 | 4,639 | 323.6× | 9/14 | 0.076 | 94 | 6.7× |
+
+Aralıklar: DM için gereken uzatma mevcut test döneminin 3.1–324 katı; işaret testi için 1.0–6.7 katı.
+
+### 10b. Önsel güç eğrileri (gözlenen sonuçları kullanmaz)
+
+İşaret testi: %5 iki yönlü anlamlılık için gereken en az kazanma: n=15: 12, n=14: 12.
+
+| gerçek kazanma olasılığı | n=14 | n=15 |
+| --- | --- | --- |
+| 0.6 | 0.040 | 0.092 |
+| 0.65 | 0.084 | 0.173 |
+| 0.7 | 0.161 | 0.297 |
+| 0.75 | 0.281 | 0.461 |
+| 0.8 | 0.448 | 0.648 |
+| 0.85 | 0.648 | 0.823 |
+| 0.9 | 0.842 | 0.944 |
+
+DM testi: `δ_blok = k·|r²−1|`, `ncp = √B·δ_blok`; k verinin gürültü yapısından (birincil ailedeki iki çiftin ortalaması) kalibre edilir, gözlenen etkiden değil. Parantezde k'nın iki çift arasındaki aralığıyla güç.
+
+| ufuk | etkin blok | k | %5 RMSE farkı | %10 RMSE farkı | %20 RMSE farkı |
+| --- | --- | --- | --- | --- | --- |
+| h=5 | 732 | 0.437 | 0.210 (0.209–0.211) | 0.612 (0.609–0.615) | 0.989 (0.989–0.989) |
+| h=22 | 166 | 0.542 | 0.105 (0.099–0.110) | 0.264 (0.243–0.286) | 0.710 (0.665–0.752) |
+| h=66 | 53 | 1.137 | 0.127 (0.120–0.135) | 0.349 (0.322–0.378) | 0.846 (0.809–0.878) |
+| h=126 | 28 | 1.688 | 0.140 (0.109–0.179) | 0.396 (0.281–0.522) | 0.895 (0.743–0.968) |
+
+### 10c. İki sürüm (Ek A)
+
+| ufuk | karşılaştırma | DM gerekli yıl (z.d. → yayım) | işaret gerekli yıl (z.d. → yayım) |
+| --- | --- | --- | --- |
+| h=5 | HAR vs HAR-X | 927 → 760 | 20 → 37 |
+| h=22 | HAR vs HAR-X | 273 → 320 | 15 → 15 |
+| h=66 | HAR vs HAR-X | 2,764 → 1,680 | 42 → 42 |
+| h=126 | HAR vs HAR-X | 400 → 307 | 94 → 94 |
+| h=5 | HAR-X vs XGBoost | 323 → 233 | 72 → 72 |
+| h=22 | HAR-X vs XGBoost | 61 → 144 | 15 → 15 |
+| h=66 | HAR-X vs XGBoost | 52 → 45 | 25 → 42 |
+| h=126 | HAR-X vs XGBoost | 5,582 → 4,639 | 42 → 94 |
+
+Önsel işaret testi eğrileri iki sürümde birebir aynıdır (yalnızca fold sayısına bağlı; assert). Önsel DM eğrilerinde k: h=5: 0.444 → 0.437, h=22: 0.557 → 0.542, h=66: 1.124 → 1.137, h=126: 1.700 → 1.688.
 

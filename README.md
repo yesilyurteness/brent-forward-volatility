@@ -141,7 +141,7 @@ trial.
 > **Numbers in this README.** Every number below is taken from
 > [`outputs/paper_numbers_publication_aligned.md`](outputs/paper_numbers_publication_aligned.md),
 > which `18_paper_numbers.py` generates from the saved outputs of commit
-> `c57c593` (the file header records the full hash and the generation time).
+> `fbf2072` (the file header records the full hash and the generation time).
 > All numbers are from the **publication-aligned** GPR version, the primary results; see
 > [GPR publication-date alignment](#gpr-publication-date-alignment).
 
@@ -361,42 +361,46 @@ Because the raw data is not in the repository, the first step is to build
 Every script is runnable on its own and writes its outputs under `outputs/`. The order
 matters: each step reads the previous step's output.
 
+**GPR alignment is a required argument.** Every model and analysis step that uses GPR
+(steps 3-13, 15 and 19) takes `--gpr-alignment {publication,timestamp}` and has **no
+default**; a run without it stops with an error. `publication` produces the primary
+results (reads `features_publication_aligned.csv`, writes `_publication_aligned` files);
+`timestamp` reproduces the earlier alignment (unsuffixed files, paper Appendix A).
+
 ```bash
+# Data and features (no GPR alignment argument)
 python scripts/validate_data.py               # 0. data integrity validation (run this first)
 python scripts/16_gpr_vintages.py             # GPR publication rule from the vintage archive (downloads ~400 MB once)
 python scripts/01_build_targets.py            # 1. targets for the four horizons
 python scripts/02_build_features.py           # 2. causal features, both GPR alignments
-python scripts/03_walkforward.py              # 3. XGBoost, primary specification
-python scripts/04_optuna_walkforward.py       # 4. Optuna robustness analysis (longest step)
-python scripts/05_benchmarks.py               # 5. HAR, HAR-X, GARCH, naive baselines
-python scripts/06_attention_bilstm.py         # 6. Attention BiLSTM
-python scripts/07_hybrid.py                   # 7. hybrid combinations
-python scripts/07b_exploratory_vol_regime.py  # 7b. exploratory volatility regime analysis
-python scripts/08_dm_test.py                  # 8. Diebold-Mariano tests
-python scripts/09_power_analysis.py           # 9. statistical power analysis
-python scripts/10_shap_analysis.py            # 10. TreeSHAP attribution analysis
-python scripts/11_ablation_exogenous.py       # 11. OVX / GPR ablation of the HAR family
-python scripts/12_robustness_gapfree.py       # 12. main comparison on the gap-free 2017+ folds
-python scripts/13_gap_target_test.py          # 13. direct test: gap-corrected target, fixed predictions
 python scripts/14_date_gap_diagnostics.py     # 14. date-gap diagnostics of the merged series
-python scripts/15_exploratory_xgb6.py         # 15. exploratory: XGBoost on HAR-X's inputs and target
-python scripts/17_gpr_alignment_comparison.py # 17. timestamp vs publication alignment, same samples
-python scripts/18_paper_numbers.py            # 18. number package for the paper and this README
-python scripts/19_bilstm_fixed_epochs.py      # 19. exploratory: BiLSTM trained for a fixed 200 epochs
+
+# Primary results: publication-aligned GPR
+python scripts/03_walkforward.py              --gpr-alignment publication  # 3. XGBoost, primary specification
+python scripts/04_optuna_walkforward.py       --gpr-alignment publication  # 4. Optuna robustness analysis (longest step)
+python scripts/05_benchmarks.py               --gpr-alignment publication  # 5. HAR, HAR-X, GARCH, naive baselines
+python scripts/06_attention_bilstm.py         --gpr-alignment publication  # 6. Attention BiLSTM
+python scripts/07_hybrid.py                   --gpr-alignment publication  # 7. hybrid combinations
+python scripts/07b_exploratory_vol_regime.py  --gpr-alignment publication  # 7b. exploratory volatility regime analysis
+python scripts/08_dm_test.py                  --gpr-alignment publication  # 8. Diebold-Mariano tests
+python scripts/09_power_analysis.py           --gpr-alignment publication  # 9. statistical power analysis
+python scripts/10_shap_analysis.py            --gpr-alignment publication  # 10. TreeSHAP attribution analysis
+python scripts/11_ablation_exogenous.py       --gpr-alignment publication  # 11. OVX / GPR ablation of the HAR family
+python scripts/12_robustness_gapfree.py       --gpr-alignment publication  # 12. main comparison on the gap-free 2017+ folds
+python scripts/13_gap_target_test.py          --gpr-alignment publication  # 13. direct test: gap-corrected target, fixed predictions
+python scripts/15_exploratory_xgb6.py         --gpr-alignment publication  # 15. exploratory: XGBoost on HAR-X's inputs and target
+
+# Robustness variants (publication-aligned)
+python scripts/05_benchmarks.py       --gpr-alignment publication --align-start-row 127 --suffix _aligned  # data equalization
+python scripts/06_attention_bilstm.py --gpr-alignment publication --convergence-mode --suffix _conv    # convergence criterion
+python scripts/19_bilstm_fixed_epochs.py --gpr-alignment publication  # 19. exploratory: fixed 200 epochs (after the _conv run)
+
+# Appendix A: repeat steps 3-13 and 15 (and the two variants above) with --gpr-alignment timestamp
+
+# Both versions must exist for these two (no alignment argument)
+python scripts/17_gpr_alignment_comparison.py  # 17. timestamp vs publication alignment, same samples
+python scripts/18_paper_numbers.py             # 18. number package for the paper and this README
 ```
-
-**GPR alignment.** Steps 3-8, 10-13 and 15 take `--gpr-alignment {timestamp,publication}`.
-The default, `timestamp`, reproduces the earlier results (unsuffixed files, Appendix A);
-**the primary results are produced with `--gpr-alignment publication`**, which reads
-`features_publication_aligned.csv` and writes `_publication_aligned` files, e.g.
-
-```bash
-python scripts/03_walkforward.py --gpr-alignment publication
-```
-
-Steps 17 and 18 need both versions; step 19 is run with `--gpr-alignment publication`
-after step 6 in the convergence mode (`--convergence-mode --suffix _conv`). Step 9 has
-no alignment option and reads the timestamp-aligned DM results.
 
 Steps 11-15 take a few seconds each (step 15 under a minute). Step 12 reads the outputs of steps 3, 5, 6, 7 and 11;
 step 13 reads the prediction files of steps 3, 5, 6, 7 and 11, and imports the gap
@@ -408,8 +412,8 @@ error and stop if the row count is not 4641.
 Steps 3-7 can be narrowed by horizon and test year, which is useful for quick trials:
 
 ```bash
-python scripts/03_walkforward.py --horizons 5 --max-folds 2
-python scripts/05_benchmarks.py --horizons 5 22 --test-years 2012 2013
+python scripts/03_walkforward.py --gpr-alignment publication --horizons 5 --max-folds 2
+python scripts/05_benchmarks.py --gpr-alignment publication --horizons 5 22 --test-years 2012 2013
 ```
 
 The most expensive step is the Optuna run (30 trials per fold, four horizons). The BiLSTM
