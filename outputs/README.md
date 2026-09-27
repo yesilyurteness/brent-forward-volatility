@@ -7,7 +7,9 @@
 > The two versions differ only in how the GPR features are aligned: to the date each GPR
 > observation refers to (timestamp), or to the date it was actually published
 > (publication). Samples are identical; models without GPR input give bit-identical
-> results in both. See `gpr_availability_report.md` and `gpr_alignment_comparison.csv`.
+> results in both. See Stage 16 below, `experiment_log.md` (Stage 16) and
+> `gpr_alignment_comparison.csv`. Numbers quoted in the paper come only from
+> `paper_numbers_publication_aligned.md`.
 > The naming will be made explicit (`*_timestamp_aligned` / primary names) in the final
 > release.
 
@@ -878,6 +880,56 @@ Test predictions (`pred_xgb6`) with `y_true`.
 
 ### `exploratory_xgb6_summary.json`
 Status note, the fixed design choices, runtime and the aggregate table.
+
+---
+
+## Stage 16: GPR publication-date alignment
+
+The daily GPR index is published in batches (weekly, plus a month-start update), so the
+observation dated t−1 was usually not yet public at t. Stage 16 measures the publication
+rule from the authors' vintage archive and rebuilds every GPR-derived feature so that row t
+uses only observations published by t−1. The full account is in `experiment_log.md`,
+Stage 16.
+
+### `gpr_vintage_meta.csv`, `gpr_first_release.csv`, `gpr_revision_summary.json` — `16_gpr_vintages.py`
+One row per archived vintage (289, 2022-02-24 to 2026-09-21): vintage date, last
+observation date, new observations. The first-release value of every observation from
+2022-02-24 on, with its revision against the current vintage. The summary gives the
+publication rule support (279/289 vintages contain observations through their own date),
+publication lags by weekday and year, and revision statistics.
+
+### `gpr_publication_calendar.csv`, `features_publication_aligned.csv`, `features_publication_aligned_changes.csv`, `build_features_publication_aligned_report.json` — `02_build_features.py`
+The publication date assigned to every GPR observation (empirical from 2022-02-24,
+counterfactual Monday/federal-holiday rule before), the publication-aligned feature
+matrix (same rows and columns as `features.csv`; 27 of 65 features differ), the list of
+changed features, and the report with the prefix-invariance and publication-sensitivity
+tests and the effective-lag statistics.
+
+### `gpr_alignment_comparison*.csv`, `gpr_alignment_decomposition.csv`, `gpr_alignment_comparison_summary.json` — `17_gpr_alignment_comparison.py`
+Every model × horizon (and × fold) in both versions, on identical samples: RMSE, MAE and
+R²_oos, percent change, and a sign test over folds. Models without GPR input are asserted
+bit-identical. The decomposition file gives HAR → HAR-X → XGBoost-6 → XGBoost in both
+versions; the 2026 file is the partial-year footnote at h=66 and h=126.
+
+---
+
+## Stage 17: paper number package
+
+### `paper_numbers_publication_aligned.md` — `18_paper_numbers.py`
+**The single source for numbers quoted in the manuscript.** Generated from saved outputs
+only (no model is fitted); not edited by hand. Main RMSE/MAE/R²_oos table for all models,
+four-step decomposition, ablation ladder, standardized betas, SHAP group shares, the
+primary hypothesis family, the robustness checks rerun in publication mode, and the
+two-version comparison for Appendix A. R²_oos in this file uses one common reference per
+fold (the train-mean baseline of `hybrid_metrics_all`) for every model, so the values of
+models taken from `bench`, `ablation`, `exploratory_xgb6` and `opt_*` differ slightly
+from those files, which use each model's own training window. The text is in Turkish.
+
+### `primary_family_tests_publication_aligned.csv` — `18_paper_numbers.py`
+The eight tests of the primary family (HAR vs HAR-X and HAR-X vs XGBoost, four horizons),
+publication-aligned: DM and HLN statistics, raw and HLN p-values, Holm and BH p-values
+(applied to the HLN p-value), HAR-X fold wins, and the sign test with its Holm and BH
+p-values.
 
 ---
 

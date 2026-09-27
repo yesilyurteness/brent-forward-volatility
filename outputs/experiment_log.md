@@ -1365,3 +1365,257 @@ keşifsel olarak raporlanmalı; birincil karşılaştırmanın yerine geçmez.
 
 Çıktılar: `exploratory_xgb6.csv`, `exploratory_xgb6_folds.csv`,
 `exploratory_xgb6_predictions.csv`, `exploratory_xgb6_summary.json`.
+
+---
+
+# Aşama 16: GPR yayım tarihi hizalaması (erişilebilirlik düzeltmesi)
+
+**Tetikleyici — şeffaflık kaydı.** Bu çalışma, projenin kodunu inceleyen **bağımsız bir dış
+kod incelemesiyle tetiklendi**. İnceleme, GPR özelliklerinin tahmin anında erişilebilir
+olmayan bilgiyi kullandığını işaret etti. Makalenin şeffaflık beyanında bu şekilde yer
+alacak.
+
+**Sorun.** Günlük GPR endeksi (Caldara ve Iacoviello) OVX ve Brent gibi gerçek zamanlı
+gözlenmez. Toplu halde yayımlanır (haftalık, artı aylık güncelleme) ve sonraki sürümler
+geçmiş değerleri revize eder. Model ise GPR'ı her gün bir gün gecikmeyle kullanıyordu:
+satır t, t−1 tarihli gözlemi görüyordu. Bu `.shift(1)` kuralına biçimsel olarak uyuyor
+ama bir **erişilebilirlik ihlali**. t−1 gözlemi çoğu gün t anında henüz yayımlanmamıştı.
+Ölçüm (Aşama 16.2): zaman damgalı hizalamada satırların **%80.3'ü** yayımlanmamış bir
+gözlem kullanıyor. Bu, Kritik Kural 6'nın ("t anında bilinmeyen bilgi kullanılamaz")
+ruhuna aykırı bir sızıntıdır. Kod `.shift()` kontrolünden geçtiği için önceki
+denetimlerde yakalanmadı.
+
+Düzeltme üç aşamada yapıldı. Aşama 1 ve 2 commit `20cbfab` ve `a1482d6`'da, Aşama 3
+commit `4ef8c39`'da.
+
+## 16.1 Yayım kuralının tespiti (`scripts/16_gpr_vintages.py`)
+
+**Kaynak (erişim 2026-09-24):** yazarların GitHub'daki sürüm arşivi
+(`iacoviel/iacoviel.github.io/gpr_archive_files`). **289 günlük sürüm** var, 2022-02-24
+ile 2026-09-21 arası. Sayfa beyanı: "The daily data are updated every Monday … If the
+first day of the month or week falls on a federal holiday, data updates will take place
+the next business day."
+
+**Kural: D gününde yayımlanan dosya, D dahil D'ye kadarki gözlemleri içerir.** 289
+sürümün **279'u** bu kuralı destekliyor (dosya tarihi = son gözlem tarihi). 10 istisnanın
+7'si 1 gün, 1'i 2 gün, 1'i 3 gün geride. Bunların hepsi ay başı güncellemeleri; dosya bir
+önceki ayın son gününe kadarki veriyi içeriyor. Bir istisna 124 gün geride
+(2023-01-02 dosyası, son gözlem 2022-08-31). Bu bayat bir yükleme gibi görünüyor.
+
+Sürüm günleri: Pazartesi 207, Salı 42, Çarşamba 14, Perşembe 12, Cuma 14.
+
+**Gözlem başına yayım gecikmesi** (gözlem tarihinden onu ilk içeren sürüme kadar geçen
+takvim günü): ortalama 2.84, medyan 3, en fazla 10. Gözlemin haftanın gününe göre medyan
+gecikme: Pazartesi 0, Salı 6, Çarşamba 5, Perşembe 4, Cuma 3, Cumartesi 2, Pazar 1. Yıllar
+arasında kararlı (2022–2026 ortalaması 2.76–2.88).
+
+**Revizyonlar.** İlk yayım ile güncel sürüm arasındaki göreli fark GPRD'de ortalama −%5.2
+(ortalama mutlak %12.7, medyan mutlak %10.0), GPRD_THREAT'te ortalama −%3.7 (ortalama
+mutlak %14.6, medyan mutlak %11.3). Revizyonlar küçük değil ve sistematik bir işareti var.
+
+**Kapsam uyarısı: 2022 öncesi karşı-olgusaldır.** Sürüm arşivi 2022-02-24'te başlıyor.
+Günlük GPR, Caldara ve Iacoviello (2022) ile kamuya açıldı. 2008–2021 için "o gün
+yayımlanmış değer" diye bir şey yok. Bu dönem için kural, bugünkü yayım rejiminin geçmişte
+de geçerli olduğunu varsayar: gözlem d, d'den sonraki ilk Pazartesi (d dahil) yayımlanır;
+o gün federal tatilse bir sonraki iş günü.
+
+**Revizyonlar modellenmedi.** Değerler `data/veriseti.xlsx`'ten gelir (2026-09-01
+sürümüyle birebir aynı), yani güncel sürüm değerleridir. Yayım hizalaması **zamanlamayı**
+düzeltir, **revizyonu** düzeltmez. Tam gerçek zamanlı bir tasarım ilk yayım değerlerini
+kullanırdı; bu yalnızca 2022 sonrası için mümkün. Sınırlılık olarak kaydedilir.
+
+## 16.2 Yayım-hizalı özellikler (`scripts/02_build_features.py`, `scripts/gpr_publication.py`)
+
+**Yöntem.** GPR özellikleri (lag, EMA, z-skoru, spike, momentum, threat oranı, etkileşimler)
+endeksin **kendi gözlem dizisi** üzerinde hesaplanır, sonra yayım tarihine göre işlem
+günlerine eşlenir. Satır t, t−1'e kadar yayımlanmış en son gözlemi görür: p(d*) ≤ t−1.
+Düzey seriyi işlem takvimine ileri doldurup ondan türetmek, yayımlanmış gözlemlerin %78'ini
+atardı. **Bir gün muhafazakâr:** sürümler ~13:30 UTC'de, Brent kapanışından önce
+yayımlanıyor, yani aynı gün kullanım mümkün olurdu. Yine de diğer tahmin değişkenlerinin
+`.shift(1)` kuralıyla tutarlılık için p(d*) ≤ t−1 istenir.
+
+65 özelliğin **27'si** değişti (GPRD ve GPRD_THREAT'in tüm türevleri ve dört OVX × GPR
+etkileşimi). İlk tam dolu satır iki sürümde de 127. Zaman damgalı `features.csv` bit
+düzeyinde yeniden üretiliyor. Aynı commit'te bir düzeltme: sonraki bir sürüme eklenen
+tarihler için ilk yayım takibi düzeltildi (2024-02-29).
+
+**Etkin gecikme** (işlem günü t ile kullanılan GPR gözleminin tarihi arası):
+
+| ölçü | zaman damgalı | yayım-hizalı |
+| --- | --- | --- |
+| takvim günü, medyan | 1 | 3 |
+| takvim günü, ortalama | 1.47 | 3.69 |
+| takvim günü, en fazla | 17 | 20 |
+| işlem satırı, medyan / ortalama / en fazla | — | 3 / 2.97 / 8 |
+
+Yayım-hizalı sürümde, işlem gününe göre medyan takvim günü: Pazartesi 7, Salı 1,
+Çarşamba 2, Perşembe 3, Cuma 4. Pazartesi en eski bilgiyi görüyor, çünkü o günün yayımı t−1
+kuralı gereği ancak Salı kullanılabiliyor.
+
+**Testler (hepsi geçti):**
+
+- **Prefix-invariance:** özellikler veri 3000. ve 4000. satırda kesilerek yeniden
+  hesaplandı. Kesimden önceki tüm satırlar tam veriyle hesaplananla aynı (tolerans 0).
+  Hiçbir özellik gelecekteki satırlara bakmıyor.
+- **Yayım duyarlılığı, kontrol kollu:** rastgele 40 satırda, o satırın tarihinde henüz
+  yayımlanmamış tüm GPR gözlemleri bozuldu (satır başına 136–4065 gözlem).
+  **Yayım-hizalı kol: 40/40 satır değişmedi.** **Kontrol kolu (zaman damgalı): 33/40
+  satır değişti**, yani test sızıntıyı yakalayabiliyor.
+
+  **Kontrol kolunda değişmeyen 7 satırın açıklaması.** Zaman damgalı kol satır t'de her
+  zaman t−1 tarihli gözlemi kullanır. Bozulma yalnızca t−1'e kadar yayımlanmamış
+  gözlemlere uygulanır. Bu yüzden kontrol satırı ancak t−1 gözlemi t−1'e kadar
+  yayımlanmamışsa değişir.
+  - **6 Salı satırı.** t−1 gözlemi Pazartesi tarihli. Pazartesi, yayım gecikmesinin en
+    küçük olduğu gözlem günü (medyan 0): Pazartesi gözlemi aynı gün Pazartesi dosyasında
+    yayımlanır.
+  - **1 Çarşamba satırı (2023-09-06).** İşçi Bayramı haftası. Güncelleme Salı'ya (09-05)
+    kaydı ve Salı gözlemini içerdi, yani t−1 gözlemi yine aynı gün yayımlanmıştı.
+
+  Doğrulama: yayım takviminden "t−1 gözlemi t−1'e kadar yayımlanmış mı?" sorusu 40 satırın
+  **40'ında** kontrol kolunun sonucunu doğru öngörüyor (yayımlanmış 7 satırın 7'si
+  değişmedi, yayımlanmamış 33 satırın 33'ü değişti). Dolayısıyla bu 7 satırı tespit
+  edememek testin zayıflığı değil, ölçülmüş yayım gecikmesi yapısının beklenen sonucudur:
+  bu satırlarda zaman damgalı hizalama zaten erişilebilir bir gözlem kullanıyor ve
+  bozulacak bir şey yok.
+
+  _Makale için önerilen cümle:_ "The seven control rows that did not change are exactly
+  those whose t−1 observation had already been released by t−1 (six Tuesdays, whose t−1
+  is a Monday released the same day, and one Wednesday in Labor Day week, when the update
+  moved to Tuesday); the release calendar predicts the control outcome in 40 of 40 rows,
+  so non-detection reflects the measured release schedule, not a weakness of the test."
+
+## 16.3 GPR kullanan tüm modellerin yeniden koşulması
+
+`scripts/alignment.py` ortak bir anahtar ekliyor: `--gpr-alignment publication`,
+`features_publication_aligned.csv`'yi okur ve hem yazdığı hem okuduğu her çıktıya
+`_publication_aligned` sonekini ekler (iki sürüm hiçbir zincirde karışmaz). Yeniden
+koşulanlar: 03 (XGBoost), 04 (Optuna, büzülmüş ve ham smearing), 05 (benchmark'lar),
+06 (BiLSTM), 07 (hibritler), 07b, 08 (DM), 10 (SHAP), 11 (ablasyon), 12, 13, 15 (XGB-6).
+75 `_publication_aligned` dosyası üretildi. Karşılaştırma `scripts/17_gpr_alignment_comparison.py`
+ile yapıldı.
+
+**Aynı örneklem, saf hizalama etkisi.** Her model × ufuk × fold'da train/test satırları iki
+sürümde aynı (assert). GPR kullanmayan modeller (HAR, HAR-log, HAR+OVX, GARCH, train-mean,
+past-volatility) 360 fold satırında **bit düzeyinde aynı**. Fark yalnızca hizalamadan
+geliyor.
+
+**RMSE değişimi, fold ortalaması** (`100 × (yayım / zaman damgalı − 1)`, pozitif =
+yayım gecikmesine uymanın maliyeti; parantezde yayım sürümünün daha iyi olduğu fold ve
+düzeltmesiz işaret p):
+
+| model | h=5 | h=22 | h=66 | h=126 |
+| --- | --- | --- | --- | --- |
+| XGBoost | +0.40% (8/15) | −2.31% (12/15, p=0.035) | +1.12% (6/14) | +0.56% (7/14) |
+| BiLSTM | −5.53% (9/15) | −1.20% (6/15) | +5.33% (9/14) | +1.35% (4/14) |
+| H1 | −1.67% | −2.41% | +3.59% | +1.21% |
+| H2 | +0.26% | −0.49% | +1.08% | +0.28% |
+| H3 | −0.45% | −1.88% | +0.12% | +1.21% |
+| HAR-X | +0.02% | +0.49% | +0.80% | +0.36% |
+| HAR-X-log | −0.23% | +0.64% | +0.23% | −0.44% |
+| HAR + GPR | +0.01% | +0.45% | +0.60% | +0.41% |
+| XGB-6 | +1.81% | +2.73% (2/15, p=0.007) | +0.15% | +1.11% |
+| Optuna (büzülmüş) | +1.67% | +4.03% | +7.98% | −0.30% |
+| Optuna (ham) | +1.82% | +3.08% | +0.50% | +1.69% |
+
+- **Doğrusal modellerde maliyet çok küçük:** HAR-X +%0.02 ile +%0.80 arası; hiçbir işaret
+  testi anlamlı değil. Bu, GPR'ın HAR-X'te zaten neredeyse sıfır ağırlık taşımasıyla
+  tutarlı.
+- **Esnek modeller daha oynak:** BiLSTM h=5'te −%5.5, h=66'da +%5.3 değişiyor, iki yönde de.
+  Bu bir "sızıntı kazancının kaybı" değil, yüksek varyanslı bir modelin girdi değişikliğine
+  duyarlılığı. XGBoost h=22'de yayım sürümünde **daha iyi** (−%2.3, 12/15). Düzeltmesiz
+  p=0.035; 11 model × 4 ufuk içinde çoklu karşılaştırma altında anlamlı sayılmamalı.
+- **Ana bulgular değişmedi:**
+  - Dışsal katkı OVX'ten geliyor.
+  - GPR, OVX'in üstüne dört ufukta da bir şey eklemiyor: HAR-X, HAR+OVX'ten
+    +%0.43 / +%1.36 / +%2.21 / +%1.06 kötü.
+  - Doğrusal olmayan modeller HAR-X'i hiçbir ufukta geçmiyor.
+- **Birincil hipotez ailesi (8 test):** BH altında ayakta kalanlar **aynı iki test**: h=22'de
+  HAR-X > HAR ve HAR-X > XGBoost, işaret testi 13/15, BH p = 0.030. DM 0/8 (HLN p
+  0.113–0.876). Değişenler hiçbir sonucu çevirmiyor:
+  - h=5 HAR vs HAR-X: HAR-X kazanımı 12/15 → 11/15 (ham p 0.035 → 0.118).
+  - h=66 HAR-X vs XGBoost: 11/14 → 10/14 (0.057 → 0.180).
+  - h=126 HAR-X vs XGBoost: 10/14 → 9/14.
+- **İkincil aile (24 test):** işaret testinde ayakta kalan 9/24 (Holm ve BH) → 6/24 Holm,
+  8/24 BH. DM 4/24 Holm, 6/24 BH, değişmedi.
+- **Ayrıştırma** (HAR → HAR-X → XGB-6 → XGB), yayım-hizalı:
+  - dışsal: −4.53 / −10.39 / −5.75 / −1.41%
+  - fonksiyonel form: +4.78 / +9.11 / +5.16 / +0.63%
+  - özellik paketi: +1.09 / +5.50 / +12.42 / +6.59%
+
+  Fonksiyonel form maliyeti h=5 ve h=22'de arttı, h=126'da −0.12'den +0.63'e geçti. Yön
+  değişmedi.
+- **GPR'ın ağırlığı iki yönde farklı hareket ediyor:**
+  - XGBoost SHAP'ında GPR grup payı **arttı**: %19.5 → 25.5, 16.5 → 29.8, 11.3 → 20.0,
+    9.9 → 15.3.
+  - HAR-X'te GPR betaları sıfıra **yaklaştı**: gprd_lag1 h=22'de +0.019 → +0.001,
+    h=126'da +0.040 → +0.006.
+  - Yorum: SHAP payı katkı değil kullanım ölçer. Haftalık basamaklı GPR serileri
+    ağaçlara daha çok bölme noktası sunuyor, ama XGBoost'un doğruluğu artmıyor. GPR grubu
+    23 özellikle en kalabalık grup; pay bu yüzden de şişik.
+- **2026 kısmi yıl (h=66/126, bilgi amaçlı):** GPR kullanan modellerin çoğu yayım
+  sürümünde %1–16 daha kötü, XGB-6 −%6.7 / −%6.2 daha iyi. Ana metriğe girmiyor; 41–101
+  örtüşen gözlem, etkin gözlem ~1.
+
+**Karar.** Birincil sonuçlar artık yayım-hizalı sürüm. Zaman damgalı sürüm makalenin
+Ek A'sına taşınır ve iki sürüm karşılaştırması orada raporlanır. Model spesifikasyonu,
+hiperparametre kuralı ve test aileleri değiştirilmedi. Değişen tek şey GPR özelliklerinin
+zamanlaması.
+
+## 16.4 Sağlamlık kontrollerinin yayım modunda yeniden koşulması
+
+**Veri eşitleme (Aşama 5), `bench_*_aligned_publication_aligned`.** Benchmark'lar
+XGBoost'un penceresine (satır 127) indirildi. XGBoost'a göre fark (h=5/22/66/126):
+
+| model | normal pencere | eşitlenmiş pencere |
+| --- | --- | --- |
+| HAR | −1.11 / −3.05 / −10.25 / −5.44 | −1.12 / −3.13 / −10.36 / −6.74 |
+| HAR-X | −5.60 / −13.12 / −15.41 / −6.77 | −5.58 / −13.01 / −15.37 / −8.29 |
+| HAR-X-log | −5.89 / −14.21 / −16.66 / −8.04 | −5.81 / −14.19 / −16.81 / −9.48 |
+
+**Sonuç değişmedi:** eşitleme sonrası HAR ailesinin üstünlüğü korunuyor, h=126'da yine
+bir miktar artıyor. Zaman damgalı referans aynı komutla bit düzeyinde yeniden üretildi
+(Aşama 5 tablosu). Süre 32 saniye.
+
+**BiLSTM yakınsama kontrolü (Aşama 6), `bilstm_*_conv_publication_aligned`.** Aynı komut
+(`--convergence-mode --suffix _conv`), aynı önceden ilan edilmiş kriter. Süre 29 dakika.
+
+| ufuk | birincil | yakınsama kriterli | değişim | yakınsama daha iyi olan fold | (zaman damgalı: değişim, fold) |
+| --- | --- | --- | --- | --- | --- |
+| 5 | 0.013440 | 0.013518 | +0.58% | 7/15 | +1.03%, 6/15 |
+| 22 | 0.010386 | 0.010653 | +2.58% | 3/15 | −0.85%, 5/15 |
+| 66 | 0.012207 | 0.012207 | 0.00% | 0/14 | 0.00% |
+| 126 | 0.011585 | 0.011585 | 0.00% | 0/14 | 0.00% |
+
+h=66 ve h=126'da yüksek kademe fold yok; sonuçlar tanım gereği birebir aynı (determinizm
+doğrulaması yine geçerli). **Test hatası iyileşmedi**: h=5'te +%0.6, h=22'de +%2.6 kötü.
+
+**Ancak kontrolün dayandığı öncül bu sürümde tekrarlanmadı.**
+- **Eğitim uzamadı.** Zaman damgalı sürümde h=5'te fold'lar ortalama 124 epoch koşmuştu;
+  geç fold'lar (2021–2026) 182–198 epoch koştu ve eğitim kaybı fold başına 4.1–6.1 kat
+  düştü. Yayım sürümünde durdurma kriteri 15 fold'un 14'ünde 62–78 epoch'ta tetiklendi.
+  Yalnızca 2025 fold'u 119 epoch koştu. Ortalama 72 epoch.
+- **Kayıp düşüşü küçük.** Son eğitim kaybı oranı (birincil / yakınsama) medyan 1.36;
+  zaman damgalı sürümde medyan 2.40, 8 fold'da ≥2. Yayım sürümünde yalnızca 1 fold ≥2.
+- **Bağımsız sınıflandırıcı itiraz ediyor.** Son %20 penceresine göre h=5'te 11/15 fold
+  hâlâ "yetersiz eğitilmiş" (birincil koşuda 4/15).
+
+Bu, Aşama 6'da kaydedilen tanı sınırlılığının doğrudan sonucu. Durdurma kriteri (son %10,
+<%2 düşüş) gürültülü kayıp eğrisinde şansa bağlı düz bir epoch çifti üzerinde
+tetiklenebiliyor. GPR girdisinin değişmesi kayıp yörüngesini değiştirdi ve kriter bu kez
+erken tetiklendi.
+
+**Yorum.** "Yetersiz eğitim değil aşırı uyum" bulgusu yayım sürümünde **bu kontrolle
+desteklenmiyor, ama çürütülmüyor da**. Yapılan ek eğitim test hatasını iyileştirmedi.
+Fakat kontrol, zaman damgalı sürümdeki kanıtın dayandığı rejime (eğitim kaybında büyük
+düşüş) ulaşmadı; yani eğitim kaybını gerçekten düşürmenin test hatasına etkisini
+bu sürümde ölçmüyor. Aşırı saçılım göstergesi de bu sürümde zayıfladı:
+std(tahmin)/std(gerçek) ortalaması h=5 ve h=22'de ~1.0 (zaman damgalı: 1.16 ve 0.96),
+h=66 ve h=126'da 1.31 ve 1.68 (zaman damgalı: 1.23 ve 1.49). Aşırı saçılım argümanı
+yalnızca uzun ufuklarda geçerli.
+
+**Açık karar (kullanıcıda):** makalede bu iddia (a) zayıflatılarak mı yazılacak, yoksa
+(b) daha güçlü bir kontrol mü koşulacak? (b) örneğin yüksek kademe fold'larda sabit 200
+epoch ile yapılabilir; tahmini süre ~70 dakika. Bu, sonuç görüldükten sonra tasarlanmış
+bir kontrol olur ve öyle kaydedilmelidir; birincil spesifikasyonu değiştirmez. Kriter yine
+yalnızca eğitim kaybından türemeli, test performansına bakılmamalı.
