@@ -44,8 +44,9 @@ for both a human reader and the assistant.
 40 returns between 2008 and 2016 skip one or more trading days, see
 [Date gaps in the merged series](#date-gaps-in-the-merged-series)).
 
-The daily GPR index is published in weekly updates, so in real time its latest value can
-be up to about a week old; see the note under [Main findings](#main-findings).
+The daily GPR index is not observed in real time: it is published in batches, so the GPR
+features are aligned to the dates on which each observation was actually published; see
+[GPR publication-date alignment](#gpr-publication-date-alignment).
 
 **The OVX constraint:** the OVX index does not exist before **May 2007**. That is why the
 sample period begins in 2008; going further back would leave the main explanatory variable
@@ -137,6 +138,13 @@ trial.
 
 ## Main findings
 
+> **Numbers in this README.** Every number below is taken from
+> [`outputs/paper_numbers_publication_aligned.md`](outputs/paper_numbers_publication_aligned.md),
+> which `18_paper_numbers.py` generates from the saved outputs of commit
+> `b1154be` (the file header records the full hash and the generation time).
+> All numbers are from the **publication-aligned** GPR version, the primary results; see
+> [GPR publication-date alignment](#gpr-publication-date-alignment).
+
 > **Correction in v1.1.0.** Version 1.0.0 of this README stated that OVX *and* GPR
 > information both contribute to the forecast. An ablation of the exogenous block
 > (`11_ablation_exogenous.py`) shows that this was wrong: the entire gain comes from OVX,
@@ -147,73 +155,113 @@ trial.
    fold-average RMSE by 4.9% (h=5), 11.6% (h=22), 7.8% (h=66) and 2.4% (h=126). HAR + OVX
    beats HAR in 13/15, 14/15, 12/14 and 10/14 folds.
 2. **GPR does not help; it slightly hurts.** Adding the two GPR regressors (`gprd_lag1`,
-   `gprd_threat_lag1`) worsens RMSE by 0.4–1.4%. This holds both when GPR is added to HAR
-   alone (+0.4%, +0.8%, +1.2%, +0.7%) and when it is added on top of OVX (+0.4%, +0.9%,
-   +1.4%, +0.7%). The direction is the same at every horizon, but the effect is small and
-   not statistically significant fold by fold. HAR + OVX beats HAR-X in 9/15, 11/15, 9/14
-   and 9/14 folds, with exact sign test p = 0.61, 0.12, 0.42 and 0.42. The GPR
-   coefficients are close to zero: fold-average standardized coefficients lie between
-   −0.06 and +0.08, against 0.49–0.65 for OVX. The two GPR components take opposite
-   signs, so they partly cancel: GPRD is mostly positive and GPRD_THREAT mostly negative.
-   At long horizons their signs are unstable across folds (at h=126, GPRD is positive in
-   9 of 14 folds and GPRD_THREAT in 5 of 14).
+   `gprd_threat_lag1`) worsens RMSE by 0.4–2.2%. This holds both when GPR is added to HAR
+   alone (+0.5%, +1.3%, +1.8%, +1.1%) and when it is added on top of OVX (+0.4%, +1.4%,
+   +2.2%, +1.1%). The direction is the same at every horizon, but the effect is small.
+   HAR + OVX beats HAR-X in 9/15, 12/15, 11/14 and 9/14 folds, with exact sign test
+   p = 0.61, 0.035, 0.057 and 0.42; these tests are exploratory and not corrected for
+   multiplicity. The GPR coefficients are close to zero: fold-average standardized
+   coefficients lie between −0.07 and +0.05, against 0.48–0.66 for OVX. The two GPR
+   components tend to take opposite signs and partly cancel: in HAR + GPR, GPRD is
+   positive in 12/15, 6/15, 11/14 and 9/14 folds and GPRD_THREAT negative in 11/15, 11/15,
+   11/14 and 9/14. Inside HAR-X, next to OVX, their signs are unstable across folds (at
+   h=126, GPRD is positive in 9 of 14 folds and GPRD_THREAT in 6 of 14).
 3. **Non-linear models do not beat the HAR family at any horizon.** XGBoost, under both
    the primary specification and the Optuna robustness specification, and the Attention
-   BiLSTM are worse than even plain HAR at every horizon. The hybrids that contain HAR-X
-   at best draw level with HAR-X (h=5: −0.006%) and never beat the best HAR-family model.
+   BiLSTM are worse than even plain HAR at every horizon (primary XGBoost: +1.1%, +3.2%,
+   +11.4%, +5.8%). The hybrids that contain HAR-X at best draw level with HAR-X (h=5:
+   +0.2%, h=126: +0.6%) and never beat the best HAR-family model.
 
 Fold-average RMSE (in units of the standard deviation of daily log returns, lower is
 better; the best value at each horizon is in bold):
 
 | Model | h=5 | h=22 | h=66 | h=126 |
 | --- | --- | --- | --- | --- |
-| HAR + OVX | **0.010298** | 0.007603 | **0.007469** | **0.008003** |
-| HAR-X, log-log | 0.010335 | **0.007561** | 0.007504 | 0.008012 |
-| HAR-X (HAR + OVX + GPR) | 0.010341 | 0.007669 | 0.007573 | 0.008059 |
+| HAR + OVX | **0.010298** | **0.007603** | **0.007469** | 0.008003 |
+| HAR-X, log-log | 0.010311 | 0.007610 | 0.007521 | **0.007977** |
+| HAR-X (HAR + OVX + GPR) | 0.010343 | 0.007706 | 0.007634 | 0.008088 |
 | HAR | 0.010834 | 0.008600 | 0.008100 | 0.008203 |
-| HAR + GPR | 0.010882 | 0.008668 | 0.008198 | 0.008262 |
-| XGBoost | 0.010913 | 0.009080 | 0.008924 | 0.008627 |
+| HAR + GPR | 0.010883 | 0.008707 | 0.008247 | 0.008296 |
+| XGBoost | 0.010956 | 0.008870 | 0.009024 | 0.008675 |
 | GARCH(1,1) | 0.011211 | 0.008970 | 0.009036 | 0.009436 |
-| Attention BiLSTM | 0.014227 | 0.010512 | 0.011589 | 0.011431 |
+| Attention BiLSTM | 0.013440 | 0.010386 | 0.012207 | 0.011585 |
 | Past-volatility | 0.013318 | 0.009493 | 0.008913 | 0.008508 |
-| Train-mean | 0.013451 | 0.011243 | 0.009239 | 0.008916 |
+| Train-mean | 0.013456 | 0.011238 | 0.009265 | 0.008965 |
 
-HAR + OVX and HAR + GPR come from the ablation (`outputs/ablation_exogenous.csv`); the
-other rows are from `outputs/all_models_comparison.csv`. HAR-X is kept in the main
-comparison as specified before the ablation was run, and is not replaced by the better
-HAR + OVX after the fact.
+All rows are evaluated on the same test rows in every fold; the full table, with MAE,
+R²_oos and every model including the hybrids and the robustness variants, is Section 1
+of the number package. HAR-X is kept in the main comparison as specified before the
+ablation was run, and is not replaced by the better HAR + OVX after the fact.
 
-**Real-time availability of GPR.** The daily GPR index is published in weekly updates.
-The GPR features use a one-day lag, which assumes that yesterday's value is known at
-forecast time; in real time the latest value can be up to about a week old. This
-assumption favours GPR, so it strengthens rather than weakens the finding that GPR adds
-nothing.
+### GPR publication-date alignment
+
+The daily GPR index (Caldara and Iacoviello) is not observed in real time the way OVX and
+Brent are: it is published in batches, and later releases revise past values. An earlier
+version of this pipeline gave row t the GPR observation dated t−1, which assumed that
+yesterday's value was already public; in fact 80.3% of rows used an observation that had
+not yet been published. This was found by an independent external code review.
+
+The publication rule was measured from the authors' own vintage archive: 289 archived
+releases from 2022-02-24 to 2026-09-21 (`16_gpr_vintages.py`). A file released on day D
+contains the observations through D itself (279 of 289 vintages; the exceptions are
+month-start updates that stop at the previous month's end, plus one stale upload). Most
+releases fall on Mondays, and the median delay from an observation to its first release
+is 3 days (0 for a Monday observation, 6 for a Tuesday one). Before 2022-02-24 no
+archive exists, and the same rule is applied counterfactually (first Monday on or after
+the observation date, next business day after a federal holiday).
+
+The GPR features are then built **as of** those publication dates: every GPR-derived
+feature is computed on the index's own observation sequence and row t uses the latest
+observation published by t−1 (`02_build_features.py`, `gpr_publication.py`).
+Forward-filling the GPR level onto the trading calendar was rejected because it would
+discard 78% of the published observations. The features pass a prefix-invariance test
+and a publication-sensitivity test in which every not-yet-published observation is
+perturbed: the publication-aligned rows are unchanged in 40 of 40 cases, while the old
+alignment changes in 33 of 40 (the other seven are exactly the rows whose t−1 observation
+had already been released). The alignment corrects the timing but not the revisions: the
+values are from the current vintage.
+
+Every model that uses GPR was re-run on the aligned features, on exactly the same
+training and test rows; models without GPR input are bit-identical. The previous,
+timestamp-aligned results are kept (unsuffixed output files, paper Appendix A), and the
+comparison of the two versions is Section 8 of the number package. For the linear models
+the cost of respecting the publication lag is small (HAR-X: +0.0% to +0.8% RMSE), and no
+conclusion of the study changes.
 
 Detail and interpretation:
 
 - **The learnable signal is exhausted as the horizon lengthens.** XGBoost beats the
-  past-volatility baseline by 18% at h=5, but at h=66 and h=126 it merely draws level with
-  it (+0.1% and +1.4%) and its R²_oos values fall negative (−0.28 at h=126), meaning it is
-  worse than a constant forecast at the training mean.
-- **The Attention BiLSTM is the worst model at all four horizons.** This supports the
-  reading that XGBoost's loss is not specific to XGBoost but reflects a general limit of
-  non-linear modelling on this problem. Both outcomes are reported.
-- **The hybrids do not help.** The XGB+BiLSTM average is 12% worse than HAR-X at h=5 and
-  22% worse at h=22. Blending HAR-X with XGBoost only draws level with HAR-X (0.7% behind
-  at h=126), meaning the net information added by the ML component is close to zero.
-- **Diebold-Mariano test.** HAR-X's superiority over past-volatility and over the BiLSTM
-  remains significant at h=5 and h=22 after correction for multiple comparisons. The
-  difference between HAR-X and XGBoost is **not significant at any horizon**, and at h=66
-  and h=126 no comparison produces significance against the naive baseline. The long-horizon
-  results are statistically fragile, and that is written up as a finding in exactly those
-  terms.
-- **SHAP.** HAR-X assigns two thirds of its weight to OVX. XGBoost, by contrast, looks
-  primarily at the Brent volatility window and spends 15-30% of its attention on groups
-  HAR-X never uses (price level, calendar, interactions); at long horizons it leaves 44-67%
-  of the features entirely unused. On common ground, that is on OVX, the two models agree
-  on direction (83% sign agreement). The stability of the attribution ranking is genuine at
-  short horizons (first-to-last fold correlation 0.77-0.79) but weak at long horizons (0.53
-  at h=126).
+  past-volatility baseline by 17.7% at h=5 and 6.6% at h=22, but at h=66 and h=126 it
+  falls behind it (+1.3% and +2.0%) and its R²_oos values fall negative (−0.28 and
+  −0.31), meaning it is worse than a constant forecast at the training mean.
+- **The Attention BiLSTM is the worst non-naive model at all four horizons**, and at h=5
+  it is no better than the train-mean baseline (0.013440 against 0.013456). This supports
+  the reading that XGBoost's loss is not specific to XGBoost but reflects a general limit
+  of non-linear modelling on this problem.
+- **The hybrids do not help.** The XGB+BiLSTM average is 10.4% worse than HAR-X at h=5 and
+  18.9% worse at h=22. Blending HAR-X with XGBoost draws level with HAR-X only at h=5
+  (+0.2%) and h=126 (+0.6%) and is 3–5% behind at h=22 and h=66, meaning the net
+  information added by the ML component is close to zero.
+- **Primary hypothesis family** (HAR vs HAR-X and HAR-X vs XGBoost at four horizons,
+  8 tests). The Diebold-Mariano test is not significant under any correction (HLN
+  p = 0.11–0.88). The fold-level sign test gives HAR-X 13 of 15 folds against both HAR and
+  XGBoost at h=22; under Benjamini-Hochberg these two hypotheses are rejected (p = 0.030),
+  under Holm (p = 0.059) and under Benjamini-Yekutieli, which is valid under any
+  dependence (p = 0.080), nothing survives. The two h=22 tests are not independent
+  evidence: their fold-level differences correlate at 0.94, both involve HAR-X, and 2020
+  is a losing year in both.
+- **Secondary comparisons.** HAR-X's superiority over past-volatility and over the BiLSTM
+  is significant at h=5 under every correction; at h=22 it survives Benjamini-Hochberg
+  only (DM), or all three corrections against the BiLSTM (sign test). At h=66 and h=126 no
+  DM comparison against the naive baseline is significant. The long-horizon results are
+  statistically fragile, and that is written up as a finding in exactly those terms.
+- **SHAP.** HAR-X assigns 58–73% of its weight to OVX. XGBoost spends 13–29% of its
+  attribution on features outside HAR-X's six regressors, more at longer horizons, and at
+  long horizons it often does not split on the shared regressors at all (unused in 23% of
+  fold comparisons at h=66 and 65% at h=126). On OVX the two models agree on direction in
+  74% of fold comparisons (93% at h=5, 80% at h=22, 54–57% at h=66 and h=126). The
+  attribution ranking is only moderately stable over time: the rank correlation between
+  the first and last fold is 0.55, 0.70, 0.57 and 0.53.
 
 Every configuration tried, together with its result, is recorded chronologically in
 [outputs/experiment_log.md](outputs/experiment_log.md).
@@ -246,18 +294,18 @@ Two checks show that the gaps do not change the conclusions:
   rescaled returns. Every model's published predictions are then re-scored against the
   corrected target, with the predictions held fixed. The fold-average RMSE moves by at
   most 0.5%, and **the RMSE ranking of the 12 models does not change at any horizon.** In
-  the MAE ranking, two pairs that were already near-tied swap places: train-mean and the
-  BiLSTM at h=5, and XGBoost and past-volatility at h=66. HAR + OVX beats HAR-X, and HAR
-  beats HAR + GPR, under the corrected target as well.
+  the MAE ranking, one pair that was already near-tied swaps places: HAR + OVX and
+  HAR-X-log at h=22. HAR + OVX beats HAR-X, and HAR beats HAR + GPR, under the corrected
+  target as well, at every horizon.
 - **Gap-free subsample** (`12_robustness_gapfree.py`). The comparison is repeated on the
-  2017-2026 folds only. The ranking is largely preserved at h=5 and h=22 (Spearman 0.96
-  and 0.98 against the full sample). At h=66 and h=126 it changes (0.84 and 0.67), mainly
+  2017-2026 folds only. The ranking is largely preserved at h=5 and h=22 (Spearman 0.95
+  and 0.98 against the full sample). At h=66 and h=126 it changes (0.84 and 0.68), mainly
   because train-mean moves up. The 2012-2016 ranking differs from the full-sample ranking
-  as well, so this reflects a difference in volatility regime between the two periods, not
-  the gaps; the direct test above is what separates the two. In the gap-free subsample,
-  the HAR family stays ahead of XGBoost and the BiLSTM at every horizon. At h=126, no model
-  beats the train-mean baseline over 2017-2026: every model has a negative R²_oos, and the
-  top five differ by about 3%.
+  as well (0.54 and 0.77), so this reflects a difference in volatility regime between the
+  two periods, not the gaps; the direct test above is what separates the two. In the
+  gap-free subsample, the HAR family stays ahead of XGBoost and the BiLSTM at every
+  horizon. At h=126, no model has a lower RMSE than the train-mean baseline over
+  2017-2026, and the top five differ by 2.4%.
 
 ### Metric reporting
 
@@ -265,7 +313,10 @@ RMSE and MAE are the main metrics; they are in the same unit as the target and d
 depend on any choice of denominator. **R²_oos** is the secondary metric, and its reference
 is that fold's **training** target mean, a quantity genuinely known at forecast time. By
 definition the train-mean baseline has an R²_oos of exactly 0, which serves as a check that
-the calculation is correct. Standard R² (the sklearn definition) is a footnote metric, not
+the calculation is correct. Because the HAR family and XGBoost start their training
+windows at different rows, the number package measures every model's R²_oos against the
+same reference in each fold (the train-mean baseline's forecast), so that one column
+compares every model with one constant forecast. Standard R² (the sklearn definition) is a footnote metric, not
 a basis for decisions: because its reference is the test slice's own mean it is an ex-post
 quantity, and in calm years the fold SST is so small that it takes large negative values.
 MAPE is not used, because volatility can take values near zero.
@@ -274,6 +325,13 @@ MAPE is not used, because volatility can take values near zero.
 
 ## Version history
 
+- **Unreleased: GPR publication-date alignment.** The GPR features are aligned to the
+  dates on which each observation was published, measured from the authors' vintage
+  archive (scripts 16 and 02); every GPR-dependent model is re-run on them, and these are
+  now the primary results (`_publication_aligned` output files). The earlier
+  timestamp-aligned results are kept for paper Appendix A. Adds the two-version comparison
+  (script 17), the number package (script 18) and an exploratory BiLSTM fixed-epoch check
+  (script 19). The numbers in this README changed accordingly; no conclusion changed.
 - **v1.1.0.** Corrects the main finding: the exogenous gain comes from OVX alone, and GPR
   slightly worsens the forecast (exogenous ablation, script 11). Adds the date-gap
   diagnostics (script 14), the direct gap-target test (script 13) and the gap-free 2017+
@@ -305,8 +363,9 @@ matters: each step reads the previous step's output.
 
 ```bash
 python scripts/validate_data.py               # 0. data integrity validation (run this first)
+python scripts/16_gpr_vintages.py             # GPR publication rule from the vintage archive (downloads ~400 MB once)
 python scripts/01_build_targets.py            # 1. targets for the four horizons
-python scripts/02_build_features.py           # 2. causal features
+python scripts/02_build_features.py           # 2. causal features, both GPR alignments
 python scripts/03_walkforward.py              # 3. XGBoost, primary specification
 python scripts/04_optuna_walkforward.py       # 4. Optuna robustness analysis (longest step)
 python scripts/05_benchmarks.py               # 5. HAR, HAR-X, GARCH, naive baselines
@@ -321,7 +380,23 @@ python scripts/12_robustness_gapfree.py       # 12. main comparison on the gap-f
 python scripts/13_gap_target_test.py          # 13. direct test: gap-corrected target, fixed predictions
 python scripts/14_date_gap_diagnostics.py     # 14. date-gap diagnostics of the merged series
 python scripts/15_exploratory_xgb6.py         # 15. exploratory: XGBoost on HAR-X's inputs and target
+python scripts/17_gpr_alignment_comparison.py # 17. timestamp vs publication alignment, same samples
+python scripts/18_paper_numbers.py            # 18. number package for the paper and this README
+python scripts/19_bilstm_fixed_epochs.py      # 19. exploratory: BiLSTM trained for a fixed 200 epochs
 ```
+
+**GPR alignment.** Steps 3-8, 10-13 and 15 take `--gpr-alignment {timestamp,publication}`.
+The default, `timestamp`, reproduces the earlier results (unsuffixed files, Appendix A);
+**the primary results are produced with `--gpr-alignment publication`**, which reads
+`features_publication_aligned.csv` and writes `_publication_aligned` files, e.g.
+
+```bash
+python scripts/03_walkforward.py --gpr-alignment publication
+```
+
+Steps 17 and 18 need both versions; step 19 is run with `--gpr-alignment publication`
+after step 6 in the convergence mode (`--convergence-mode --suffix _conv`). Step 9 has
+no alignment option and reads the timestamp-aligned DM results.
 
 Steps 11-15 take a few seconds each (step 15 under a minute). Step 12 reads the outputs of steps 3, 5, 6, 7 and 11;
 step 13 reads the prediction files of steps 3, 5, 6, 7 and 11, and imports the gap
@@ -373,7 +448,7 @@ step trains one neural network per fold on CPU. The rest take on the order of mi
 |-- data/
 |   |-- README.md          data sources and reconstruction instructions
 |   +-- veriseti.xlsx      NOT in the repository, built locally
-|-- scripts/               17 independently runnable scripts
+|-- scripts/               21 independently runnable scripts and 2 shared modules
 +-- outputs/               metrics, predictions, JSON reports, experiment log
 ```
 

@@ -1,7 +1,7 @@
 # Makale sayıları — yayım-hizalı GPR sürümü (BİRİNCİL)
 
-- **Üretildiği commit:** `a8b2c1a8250229ccf03c5bbfd4fe3c9990e090ec` (Rerun robustness checks in publication mode and add the paper number generator)
-- **Üretim tarihi:** 2026-09-27T14:46:19+03:00
+- **Üretildiği commit:** `b1154be5acec5881182e17acfa47981921957a1c` (Add Benjamini-Yekutieli, README number section and the fixed-epoch BiLSTM script)
+- **Üretim tarihi:** 2026-09-27T15:12:17+03:00
 - **Çalışma ağacı:** temiz — girdiler bu commit'teki dosyalarla birebir aynı.
 - Doğrulama: `git checkout <commit> && python scripts/18_paper_numbers.py` aynı sayıları üretmelidir (yalnızca bu başlık değişir).
 
@@ -252,33 +252,38 @@ XGBoost SHAP'ında HAR-X'in altı regresörü dışındaki özelliklerin payı: 
 
 ## 6. Birincil hipotez ailesi (8 test) — merkez çıkarım sonucu
 
-İki iddia × dört ufuk: **HAR vs HAR-X** (dışsal değişkenler katkı sağlar mı) ve **HAR-X vs XGBoost** (doğrusal olmayan model katkı sağlar mı). Holm (FWER) ve Benjamini-Hochberg (FDR) aile içinde, 8 test üzerinden. Kayıp: karesel hata. HAC: Newey-West, Bartlett, L = h-1 (onceden ilan edilmis). HLN: `DM* = DM * sqrt((n+1-2h+h(h-1)/n)/n), t(n-1)`. DM işareti: negatif = ilk model daha iyi. **Holm ve BH düzeltmeleri HLN p değerine uygulanır** (ham DM p'sine değil). İşaret testi fold düzeyinde binom (H0: p=0.5, iki yönlü); HAC/normallik varsayımı kullanmaz. DM havuzlanmış seri üzerindedir (her yıl yeniden eğitilmiş modellerin tahminleri), fold ortalaması değil; bu yüzden havuzlanmış RMSE farkı Bölüm 1'deki fold ortalaması farkından farklıdır ve h=66/126'da HAR vs HAR-X'te işaret değiştirir.
+İki iddia × dört ufuk: **HAR vs HAR-X** (dışsal değişkenler katkı sağlar mı) ve **HAR-X vs XGBoost** (doğrusal olmayan model katkı sağlar mı). Holm (FWER), Benjamini-Hochberg (FDR, pozitif bağımlılık/PRDS altında geçerli) ve Benjamini-Yekutieli (FDR, her bağımlılık yapısında geçerli; BH × c(m), c(8) = 2.718) aile içinde, 8 test üzerinden. Kayıp: karesel hata. HAC: Newey-West, Bartlett, L = h-1 (onceden ilan edilmis). HLN: `DM* = DM * sqrt((n+1-2h+h(h-1)/n)/n), t(n-1)`. DM işareti: negatif = ilk model daha iyi. **Holm, BH ve BY düzeltmeleri HLN p değerine uygulanır** (ham DM p'sine değil). BY bu dosyada hesaplanır; BH, `08_dm_test.py`'nin kayıtlı değeriyle aynı fonksiyonla yeniden üretilip doğrulanır (assert). İşaret testi fold düzeyinde binom (H0: p=0.5, iki yönlü); HAC/normallik varsayımı kullanmaz. DM havuzlanmış seri üzerindedir (her yıl yeniden eğitilmiş modellerin tahminleri), fold ortalaması değil; bu yüzden havuzlanmış RMSE farkı Bölüm 1'deki fold ortalaması farkından farklıdır ve h=66/126'da HAR vs HAR-X'te işaret değiştirir.
 
 Şeffaflık: aile tanımı testlerden sonra resmileştirilmiştir (ön-kayıt değildir); karşılaştırmalar p değerine göre değil, Aşama 5–6'da ilan edilmiş iddialara göre seçilmiştir.
 
-| ufuk | karşılaştırma | havuz RMSE farkı | DM | DM (HLN) | ham p | HLN p | Holm p | BH p | işaret: HAR-X kazanır | işaret ham p | işaret Holm p | işaret BH p |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| h=5 | HAR vs HAR-X | +1.66% | +0.394 | +0.394 | 0.693 | 0.694 | 1.000 | 0.876 | 11/15 | 0.118 | 0.711 | 0.287 |
-| h=22 | HAR vs HAR-X | +4.47% | +0.609 | +0.605 | 0.543 | 0.545 | 1.000 | 0.872 | 13/15 | 0.007 | 0.059 | **0.030** |
-| h=66 | HAR vs HAR-X | −1.66% | −0.264 | −0.259 | 0.792 | 0.796 | 1.000 | 0.876 | 10/14 | 0.180 | 0.898 | 0.287 |
-| h=126 | HAR vs HAR-X | −2.91% | −0.628 | −0.606 | 0.530 | 0.545 | 1.000 | 0.872 | 9/14 | 0.424 | 0.905 | 0.424 |
-| h=5 | HAR-X vs XGBoost | −3.04% | −0.711 | −0.710 | 0.477 | 0.477 | 1.000 | 0.872 | 10/15 | 0.302 | 0.905 | 0.402 |
-| h=22 | HAR-X vs XGBoost | −6.37% | −0.908 | −0.903 | 0.364 | 0.367 | 1.000 | 0.872 | 13/15 | 0.007 | 0.059 | **0.030** |
-| h=66 | HAR-X vs XGBoost | −9.60% | −1.617 | −1.586 | 0.106 | 0.113 | 0.902 | 0.872 | 10/14 | 0.180 | 0.898 | 0.287 |
-| h=126 | HAR-X vs XGBoost | −1.08% | −0.162 | −0.156 | 0.872 | 0.876 | 1.000 | 0.876 | 9/14 | 0.424 | 0.905 | 0.424 |
+| ufuk | karşılaştırma | havuz RMSE farkı | DM | DM (HLN) | ham p | HLN p | Holm p | BH p | BY p | işaret: HAR-X kazanır | işaret ham p | işaret Holm p | işaret BH p | işaret BY p |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| h=5 | HAR vs HAR-X | +1.66% | +0.394 | +0.394 | 0.693 | 0.694 | 1.000 | 0.876 | 1.000 | 11/15 | 0.118 | 0.711 | 0.287 | 0.781 |
+| h=22 | HAR vs HAR-X | +4.47% | +0.609 | +0.605 | 0.543 | 0.545 | 1.000 | 0.872 | 1.000 | 13/15 | 0.007 | 0.059 | **0.030** | 0.080 |
+| h=66 | HAR vs HAR-X | −1.66% | −0.264 | −0.259 | 0.792 | 0.796 | 1.000 | 0.876 | 1.000 | 10/14 | 0.180 | 0.898 | 0.287 | 0.781 |
+| h=126 | HAR vs HAR-X | −2.91% | −0.628 | −0.606 | 0.530 | 0.545 | 1.000 | 0.872 | 1.000 | 9/14 | 0.424 | 0.905 | 0.424 | 1.000 |
+| h=5 | HAR-X vs XGBoost | −3.04% | −0.711 | −0.710 | 0.477 | 0.477 | 1.000 | 0.872 | 1.000 | 10/15 | 0.302 | 0.905 | 0.402 | 1.000 |
+| h=22 | HAR-X vs XGBoost | −6.37% | −0.908 | −0.903 | 0.364 | 0.367 | 1.000 | 0.872 | 1.000 | 13/15 | 0.007 | 0.059 | **0.030** | 0.080 |
+| h=66 | HAR-X vs XGBoost | −9.60% | −1.617 | −1.586 | 0.106 | 0.113 | 0.902 | 0.872 | 1.000 | 10/14 | 0.180 | 0.898 | 0.287 | 0.781 |
+| h=126 | HAR-X vs XGBoost | −1.08% | −0.162 | −0.156 | 0.872 | 0.876 | 1.000 | 0.876 | 1.000 | 9/14 | 0.424 | 0.905 | 0.424 | 1.000 |
 
 Makine okunur kopya: `primary_family_tests_publication_aligned.csv`.
 
 Ayakta kalan test sayısı (%5 eşiği):
 
-| sürüm | aile | DM Holm | DM BH | işaret Holm | işaret BH |
-| --- | --- | --- | --- | --- | --- |
-| yayım-hizalı (birincil) | birincil (8 test) | 0/8 | 0/8 | 0/8 | 2/8 |
-| yayım-hizalı (birincil) | ikincil (24 test) | 4/24 | 6/24 | 6/24 | 8/24 |
-| zaman damgalı (Ek A) | birincil (8 test) | 0/8 | 0/8 | 0/8 | 2/8 |
-| zaman damgalı (Ek A) | ikincil (24 test) | 4/24 | 6/24 | 9/24 | 9/24 |
+| sürüm | aile | DM Holm | DM BH | DM BY | işaret Holm | işaret BH | işaret BY |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| yayım-hizalı (birincil) | birincil (8 test) | 0/8 | 0/8 | 0/8 | 0/8 | 2/8 | 0/8 |
+| yayım-hizalı (birincil) | ikincil (24 test) | 4/24 | 6/24 | 4/24 | 6/24 | 8/24 | 6/24 |
+| zaman damgalı (Ek A) | birincil (8 test) | 0/8 | 0/8 | 0/8 | 0/8 | 2/8 | 0/8 |
+| zaman damgalı (Ek A) | ikincil (24 test) | 4/24 | 6/24 | 4/24 | 9/24 | 9/24 | 9/24 |
 
-Birincil ailede BH altında ayakta kalanlar (yayım-hizalı): h=22 HAR-X, HAR'ı geçer, işaret 13/15, BH p = 0.030; h=22 HAR-X, XGBoost'u geçer, işaret 13/15, BH p = 0.030. DM testi hiçbir düzeltmede anlamlılık üretmiyor (HLN p aralığı 0.113–0.876).
+**Birincil aile sonucu (yayım-hizalı):**
+
+- **Holm (FWER):** hiçbir test ayakta kalmıyor.
+- **BH (FDR, PRDS varsayımıyla):** h=22'de iki hipotez reddediliyor: HAR-X, HAR'ı geçer (işaret 13/15, BH p = 0.030); HAR-X, XGBoost'u geçer (işaret 13/15, BH p = 0.030). **Bunlar iki ayrı hipotez, ama birbirinden bağımsız iki kanıt değil:** iki fold farkı vektörü (HAR − HAR-X ve XGBoost − HAR-X) 0.94 korelasyonlu. İkisi de HAR-X'i içeriyor ve 2020 ortak kayıp yılı (HAR-X'in kaybettiği yıllar: HAR'a karşı 2020, 2024; XGBoost'a karşı 2014, 2020). Aynı 13/15 ve aynı ham p, binom testinin yalnızca kazanma sayısına bağlı olmasından geliyor; vektörler farklı (assert).
+- **BY (FDR, bağımlılık yapısından bağımsız geçerli):** hiçbir test ayakta kalmıyor. En küçük BY p = 0.080 (h=22 işaret testleri; BH p 0.0295 × c(8) = 2.718).
+- **DM:** hiçbir düzeltmede anlamlılık yok (HLN p aralığı 0.113–0.876).
 
 Yön uyumu: DM (havuz) ve işaret testi 6/8 testte aynı modeli işaret ediyor; uyuşmayanlar: h=66 har vs har_x, h=126 har vs har_x.
 
@@ -391,4 +396,87 @@ GPR kullanmayan modeller (HAR, HAR-log, HAR+OVX, GARCH, train-mean, past-volatil
 | XGBoost-6 | 0.016509 → 0.015405 (−6.69%) | 0.019999 → 0.018758 (−6.21%) |
 | XGBoost, Optuna + büzülmüş smearing | 0.017787 → 0.018447 (+3.71%) | 0.026580 → 0.026546 (−0.13%) |
 | XGBoost, Optuna + ham smearing | 0.018129 → 0.020986 (+15.76%) | 0.027269 → 0.027262 (−0.02%) |
+
+## 9. README'de kullanılan ek sayılar (yayım-hizalı)
+
+Kök `README.md`'deki her sayı ya Bölüm 1–8'den ya da bu bölümden gelir.
+
+### 9a. Başlıca RMSE karşılaştırmaları (fold ortalaması, %)
+
+| karşılaştırma | h=5 | h=22 | h=66 | h=126 |
+| --- | --- | --- | --- | --- |
+| XGBoost vs past-volatility | −17.73% | −6.56% | +1.25% | +1.97% |
+| XGBoost vs HAR | +1.13% | +3.15% | +11.42% | +5.75% |
+| XGBoost (Optuna) vs HAR | +2.55% | +6.32% | +30.60% | +18.07% |
+| BiLSTM vs HAR | +24.05% | +20.77% | +50.71% | +41.22% |
+| XGBoost vs HAR-X | +5.93% | +15.10% | +18.21% | +7.26% |
+| BiLSTM vs HAR-X | +29.94% | +34.77% | +59.90% | +43.24% |
+| H1 (XGB+BiLSTM) vs HAR-X | +10.38% | +18.91% | +34.19% | +21.98% |
+| H2 (HAR-X+XGB) vs HAR-X | +0.24% | +3.33% | +4.61% | +0.60% |
+| H3 (HAR-X+artık) vs HAR-X | +7.71% | +12.27% | +22.41% | +6.86% |
+| HAR-X-log vs HAR-X | −0.31% | −1.25% | −1.49% | −1.37% |
+| HAR+OVX vs HAR-X | −0.43% | −1.34% | −2.16% | −1.05% |
+| en iyi hibrit vs en iyi HAR-ailesi | +0.67% (h2_harx_xgb vs har_ovx) | +4.73% (h2_harx_xgb vs har_ovx) | +6.92% (h2_harx_xgb vs har_ovx) | +1.99% (h2_harx_xgb vs har_x_log) |
+| en iyi birincil doğrusal olmayan (XGB, XGB-Optuna, BiLSTM) vs HAR | +1.13% (xgboost vs har) | +3.15% (xgboost vs har) | +11.42% (xgboost vs har) | +5.75% (xgboost vs har) |
+| XGBoost-6 (keşifsel; HAR-X'in girdileri, OVX dahil) vs HAR | +0.03% (xgb6 vs har) | −2.23% (xgb6 vs har) | −0.89% (xgb6 vs har) | −0.79% (xgb6 vs har) |
+
+En iyi HAR-ailesi modeli (RMSE): h=5: HAR + OVX, h=22: HAR + OVX, h=66: HAR + OVX, h=126: HAR-X-log.
+
+HAR+OVX vs HAR-X, fold bazında (düzeltmesiz iki yönlü işaret testi):
+
+| ufuk | HAR+OVX, HAR-X'i geçer | işaret p |
+| --- | --- | --- |
+| h=5 | 9/15 | 0.607 |
+| h=22 | 12/15 | 0.035 |
+| h=66 | 11/14 | 0.057 |
+| h=126 | 9/14 | 0.424 |
+
+Standartlaştırılmış beta aralığı (fold ortalamaları, HAR-X ve ablasyon, dört ufuk): GPR −0.069 ile +0.054 arası; OVX +0.484 ile +0.655 arası.
+
+### 9b. DM ikincil aile (24 test), yayım-hizalı: ayakta kalanlar
+
+| ufuk | karşılaştırma | havuz RMSE farkı | DM Holm / BH / BY | işaret | işaret Holm / BH / BY |
+| --- | --- | --- | --- | --- | --- |
+| h=5 | har_x vs past_vol | −19.92% | <0.001 / <0.001 / <0.001 | 15/15 | 0.001 / <0.001 / 0.003 |
+| h=5 | xgboost vs past_vol | −17.41% | <0.001 / <0.001 / <0.001 | 14/15 | 0.021 / 0.005 / 0.018 |
+| h=5 | har_x vs bilstm | −17.98% | <0.001 / <0.001 / <0.001 | 14/15 | 0.021 / 0.005 / 0.018 |
+| h=5 | har vs past_vol | −18.59% | <0.001 / <0.001 / <0.001 | 15/15 | 0.001 / <0.001 / 0.003 |
+| h=22 | har_x vs past_vol | −14.35% | 0.198 / 0.042 / 0.158 | 13/15 | 0.133 / 0.022 / 0.084 |
+| h=22 | har_x vs garch | −9.40% | 1.000 / 0.211 / 0.795 | 13/15 | 0.133 / 0.022 / 0.084 |
+| h=22 | har_x vs bilstm | −17.74% | 0.156 / 0.037 / 0.141 | 14/15 | 0.021 / 0.005 / 0.018 |
+| h=66 | har_x vs garch | −10.59% | 0.427 / 0.075 / 0.284 | 13/14 | 0.035 / 0.007 / 0.028 |
+
+İşaret: model1'in kazandığı fold / toplam. Uzun ufuklarda (h=66, h=126) naif baseline'a karşı DM anlamlılığı: yok.
+
+### 9c. SHAP ek ölçüler
+
+| ölçü | h=5 | h=22 | h=66 | h=126 |
+| --- | --- | --- | --- | --- |
+| HAR-X: OVX'in |std beta| payı | 72.5% | 73.4% | 69.8% | 58.5% |
+| XGBoost: HAR-X'in altı regresörü dışındaki SHAP payı | 13.4% | 16.2% | 22.6% | 29.4% |
+| kullanılmayan karşılaştırma oranı (5 ortak regresör × fold; SHAP özdeş sıfır) | 0.0% | 0.0% | 22.7% | 65.3% |
+| OVX işaret uyumu (XGBoost SHAP yönü vs HAR-X beta; kullanılan karşılaştırmalar) | 93% (14/15) | 80% (12/15) | 54% (7/13) | 57% (4/9) |
+| atıf sıralaması kararlılığı: ilk-son fold Spearman ρ | 0.55 | 0.70 | 0.57 | 0.53 |
+
+OVX işaret uyumu, dört ufuk birlikte: 74% (37/52). Tüm fold'lar (2026 dahil), `shap_sign_agreement_publication_aligned.csv`.
+
+### 9d. Tarih boşluğu: doğrudan hedef düzeltme testi (tahminler sabit)
+
+| ufuk | model | en büyük |RMSE değişimi| | RMSE sıra değişimi | MAE sıra değişimi | HAR+OVX < HAR-X (düzeltilmiş) | HAR < HAR+GPR (düzeltilmiş) |
+| --- | --- | --- | --- | --- | --- | --- |
+| h=5 | 12 | 0.16% | 0 | 0 | evet | evet |
+| h=22 | 12 | 0.26% | 0 | 2 (har_ovx ↔ har_x_log) | evet | evet |
+| h=66 | 12 | 0.43% | 0 | 0 | evet | evet |
+| h=126 | 12 | 0.49% | 0 | 0 | evet | evet |
+
+### 9e. Boşluksuz alt örneklem (2017–2026 fold'ları)
+
+| ufuk | fold (2017+) | Spearman RMSE sırası, tüm vs 2017+ | Spearman, tüm vs 2012–2016 | en iyi HAR-ailesi < XGBoost ve BiLSTM | train-mean'den düşük RMSE'li model | ilk beş RMSE aralığı |
+| --- | --- | --- | --- | --- | --- | --- |
+| h=5 | 10 | 0.95 | 0.96 | evet | 8/10 | 3.4% |
+| h=22 | 10 | 0.98 | 0.95 | evet | 9/10 | 10.6% |
+| h=66 | 9 | 0.84 | 0.54 | evet | 3/10 | 3.0% |
+| h=126 | 9 | 0.68 | 0.77 | evet | 0/10 | 2.4% |
+
+"train-mean'den düşük RMSE'li model" RMSE üzerinden sayılır (R²_oos referans farklarından etkilenmez).
 
