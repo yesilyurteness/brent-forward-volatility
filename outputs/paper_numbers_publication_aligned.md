@@ -1,7 +1,7 @@
 # Makale sayıları — yayım-hizalı GPR sürümü (BİRİNCİL)
 
-- **Üretildiği commit:** `b1154be5acec5881182e17acfa47981921957a1c` (Add Benjamini-Yekutieli, README number section and the fixed-epoch BiLSTM script)
-- **Üretim tarihi:** 2026-09-27T15:12:17+03:00
+- **Üretildiği commit:** `c57c59305ed8447d582d301ffe3f5f9de8fd2024` (Add the fixed-200-epoch BiLSTM check (exploratory, post hoc))
+- **Üretim tarihi:** 2026-09-27T16:56:14+03:00
 - **Çalışma ağacı:** temiz — girdiler bu commit'teki dosyalarla birebir aynı.
 - Doğrulama: `git checkout <commit> && python scripts/18_paper_numbers.py` aynı sayıları üretmelidir (yalnızca bu başlık değişir).
 
@@ -312,7 +312,18 @@ XGBoost'a göre RMSE farkı (%, negatif = benchmark daha iyi). Kaynak: `bench_mo
 
 Değişim = yakınsama / birincil − 1 (fold ortalaması RMSE, ana fold'lar). h=66 ve h=126'da yüksek kademe fold yok, sonuçlar tanım gereği aynı.
 
-**Yorum sınırı (bkz. deney günlüğü 16.4):** yayım sürümünde durdurma kriteri erken tetiklendi, eğitim kaybı yalnızca ~1.4 kat düştü (zaman damgalı sürümde geç fold'larda 4–6 kat). Bu kontrol yayım sürümünde "yetersiz eğitim değil aşırı uyum" iddiasını desteklemez; yalnızca ek eğitimin test hatasını iyileştirmediğini gösterir. İddianın makaledeki biçimi açık karar.
+**Yorum sınırı (bkz. deney günlüğü 16.4):** yayım sürümünde durdurma kriteri erken tetiklendi, eğitim kaybı yalnızca ~1.4 kat düştü (zaman damgalı sürümde geç fold'larda 4–6 kat). Bu kontrol tek başına "yetersiz eğitim değil aşırı uyum" iddiasını desteklemez; iddianın dayanağı 7c'deki sabit 200 epoch kontrolüdür.
+
+### 7c. BiLSTM sabit 200 epoch (keşifsel, post hoc; erken durdurma yok)
+
+Yüksek kademe fold'lar, h=5 ve h=22. Kosinüs programı yakınsama koşusuyla aynı (`T_max=200`); k'ıncı epoch yakınsama koşusunun kendisidir (kayıp ve test tahminleri bit düzeyinde aynı, assert). k = yakınsama kuralının durduğu epoch. Kaynak: `bilstm_fixed200_folds_publication_aligned.csv`; epoch bazında kayıp `bilstm_fixed200_loss_history_publication_aligned.csv`. Günlük 16.5.
+
+| ufuk | fold | ort. k | eğitim kaybı k→200, medyan (aralık) | eval-modu eğitim MSE k→200 | kayıp birincil(60)→200, medyan | test RMSE birincil / k / 200 | RMSE 200 vs k | 200 daha iyi (işaret p) | MAE 200 vs k | sd oranı k→200 | ufuk ortalaması RMSE (tüm fold'lar) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| h=5 | 15 | 72 | 2.48× (1.51–4.65) | 2.40× (1.41–6.29) | 3.63× | 0.013440 / 0.013518 / 0.014493 | +7.21% | 2/15 (p=0.007) | +5.22% | 1.00 → 1.10 | 0.013518 → 0.014493 (+7.21%) |
+| h=22 | 9 | 62 | 3.09× (2.58–3.50) | 3.08× (2.52–4.94) | 2.21× | 0.012137 / 0.012583 / 0.013170 | +4.67% | 3/9 (p=0.508) | +3.32% | 1.02 → 1.05 | 0.010653 → 0.011006 (+3.31%) |
+
+**Yorum:** eğitim kaybı durdurma kuralı olmadan ciddi düşüyor ve test hatası iyileşmiyor, kötüleşiyor. "Yetersiz eğitim değil aşırı uyum" bulgusu yayım sürümünde bu kontrolle destekleniyor. Zaman damgalı sürümdeki "~4×" rakamı Ek A'ya aittir; yayım sürümünün rakamı yukarıdaki medyanlardır.
 
 ## 8. İki sürüm karşılaştırması (Ek A)
 
