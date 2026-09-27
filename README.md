@@ -199,7 +199,8 @@ The daily GPR index (Caldara and Iacoviello) is not observed in real time the wa
 Brent are: it is published in batches, and later releases revise past values. An earlier
 version of this pipeline gave row t the GPR observation dated t−1, which assumed that
 yesterday's value was already public; in fact 80.3% of rows used an observation that had
-not yet been published. This was found by an independent external code review.
+not yet been published. This was found in an external code audit performed with a
+third-party AI assistant, run by the author (see the paper's AI-use statement).
 
 The publication rule was measured from the authors' own vintage archive: 289 archived
 releases from 2022-02-24 to 2026-09-21 (`16_gpr_vintages.py`). A file released on day D

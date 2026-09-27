@@ -1323,8 +1323,45 @@ def main():
       f"arası korelasyon **{hx:.3f}**). İki fark da aynı HAR-X RMSE'sini içerdiğinden, iki "
       "test büyük ölçüde HAR-X'i aynı ölçüte karşı sınıyor: HAR-X'in iyi geçirdiği yıl "
       "iki karşılaştırmada birden kazanç, kötü geçirdiği yıl (2020) iki karşılaştırmada "
-      "birden kayıp olarak görünüyor. Korelasyon yıl bazlı ölçek farkından ibaret değil; "
-      "göreli farklarda ve sıralamada da sürüyor.")
+      "birden kayıp olarak görünüyor. İki fark vektörü arasındaki korelasyon yıl bazlı "
+      "ölçek farkından ibaret değil; göreli farklarda ve sıralamada da sürüyor.")
+    w("")
+    w("**0.995 kendi başına bir bulgu değildir.** Fold RMSE, yılın volatilite düzeyiyle "
+      "birlikte ölçeklenir; bu yüzden hemen her model çiftinin fold RMSE'leri yüksek "
+      "korelasyonludur. Aşağıdaki tablo bunun karşılaştırma değerlerini veriyor. Ölçekten "
+      "arındırılmış ölçüler: fold RMSE'nin train-mean RMSE'sine oranı üzerinden "
+      "korelasyon ve günlük hata korelasyonu. Keşifsel, çıkarım için değil.")
+    w("")
+    hp_all = rd("hybrid_predictions_all.csv", PUB)
+    hp_all = hp_all[hp_all["include_in_main"]]
+    ms_ = ["har", "har_x", "xgboost", "bilstm", "train_mean", "past_vol"]
+    rows = []
+    for h in HORIZONS:
+        gq = hp_all[hp_all["horizon"] == h]
+        fr_ = gq.groupby("test_year").apply(lambda x: pd.Series(
+            {m: np.sqrt(((x["y_true"] - x[f"pred_{m}"]) ** 2).mean()) for m in ms_}),
+            include_groups=False)
+        c = fr_.corr()
+        rc = fr_.div(fr_["train_mean"], axis=0).corr()
+        ec = pd.DataFrame({m: gq["y_true"] - gq[f"pred_{m}"] for m in ms_}).corr()
+        rows.append({
+            "ufuk": f"h={h}",
+            "fold RMSE: HAR~XGB": f"{c.loc['har', 'xgboost']:.3f}",
+            "fold RMSE: HAR~past-vol": f"{c.loc['har', 'past_vol']:.3f}",
+            "fold RMSE: HAR~train-mean": f"{c.loc['har', 'train_mean']:.3f}",
+            "göreli: HAR~XGB": f"{rc.loc['har', 'xgboost']:.3f}",
+            "göreli: HAR~HAR-X": f"{rc.loc['har', 'har_x']:.3f}",
+            "göreli: HAR~BiLSTM": f"{rc.loc['har', 'bilstm']:.3f}",
+            "günlük hata: HAR~XGB": f"{ec.loc['har', 'xgboost']:.3f}",
+            "günlük hata: HAR-X~XGB": f"{ec.loc['har_x', 'xgboost']:.3f}",
+            "günlük hata: HAR~HAR-X": f"{ec.loc['har', 'har_x']:.3f}"})
+    w(md_table(pd.DataFrame(rows)))
+    w("")
+    w("Okuma: h=22'de HAR ile naif past-volatility baseline'ının fold RMSE korelasyonu da "
+      "HAR~XGB kadar yüksek. Yani 0.995, XGBoost'un HAR'ı özel olarak izlediğini değil, "
+      "yılların zorluk düzeyinin bütün modellere ortak olduğunu gösteriyor; üstelik "
+      "yalnızca h=22 değeri. Ölçekten arındırılmış ölçüler daha bilgilendirici ama "
+      "keşifseldir ve ufka göre değişir.")
     w("")
     w("### 11e. İşaret testi eşikleri (tam binom, %5 iki yönlü)")
     w("")

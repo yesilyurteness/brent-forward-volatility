@@ -1866,3 +1866,27 @@ olduğu görüldü. Özgün metinler köken kaydı olarak yerinde bırakıldı; 
    değildir**. Ancak p değerlerine bakılarak değil, Aşama 5–6'da ilan edilmiş iki iddiaya
    göre seçildi. O tarihten beri sabittir ve sonradan test eklenmez. Sayı paketi bu
    ifadeyle düzeltildi.
+
+## Açıklama notu (2026-09-27): inceleme ifadesi, 7b ve fold RMSE korelasyonu
+
+1. **"Bağımsız bir dış kod incelemesi" (16. aşama girişi).** "Bağımsız" üçüncü taraf bir
+   insan incelemesini ima ediyor. Gerçekte bu, yazarın çalıştırdığı üçüncü taraf bir AI
+   asistanıyla (GPT tabanlı bir araç) yapılmış harici bir kod denetimiydi. Özgün ifade
+   köken kaydı olarak bırakıldı. Kök README "an external code audit performed with a
+   third-party AI assistant, run by the author" olarak düzeltildi; makalenin AI kullanım
+   beyanı aynı şeyi söylemeli.
+2. **7b volatilite rejimi analizi post hoc'tur.**
+   `scripts/07b_exploratory_vol_regime.py` docstring'i, Aşama 7'de ölçülen çelişkiyi
+   (H2 havuzda HAR-X'ten iyi, fold ortalamasında kötü) alıntılıyor ve analizin amacını
+   onu açıklamak olarak tanımlıyor. Yani hibrit sonuçları görüldükten sonra tasarlandı.
+   Bölme kriteri (yılın ortalama gerçekleşen volatilitesinin medyanı) mekanik; performansa
+   bakılarak seçilmedi. Git geçmişi zamanlamayı göstermiyor, çünkü iki script de ilk
+   commit'te birlikte geliyor; kanıt metnin içeriği.
+3. **HAR ile XGBoost'un fold RMSE korelasyonu (0.995, h=22) kendi başına bir bulgu
+   değildir.** Fold RMSE yılın volatilite düzeyiyle ölçeklenir. h=22'de HAR ile naif
+   past-volatility baseline'ı da 0.996 korelasyonlu. Değer yalnızca h=22 için geçerli
+   (h=5: 0.981, h=66: 0.932, h=126: 0.931).
+
+   İki h=22 işaret testinin neden bağımlı olduğunu açıklayan mekanizma olarak geçerli,
+   ama "XGBoost HAR'ın bulmadığı bir şey bulmuyor" iddiasına kanıt değil. Ölçekten
+   arındırılmış karşılaştırmalar sayı paketinde (Bölüm 11d); hepsi keşifsel.
