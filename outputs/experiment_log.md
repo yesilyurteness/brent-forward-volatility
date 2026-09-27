@@ -1847,3 +1847,22 @@ gerekli örneklem ve önsel eğrilerdir.
 Çıktılar: `power_analysis_publication_aligned.csv`,
 `apriori_power_sign_publication_aligned.csv`, `apriori_power_dm_publication_aligned.csv`,
 `power_analysis_summary_publication_aligned.json`. Sayı paketi Bölüm 10.
+
+## Düzeltme notu (2026-09-27, Aşama 18 sonrası)
+
+Sayı paketine yöntem bölümü (Bölüm 11) eklenirken bu günlükteki iki ifadenin yanlış
+olduğu görüldü. Özgün metinler köken kaydı olarak yerinde bırakıldı; doğrusu burada.
+
+1. **16.1, yayım kuralı istisnaları.** "Bunların hepsi ay başı güncellemeleri" ifadesi
+   yanlış. 10 istisnanın dökümü:
+   - 6'sı ay başında yayımlanıp bir önceki ayın son gününde duran dosya.
+   - 1'i bayat yükleme (2023-01-02 dosyası, son gözlem 2022-08-31).
+   - 3'ü diğer: 2023-11-01 dosyası (son gözlem 2023-10-30), 2024-03-12 dosyası (son
+     gözlem 2024-03-11), 2025-12-02 dosyası (son gözlem 2025-12-01).
+
+   Kural desteği (279/289) değişmiyor. Kök README'deki aynı ifade düzeltildi.
+2. **16.5 ve paketin eski sürümleri: "birincil aile önceden sabitlendi".** Bu ifade
+   Aşama 8'in kaydıyla çelişiyor. Aile **testlerden sonra resmileştirildi ve ön-kayıt
+   değildir**. Ancak p değerlerine bakılarak değil, Aşama 5–6'da ilan edilmiş iki iddiaya
+   göre seçildi. O tarihten beri sabittir ve sonradan test eklenmez. Sayı paketi bu
+   ifadeyle düzeltildi.

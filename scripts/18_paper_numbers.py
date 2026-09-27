@@ -307,9 +307,11 @@ def main():
       "ana metrikten çıkarılır, ayrıca dipnotta verilir). Birim: günlük log getirilerin "
       "standart sapması. Yüzdeler `100 × (RMSE_a / RMSE_b − 1)`; negatif = a daha iyi.")
     w("")
-    w("**p değerleri.** Çıkarım için kullanılan tek test ailesi, önceden sabitlenmiş "
-      "**birincil sekizlik ailedir** (Bölüm 6: HAR vs HAR-X ve HAR-X vs XGBoost, dört "
-      "ufuk); ona sonradan test eklenmez. Bu dosyadaki diğer tüm p değerleri "
+    w("**p değerleri.** Çıkarım için kullanılan tek test ailesi **birincil sekizlik "
+      "ailedir** (Bölüm 6: HAR vs HAR-X ve HAR-X vs XGBoost, dört ufuk). Aile "
+      "**testlerden sonra resmileştirildi, ön-kayıt değildir**; ancak p değerlerine "
+      "bakılarak değil, Aşama 5–6'da ilan edilmiş iki iddiaya göre seçildi ve o tarihten "
+      "beri sabittir: sonradan test eklenmez. Bu dosyadaki diğer tüm p değerleri "
       "(ablasyon, XGBoost-6, iki sürüm karşılaştırması, BiLSTM kontrolleri, 9. bölüm) "
       "**keşifsel ve çoklu karşılaştırma için düzeltilmemiştir**; betimleyici olarak "
       "verilir. İkincil DM ailesi (24 test) kendi içinde Holm/BH/BY ile düzeltilir ama "
@@ -819,7 +821,8 @@ def main():
         w("**p değerlerinin statüsü:** buradaki işaret testi p'leri (h=5: 0.007) keşifsel "
           "bir teşhisten gelir, **birincil sekizlik aileye dahil değildir ve "
           "düzeltilmemiştir**; statüsü HAR+OVX vs HAR-X'in düzeltmesiz p = 0.035'iyle "
-          "aynıdır. Birincil aile önceden sabitlendi; sonradan test eklenmez.")
+          "aynıdır. Birincil aile sabittir (testlerden sonra resmileştirildi, ön-kayıt "
+          "değil; bkz. Bölüm 6); sonradan test eklenmez.")
         w("")
         w("**Yorum:** eğitim kaybı durdurma kuralı olmadan ciddi düşüyor ve test hatası "
           "iyileşmiyor, kötüleşiyor. \"Yetersiz eğitim değil aşırı uyum\" bulgusu yayım "
@@ -1189,6 +1192,152 @@ def main():
     w("Önsel işaret testi eğrileri iki sürümde birebir aynıdır (yalnızca fold sayısına "
       "bağlı; assert). Önsel DM eğrilerinde k: " + ", ".join(
           f"h={h}: {kt[h]:.3f} → {kk[h]:.3f}" for h in HORIZONS) + ".")
+    w("")
+
+    # ---------------- 11. Methodology / Limitations numbers ----------------
+    w("## 11. Yöntem ve sınırlılık sayıları (GPR yayım hizalaması, test ailesi)")
+    w("")
+    rev = json.load(open(OUT_DIR / "gpr_revision_summary.json", encoding="utf-8"))
+    rep = json.load(open(OUT_DIR / "build_features_publication_aligned_report.json",
+                         encoding="utf-8"))
+    vm = pd.read_csv(OUT_DIR / "gpr_vintage_meta.csv")
+    gap = rev["vintage_minus_last_obs_days_counts"]
+    import re
+    m78 = re.search(r"discard (\d+)% of published observations", rep["method"])
+    assert m78, "forward-fill discard share not found in the feature report"
+    w("### 11a. Yayım kuralı (`16_gpr_vintages.py`, erişim " + rev["access_date"] + ")")
+    w("")
+    exc = vm[vm["vintage_minus_last_obs_days"] != 0].copy()
+    exc["vd"] = pd.to_datetime(exc["vintage_date"])
+    exc["lo"] = pd.to_datetime(exc["last_obs_date"])
+    stale = exc["vintage_minus_last_obs_days"] > 31
+    prev_month_end = (~stale & exc["lo"].dt.is_month_end
+                      & (exc["lo"].dt.to_period("M") < exc["vd"].dt.to_period("M")))
+    other = exc[~stale & ~prev_month_end]
+    w(f"- Arşivlenmiş sürüm: **{rev['n_vintages']}** ({rev['first_vintage']} – "
+      f"{rev['last_vintage']}).")
+    w(f"- Kural \"D günü yayımlanan dosya D dahil D'ye kadarki gözlemleri içerir\": "
+      f"**{gap['0']}/{rev['n_vintages']}** sürüm destekliyor. İstisnalar: "
+      + ", ".join(f"{v} sürüm {k} gün geride" for k, v in gap.items() if k != "0")
+      + f". İstisnaların dökümü: **{int(prev_month_end.sum())}** ay başı dosyası bir "
+        f"önceki ayın son gününde duruyor; **{int(stale.sum())}** bayat yükleme ("
+        + ", ".join(f"{a.date()} dosyası, son gözlem {b.date()}"
+                    for a, b in zip(exc.loc[stale, 'vd'], exc.loc[stale, 'lo']))
+        + f"); **{len(other)}** diğer ("
+        + ", ".join(f"{a.date()} dosyası, son gözlem {b.date()}"
+                    for a, b in zip(other["vd"], other["lo"])) + ").")
+    w("- Sürüm günleri: " + ", ".join(f"{k} {v}" for k, v in
+                                      rev["vintage_weekday_counts"].items()) + ".")
+    pl = rev["publication_lag_days"]
+    w(f"- Gözlem başına yayım gecikmesi (takvim günü): medyan {pl['median']:.0f}, "
+      f"ortalama {pl['mean']:.2f}, en fazla {pl['max']}. Gözlemin haftanın gününe göre "
+      "medyan: " + ", ".join(f"{k} {v['median']:.0f}" for k, v in
+                             rev["publication_lag_by_obs_weekday"].items()) + ".")
+    for s in ("GPRD", "GPRD_THREAT"):
+        r_ = rev["revision_rel_first_release_vs_current"][s]
+        w(f"- Revizyon, {s} (ilk yayım vs güncel, göreli): ortalama "
+          f"{100 * r_['mean']:+.1f}%, ortalama mutlak {100 * r_['mean_abs']:.1f}%, medyan "
+          f"mutlak {100 * r_['median_abs']:.1f}% (n = {r_['n']}). Revizyonlar modellenmedi; "
+          "değerler güncel sürümden.")
+    w(f"- 2022-02-24 öncesi: arşiv yok, kural karşı-olgusal uygulanır ("
+      f"{rep['publication_rule']['before_2022-02-24']}).")
+    w(f"- Forward-fill reddi: düzey seriyi işlem takvimine ileri doldurmak yayımlanan "
+      f"gözlemlerin **%{m78.group(1)}**'ini atardı.")
+    el = rep["effective_lag"]
+    w(f"- Zaman damgalı hizalamada satırların **%{100 * el['share_rows_timestamp_uses_unpublished_obs']:.1f}**'i "
+      "tahmin anında henüz yayımlanmamış bir gözlem kullanıyordu.")
+    w(f"- Değişen özellik: {rep['n_changed']}/{rep['n_features']}; ilk tam dolu satır iki "
+      f"sürümde de {rep['first_fully_valid_row']['publication']}.")
+    w("")
+    w("### 11b. Etkin gecikme (işlem günü t ile kullanılan GPR gözleminin tarihi arası)")
+    w("")
+    cdp, cdt, trp = (el["calendar_days_publication"], el["calendar_days_timestamp"],
+                     el["trading_rows_publication"])
+    t = pd.DataFrame({
+        "ölçü": ["takvim günü, medyan", "takvim günü, ortalama", "takvim günü, en fazla",
+                 "işlem satırı, medyan / ortalama / en fazla"],
+        "zaman damgalı": [f"{cdt['median']:.0f}", f"{cdt['mean']:.2f}", f"{cdt['max']:.0f}",
+                          "—"],
+        "yayım-hizalı": [f"{cdp['median']:.0f}", f"{cdp['mean']:.2f}", f"{cdp['max']:.0f}",
+                         f"{trp['median']:.0f} / {trp['mean']:.2f} / {trp['max']}"]})
+    w(md_table(t))
+    w("")
+    wd = el["calendar_days_by_trading_weekday"]
+    order_wd = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+    w("Yayım-hizalı, işlem gününe göre takvim günü (medyan / ortalama / en fazla): "
+      + "; ".join(f"{d} {wd[d]['median']:.0f} / {wd[d]['mean']:.2f} / {wd[d]['max']:.0f}"
+                  for d in order_wd) + ".")
+    w("")
+    w("### 11c. Nedensellik doğrulamaları")
+    w("")
+    pi = rep["prefix_invariance"]
+    assert all(x["passed"] and x["tolerance"] == 0 for x in pi)
+    w("- **Prefix-invariance:** özellikler veri " + " ve ".join(
+        str(x["cut_row"]) for x in pi) + ". satırda kesilerek yeniden hesaplandı; "
+      "kesim öncesi tüm satırlar tam veriyle hesaplananla **sıfır toleransta** aynı "
+      f"({len(pi)}/{len(pi)} geçti).")
+    ps_ = pd.DataFrame(rep["publication_sensitivity_test"])
+    n_s = len(ps_)
+    pub_ok = int(ps_["publication_aligned_unchanged"].sum())
+    ctrl = int(ps_["timestamp_aligned_row_changed"].sum())
+    w(f"- **Yayım duyarlılığı:** rastgele {n_s} satırda, o satırın tarihinde henüz "
+      f"yayımlanmamış tüm GPR gözlemleri bozuldu (satır başına "
+      f"{ps_['n_unpublished_perturbed'].min()}–{ps_['n_unpublished_perturbed'].max()} "
+      f"gözlem). Yayım-hizalı kol: **{pub_ok}/{n_s} değişmedi**. Kontrol kolu (zaman "
+      f"damgalı): **{ctrl}/{n_s} değişti**.")
+    cal = pd.read_csv(OUT_DIR / "gpr_publication_calendar.csv",
+                      parse_dates=["date", "publication_date"]).set_index("date")
+    fdates = pd.to_datetime(pd.read_csv(OUT_DIR / "features.csv", usecols=["Date"])["Date"],
+                            dayfirst=True)
+    pred_unch, wds = [], []
+    for r in ps_.itertuples():
+        t_, tm1 = fdates.iloc[r.row], fdates.iloc[r.row - 1]
+        assert t_ == pd.Timestamp(r.date)
+        released = cal.loc[tm1, "publication_date"] <= tm1
+        pred_unch.append(released)
+        if released:
+            wds.append(t_.day_name())
+    pred_unch = np.array(pred_unch)
+    ok_pred = int((pred_unch == ~ps_["timestamp_aligned_row_changed"].values).sum())
+    assert ok_pred == n_s, "release calendar must predict the control arm in every row"
+    wdc = pd.Series(wds).value_counts()
+    w(f"- **Kontrol kolunda değişmeyen {n_s - ctrl} satırın mekanizması:** zaman damgalı "
+      "kol satır t'de t−1 tarihli gözlemi kullanır ve bozulma yalnızca t−1'e kadar "
+      "yayımlanmamış gözlemlere uygulanır. Değişmeyen satırlar tam olarak t−1 gözleminin "
+      "t−1'e kadar zaten yayımlanmış olduğu satırlardır ("
+      + ", ".join(f"{v} {k}" for k, v in wdc.items()) + "; Salı satırlarının t−1'i aynı "
+      "gün yayımlanan Pazartesi gözlemi, Çarşamba satırı İşçi Bayramı haftası). Yayım "
+      f"takvimi kontrol kolunun sonucunu **{ok_pred}/{n_s}** satırda doğru öngörüyor.")
+    w("")
+    w("### 11d. h=22'deki iki işaret testinin bağımlılığı")
+    w("")
+    rel = float(np.corrcoef(d1 / fr["har_x"], d2 / fr["har_x"])[0, 1])
+    from scipy import stats as _st
+    sp = float(_st.spearmanr(d1, d2)[0])
+    hx = float(np.corrcoef(fr["har"], fr["xgboost"])[0, 1])
+    agree = int(((d1 > 0) == (d2 > 0)).sum())
+    w(f"- Fold farkı vektörleri (HAR − HAR-X, XGBoost − HAR-X): Pearson "
+      f"**{rho22:.2f}**; HAR-X RMSE'sine bölünmüş göreli farklarla {rel:.2f}; Spearman "
+      f"{sp:.2f}. İşaret aynı olan yıl: {agree}/{len(d1)}.")
+    w(f"- Mekanizma: HAR ve XGBoost'un fold RMSE profilleri neredeyse aynı (fold'lar "
+      f"arası korelasyon **{hx:.3f}**). İki fark da aynı HAR-X RMSE'sini içerdiğinden, iki "
+      "test büyük ölçüde HAR-X'i aynı ölçüte karşı sınıyor: HAR-X'in iyi geçirdiği yıl "
+      "iki karşılaştırmada birden kazanç, kötü geçirdiği yıl (2020) iki karşılaştırmada "
+      "birden kayıp olarak görünüyor. Korelasyon yıl bazlı ölçek farkından ibaret değil; "
+      "göreli farklarda ve sıralamada da sürüyor.")
+    w("")
+    w("### 11e. İşaret testi eşikleri (tam binom, %5 iki yönlü)")
+    w("")
+    rows = []
+    for n in (9, 14, 15):
+        kmin = min(k for k in range(n + 1) if k > n / 2 and sign_p(k, n) <= 0.05)
+        rows.append({"fold": n, "anlamlılık için en az kazanma": f"{kmin}/{n}",
+                     "o eşikte p": f"{sign_p(kmin, n):.4f}",
+                     "bir eksiğinde p": f"{sign_p(kmin - 1, n):.4f}"})
+    w(md_table(pd.DataFrame(rows)))
+    w("")
+    w("n=9 (Bölüm 7c, h=22 yüksek kademe) için anlamlılık mümkündür ama 9 fold'un en az "
+      "8'inde aynı yön gerekir; gözlenen 6/9 bu eşiğin iki fold altındadır.")
     w("")
 
     path = OUT_DIR / "paper_numbers_publication_aligned.md"
