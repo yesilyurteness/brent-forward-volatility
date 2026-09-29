@@ -64,19 +64,16 @@ def by_adjust(p):
     return np.minimum(dm.benjamini_hochberg(p) * sum(1 / i for i in range(1, m + 1)), 1.0)
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    alignment.add_argument(ap)
-    al = ap.parse_args().gpr_alignment
-
-    df = pd.read_csv(alignment.out("hybrid_predictions_all.csv", al),
-                     float_precision="round_trip")
+def clark_west(df, horizons=HORIZONS):
+    """CW test per horizon on a prediction frame with y_true, pred_har, pred_har_x,
+    test_year, include_in_main, Date; main folds only, pooled and sorted by date.
+    Holm/BH/BY are applied across the rows returned (the caller's family). Also used by
+    25_rollover_clark_west.py."""
     df = df[df["include_in_main"]].copy()
     df["dt"] = pd.to_datetime(df["Date"], format="%d.%m.%Y")
     df = df.sort_values(["horizon", "dt"]).reset_index(drop=True)
-
     rows = []
-    for h in HORIZONS:
+    for h in horizons:
         g = df[df["horizon"] == h]
         n, lag = len(g), h - 1
         y = g["y_true"].to_numpy("float64")
@@ -107,6 +104,17 @@ def main():
     res["p_HLN_holm"] = dm.holm(p)
     res["p_HLN_bh"] = dm.benjamini_hochberg(p)
     res["p_HLN_by"] = by_adjust(p)
+    return res
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    alignment.add_argument(ap)
+    al = ap.parse_args().gpr_alignment
+
+    df = pd.read_csv(alignment.out("hybrid_predictions_all.csv", al),
+                     float_precision="round_trip")
+    res = clark_west(df)
     res["family"] = "ek: Clark-West (4 test)"
 
     out = alignment.out("clark_west.csv", al)

@@ -567,6 +567,61 @@ def section_15(w):
           f"{k['p_sign_by']} (toplam {len(g)} test).")
         w("")
 
+    # ---- 15c. Clark-West family replicated on the variants (25_rollover_clark_west.py) --
+    C = rd("rollover_clark_west.csv", PUB)
+    w("### 15c. Clark–West ek ailesinin (HAR ⊂ HAR-X) varyantlarda tekrarı")
+    w("")
+    w("Tasarım ve statüler koşudan önce yazıldı (günlük Aşama 26, commit `15ff613`); "
+      "statüler roll-over'daki gibi. Kurulum §13a ile aynı (tek yanlı, Newey-West "
+      "Bartlett L = h−1, HLN ve t(n−1); düzeltmeler HLN p'sine). Holm/BH/BY her varyantın "
+      "kendi testleri içinde: A ve A′'de 4, B'de 1 (tek testte düzeltilmiş p = ham p). "
+      "CLAUDE.md: ilan edilmiş bir ailenin varyant veri üzerindeki tekrarı yeni aile "
+      "değildir ve birincil aileyle havuzlanmaz. Maskesiz tahminler §13a'yı yeniden "
+      "üretiyor (assert). Kaynak: `25_rollover_clark_west.py`.")
+    w("")
+    sci = lambda v: f"{v:.2e}".replace("-", "−")
+    diffs = []
+    for v in ("A", "A2", "B"):
+        g = C[C["variant"] == v]
+        c_ = sum(1 / i for i in range(1, len(g) + 1))
+        for col in ("p_HLN_bh", "p_HLN_by"):
+            ref = step_up(g["p_HLN_one_sided"].to_numpy(),
+                          c_ if col.endswith("by") else 1.0)
+            assert np.allclose(ref, g[col], rtol=1e-12)
+        w(f"**{VN[v]}**")
+        w("")
+        w(md_table(pd.DataFrame({
+            "ufuk": g["horizon"].map(lambda h: f"h={h}"), "n": g["n"],
+            "ort. (e²_HAR − e²_HARX)": g["mean_mse_diff"].map(sci),
+            "ort. düzeltme": g["mean_adjustment"].map(sci),
+            "CW": g["CW"].map(lambda x: f"{x:.3f}"),
+            "CW (HLN)": g["CW_HLN"].map(lambda x: f"{x:.3f}"),
+            "p normal (ham)": g["p_normal_one_sided"].map(fp),
+            "p HLN (ham)": g["p_HLN_one_sided"].map(fp),
+            "Holm": g["p_HLN_holm"].map(fp), "BH": g["p_HLN_bh"].map(fp),
+            "BY": g["p_HLN_by"].map(fp),
+            "f > 0 olan fold": [f"{a}/{b}" for a, b in zip(g["folds_f_positive"],
+                                                           g["n_folds"])]})))
+        w("")
+        # Would the standard-normal p-values (Clark & West 2007) change a 5% decision?
+        pn = g["p_normal_one_sided"].to_numpy()
+        m = len(pn)
+        holm_n = np.minimum(1, np.maximum.accumulate(
+            np.sort(pn) * (m - np.arange(m))))[np.argsort(np.argsort(pn))]
+        for lab, a_, b_ in (("ham", pn, g["p_HLN_one_sided"].to_numpy()),
+                            ("Holm", holm_n, g["p_HLN_holm"].to_numpy()),
+                            ("BH", step_up(pn), g["p_HLN_bh"].to_numpy()),
+                            ("BY", step_up(pn, c_), g["p_HLN_by"].to_numpy())):
+            for h, x, y in zip(g["horizon"], a_, b_):
+                if (x < 0.05) != (y < 0.05):
+                    diffs.append(f"{VN[v].split(' ')[0]}, h={h}, {lab}: normal p "
+                                 f"{x:.4f}, HLN p {y:.4f}")
+    w("**HLN seçiminin etkisi.** §13a'daki notun (\"sonuç değişmiyor\") varyantlardaki "
+      "karşılığı: standart normal p'lerle %5 kararının farklı olacağı hücreler — "
+      + ("; ".join(diffs) if diffs else "yok") + ". Birincil çıkarım HLN'dir (Aşama 26'da "
+      "koşudan önce yazılan kurulum); bu hücreler HLN'ye göre raporlanır.")
+    w("")
+
 
 def section_16(w):
     """Appendix A additions: A1 feature list, volatility regime analysis (07b), A8."""

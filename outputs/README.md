@@ -982,6 +982,11 @@ roll dropped). `rollover_family_tests`: the 8 primary-family tests per variant w
 BH and BY within the variant. The JSON records the design registration, the calendar
 checks and the overlap with the documented date gaps.
 
+### `rollover_clark_west_publication_aligned.csv` — `25_rollover_clark_west.py`
+The Clark-West test (HAR nested in HAR-X) on roll-over variants `A`, `A2` and `B`, same
+columns as `clark_west_publication_aligned.csv`, plus `variant`, `status` and
+`n_tests_in_family`. Holm, BH and BY are applied within each variant (4 tests; 1 for B).
+
 ### `appendix_a_source_map.md`
 Maps each Appendix A item cited by the methodology text to its source output file, the
 script that produces it and the number-package section, and marks what is missing.
