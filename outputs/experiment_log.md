@@ -2450,3 +2450,35 @@ BH ve BY ham p'ye eşittir.
 **Doğrulama:** CW istatistiğinin hesabı 21'den bir fonksiyona taşınacak. 21'in çıktısının
 değişmediği kontrol edilecek. Maskesiz roll-over tahminleri kayıtlı
 `clark_west_publication_aligned.csv` değerlerini yeniden üretmeli (assert).
+
+## 26.2 Sonuçlar (2026-09-29, koşudan sonra)
+
+Commit `ad27136`; `scripts/25_rollover_clark_west.py --gpr-alignment publication`. Sayılar
+paketin §15c'sinde. Statüler Aşama 26'daki gibi, değiştirilmedi.
+
+**Doğrulama:**
+- 21'in hesabı `clark_west()` fonksiyonuna taşındı; 21'in çıktıları bayt düzeyinde
+  aynı.
+- Maskesiz roll-over tahminleri kayıtlı CW sonuçlarını yeniden üretiyor (assert).
+
+**CW (HLN), ham p ve düzeltilmiş p** (HLN p; varyant içinde Holm / BH / BY):
+
+| varyant | h=5 | h=22 | h=66 | h=126 |
+| --- | --- | --- | --- | --- |
+| A (4 test) | 5.253; hepsi < 0.001 | 3.761; hepsi < 0.001 | 2.992; 0.001 / 0.003 / 0.002 / 0.004 | 1.416; 0.078 / 0.078 / 0.078 / 0.163 |
+| A′ (4 test) | 5.985; hepsi < 0.001 | 4.499; hepsi < 0.001 | 4.047; hepsi < 0.001 | 1.643; 0.0502 / 0.0502 / 0.0502 / 0.105 |
+| B (1 test) | 4.621; < 0.001 | — | — | — |
+
+- A ve A′'de CW, h=5, h=22 ve h=66'da üç düzeltmenin üçünde de reddediyor, h=126'da
+  reddetmiyor. B'de h=5'te reddediyor. Aşama 22'deki (birincil veri) örüntüyle aynı.
+- h=66'da havuzlanmış ham MSE farkı üç veri setinde de negatif (A −9.28e−07, A′ −1.51e−06).
+
+**HLN seçiminin etkisi.** Aşama 22'deki not ("sonuç değişmiyor") birincil veri içindi.
+Varyantlarda bir hücrede HLN seçimi %5 kararını belirliyor:
+
+| hücre | normal p | HLN p | normal p ile karar | HLN ile karar |
+| --- | --- | --- | --- | --- |
+| A′, h=126 | 0.0442 | 0.0502 | ham, Holm ve BH altında red | red yok |
+
+BY altında ikisinde de red yok. Birincil çıkarım HLN olduğu için sonuç "red yok" olarak
+raporlanır. Paketin §15c'sinde bu hücre açıkça listeleniyor.

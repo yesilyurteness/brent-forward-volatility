@@ -1,7 +1,7 @@
 # Makale sayıları — yayım-hizalı GPR sürümü (BİRİNCİL)
 
-- **Üretildiği commit:** `a4d990f446dcb0b4bef802532862bc9fc401b43e` (Run the roll-over robustness check; add Appendix A items to the package)
-- **Üretim tarihi:** 2026-09-29T21:37:51+03:00
+- **Üretildiği commit:** `ad271363d669045db9f9522be818c45f6d66130d` (Run Clark-West on the roll-over variants; add Section 15c to the package)
+- **Üretim tarihi:** 2026-09-29T21:49:26+03:00
 - **Çalışma ağacı:** temiz — girdiler bu commit'teki dosyalarla birebir aynı.
 - Doğrulama: `git checkout <commit> && python scripts/18_paper_numbers.py` aynı sayıları üretmelidir (yalnızca bu başlık değişir).
 
@@ -1095,6 +1095,36 @@ Kurulum 08 ile aynı: DM (Newey-West Bartlett, L = h−1, HLN, t(n−1)) ve fold
 | HAR-X vs XGBoost | h=5 | +0.077 | 0.939 | 1.000 | 0.939 | 1.000 | 9/15 | 0.607 | 0.607 | 0.607 | 0.911 |
 
 %5'te ayakta kalan: DM Holm 0, BH 0, BY 0; işaret Holm 0, BH 0, BY 0 (toplam 2 test).
+
+### 15c. Clark–West ek ailesinin (HAR ⊂ HAR-X) varyantlarda tekrarı
+
+Tasarım ve statüler koşudan önce yazıldı (günlük Aşama 26, commit `15ff613`); statüler roll-over'daki gibi. Kurulum §13a ile aynı (tek yanlı, Newey-West Bartlett L = h−1, HLN ve t(n−1); düzeltmeler HLN p'sine). Holm/BH/BY her varyantın kendi testleri içinde: A ve A′'de 4, B'de 1 (tek testte düzeltilmiş p = ham p). CLAUDE.md: ilan edilmiş bir ailenin varyant veri üzerindeki tekrarı yeni aile değildir ve birincil aileyle havuzlanmaz. Maskesiz tahminler §13a'yı yeniden üretiyor (assert). Kaynak: `25_rollover_clark_west.py`.
+
+**A (birincil sağlamlık varyantı)**
+
+| ufuk | n | ort. (e²_HAR − e²_HARX) | ort. düzeltme | CW | CW (HLN) | p normal (ham) | p HLN (ham) | Holm | BH | BY | f > 0 olan fold |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| h=5 | 3662 | 6.88e−06 | 3.06e−05 | 5.259 | 5.253 | <0.001 | <0.001 | <0.001 | <0.001 | <0.001 | 15/15 |
+| h=22 | 3645 | 1.07e−05 | 2.66e−05 | 3.784 | 3.761 | <0.001 | <0.001 | <0.001 | <0.001 | <0.001 | 14/15 |
+| h=66 | 3500 | −9.28e−07 | 1.74e−05 | 3.049 | 2.992 | 0.001 | 0.001 | 0.003 | 0.002 | 0.004 | 13/14 |
+| h=126 | 3500 | −4.01e−06 | 9.66e−06 | 1.468 | 1.416 | 0.071 | 0.078 | 0.078 | 0.078 | 0.163 | 10/14 |
+
+**A′ (duyarlılık: iki satır)**
+
+| ufuk | n | ort. (e²_HAR − e²_HARX) | ort. düzeltme | CW | CW (HLN) | p normal (ham) | p HLN (ham) | Holm | BH | BY | f > 0 olan fold |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| h=5 | 3662 | 7.05e−06 | 3.55e−05 | 5.992 | 5.985 | <0.001 | <0.001 | <0.001 | <0.001 | <0.001 | 15/15 |
+| h=22 | 3645 | 9.93e−06 | 3.05e−05 | 4.526 | 4.499 | <0.001 | <0.001 | <0.001 | <0.001 | <0.001 | 14/15 |
+| h=66 | 3500 | −1.51e−06 | 1.88e−05 | 4.124 | 4.047 | <0.001 | <0.001 | <0.001 | <0.001 | <0.001 | 13/14 |
+| h=126 | 3500 | −4.40e−06 | 1.01e−05 | 1.704 | 1.643 | 0.044 | 0.050 | 0.050 | 0.050 | 0.105 | 10/14 |
+
+**B (duyarlılık: yalnızca h=5)**
+
+| ufuk | n | ort. (e²_HAR − e²_HARX) | ort. düzeltme | CW | CW (HLN) | p normal (ham) | p HLN (ham) | Holm | BH | BY | f > 0 olan fold |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| h=5 | 2780 | 3.95e−06 | 3.01e−05 | 4.629 | 4.621 | <0.001 | <0.001 | <0.001 | <0.001 | <0.001 | 15/15 |
+
+**HLN seçiminin etkisi.** §13a'daki notun ("sonuç değişmiyor") varyantlardaki karşılığı: standart normal p'lerle %5 kararının farklı olacağı hücreler — A′, h=126, ham: normal p 0.0442, HLN p 0.0502; A′, h=126, Holm: normal p 0.0442, HLN p 0.0502; A′, h=126, BH: normal p 0.0442, HLN p 0.0502. Birincil çıkarım HLN'dir (Aşama 26'da koşudan önce yazılan kurulum); bu hücreler HLN'ye göre raporlanır.
 
 ## 16. Ek A eklemeleri: özellik listesi, volatilite rejimi analizi, eğitim uzunluğu
 
