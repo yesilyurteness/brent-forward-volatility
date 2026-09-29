@@ -406,6 +406,18 @@ def section_13(w, pr, F):
         "HAC şişme": cw["variance_inflation"].map(lambda v: f"{v:.2f}")})
     w(md_table(t))
     w("")
+    # The note below claims the HLN choice does not change the result: check it.
+    pn = cw["p_normal_one_sided"].to_numpy()
+    c4 = sum(1 / i for i in range(1, len(pn) + 1))
+    holm_ = lambda x: np.minimum(1, np.maximum.accumulate(
+        np.sort(x) * (len(x) - np.arange(len(x)))))[np.argsort(np.argsort(x))]
+    for fn_n, col in ((holm_, "p_HLN_holm"), (step_up, "p_HLN_bh"),
+                      (lambda x: step_up(x, c4), "p_HLN_by")):
+        assert ((fn_n(pn) < 0.05) == (cw[col].to_numpy() < 0.05)).all(), col
+    w("Not: Clark & West (2007) standart normal kullanır; burada DM ailesiyle tutarlılık "
+      "için HLN uygulandı, sonuç değişmiyor (normal p'lerle Holm, BH ve BY altında %5'te "
+      "reddedilen testler aynı; kontrol edildi).")
+    w("")
     w("**Fold düzeyinde (betimleyici, test değil):** f'nin fold ortalamalarının ortalaması "
       "ve f ortalaması pozitif olan fold sayısı: "
       + "; ".join(f"h={r.horizon}: {sci(r.f_fold_mean)}, {r.folds_f_positive}/{r.n_folds}"
