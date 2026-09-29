@@ -47,7 +47,16 @@ dates, this parsing breaks.
 ### `Brent_Petrol` — Yahoo Finance, ticker `BZ=F`
 
 - Source: <https://finance.yahoo.com/quote/BZ%3DF/history>
-- Series: Brent crude oil futures contract (front month, ICE), daily **Close**
+- Series: continuous front-month series, daily **Close**. Yahoo labels `BZ=F` "Brent Crude
+  Oil Last Day Financial Futures"; this is the name of the NYMEX-listed (CME Group) Brent
+  Last Day Financial futures contract, code BZ. It is not the ICE Brent Crude futures
+  contract itself.
+- Not verified from a primary CME document (the CME pages could not be retrieved): the
+  BZ contract's expiry calendar and its cash settlement against ICE Brent. Secondary
+  sources state that BZ follows the ICE Brent expiry calendar; the roll analysis
+  (`scripts/24_rollover_robustness.py`) uses the ICE rule and states this assumption.
+  Yahoo does not document on which day its continuous series switches to the next
+  contract.
 - Unit: USD/barrel
 - Range downloaded: 2008-01-02 to 2026-09-01
 - Terms of use: redistribution is not permitted, which is why the file is excluded via

@@ -2289,3 +2289,76 @@ yaptığı A1, A3, A6 ve A8 maddeleri kaynak dosyaya, script'e ve paket bölüm�
 
 Paketin §7b'si (BiLSTM yakınsama kontrolü) ile 07b script'i (volatilite rejimi) farklı
 şeyler; haritada not düşüldü.
+
+---
+
+# Aşama 25 (2026-09-29): Roll-over sağlamlık analizi — KOŞUDAN ÖNCE yazılan tasarım ve statüler
+
+**Bu bölüm koşudan önce yazıldı ve koşudan önce commit edildi.** Sonuçlar Aşama 25.2'de
+olacak. Statüler, sonuç ne çıkarsa çıksın değişmeyecek. Üç varyantın üçü de sonuç ne
+olursa olsun raporlanacak. Luo vd. (2024) tasarıma temel yapılmadı.
+
+## 25.1 Tasarım
+
+**Vade kuralı.** Kaynak ICE Brent sözleşme spesifikasyonu (circular 13165 Attach 6) ve
+Circular 15/235.
+
+| kontratlar | işlemin durduğu gün |
+| --- | --- |
+| Şubat 2016'ya kadar | Kontrat ayının ilk gününden 15 takvim günü önceki günden bir önceki iş günü. O gün iş günü değilse önce bir önceki iş gününe gidilir. |
+| Mart 2016'dan itibaren | Kontrat ayından iki önceki ayın son iş günü. Noel veya Yılbaşı öncesi iş gününe denk gelirse bir önceki iş günü. |
+
+- Kural örneklem içinde değişti. Mart 2016 kontratı 29.01.2016'da, Şubat 2016 kontratı
+  14.01.2016'da vadelendi.
+- İş günü: İngiltere ve Galler'de resmi tatil olmayan işlem günü.
+- Kodlanan kural, ICE'ın resmi tablosundaki 88 vadeyi (Aralık 2015 – Mart 2023) birebir
+  üretiyor.
+- 2008–2015 için resmi tablo bulunamadı. Bu dönemin tarihleri kuraldan ve tatil
+  takviminden türetildi.
+
+**Veri kaynağı varsayımı.** Yahoo `BZ=F`, NYMEX'teki Brent Last Day Financial (BZ)
+kontratı. Bu kontratın ICE vade takvimine uyduğu birincil CME belgesinden doğrulanmadı;
+varsayım olarak kullanılıyor. Yahoo'nun sürekli seride hangi gün geçiş yaptığı
+belgelenmemiş.
+
+**Geçiş satırı.** Vade gününden sonraki ilk veri satırı. O satırın getirisi eski
+kontratın kapanışından yeni kontratın kapanışına uzanıyor.
+
+**Varyantlar ve statüleri:**
+
+| varyant | statü | ne yapılıyor |
+| --- | --- | --- |
+| **A** | birincil sağlamlık varyantı | Geçiş satırının getirisi çıkarılır (NaN). Hedef, aynı h günlük penceredeki kalan getirilerin std'si; pencerenin tamamlanmış olma şartı korunur. Getiri özellikleri temiz getirilerle yeniden hesaplanır: `brent_ret_lag1-5`, `brent_vol5/20/60/126`, `vol_ratio`, `vol5_vol60`, `vol20_vol126`, HAR'ın `har_daily` terimi ve past-vol baseline (XGBoost'un oran paydası). Getiri gecikmeleri ve `har_daily`, son temiz getirileri kullanır. |
+| **A′** | duyarlılık kontrolü | A ile aynı, ama vade sonrası iki satır çıkarılır. Geçiş gününün bir gün belirsiz olmasına karşı. |
+| **B** | duyarlılık kontrolü, yalnızca h=5 | Getiri çıkarılmaz. Hedef penceresinde geçiş satırı bulunan satırlar örneklemden atılır; yaklaşık %24. |
+
+**A ve tarih boşlukları.** A, vade günleriyle örtüşen tarih boşluğu satırlarının
+getirisini de çıkarır. Belgelenmiş 40 boşluğun kaçının A'da (ve A′'de) çıkarılan
+satırlarla örtüştüğü raporlanacak.
+
+*Hipotez (kanıtlanmış değil):* boşlukların bir kısmı geçiş kaynaklı olabilir. Yahoo, vade
+günü veya ertesi günü satırını atlıyor olabilir. Bu analiz yalnızca örtüşmeyi sayar,
+nedeni göstermez.
+
+**Sınırlılık.** Kontrol, hedefteki ve getiri özelliklerindeki geçiş etkisini temizliyor.
+XGBoost'un fiyat düzeyi özelliklerindeki (`brent_lag1-5`, `brent_ema5/10/20`) etkiyi
+temizlemiyor. Bu özellikler bilerek değiştirilmedi; o etkiyi temizlemek geri ayarlanmış
+bir sürekli seri gerektirir ve verisi yok.
+
+**Testler ve raporlama:**
+- Birincil ailenin 8 testi her varyantta kendi Holm/BH/BY düzeltmeleriyle koşulacak
+  (CLAUDE.md: varyant veri üzerindeki tekrarlar yeni aile değildir ve birincil aileyle
+  havuzlanmaz). Kurulum 08 ile aynı: DM (HLN) ve işaret testi.
+- Varyant içi model farkları raporlanacak.
+- Hedef değiştiği için mutlak RMSE birincil sonuçla karşılaştırılmayacak.
+
+**Modeller:** HAR, HAR-X, XGBoost; `--gpr-alignment publication`.
+
+**Uygulama doğrulaması.** Script, maskesiz kurulumda şunları bit düzeyinde yeniden
+üretmedikçe varyantları koşmaz:
+- hedefleri, özellik dosyasını ve HAR, HAR-X, XGBoost tahminlerini;
+- birincil ailenin kayıtlı test değerlerini.
+
+Tek kod değişikliği 03'teki `run_horizon`'a eklenen isteğe bağlı `past_vol` parametresi.
+Varsayılanı mevcut davranışı koruyor; birincil çıktılar yeniden üretilip değişmediği
+kontrol edilecek.

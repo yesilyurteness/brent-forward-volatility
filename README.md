@@ -35,7 +35,7 @@ for both a human reader and the assistant.
 
 | Variable | Source | Description |
 | --- | --- | --- |
-| `Brent_Petrol` | Yahoo Finance, `BZ=F` | Brent crude futures (front month), daily close, USD/barrel |
+| `Brent_Petrol` | Yahoo Finance, `BZ=F` | Brent Last Day Financial futures (NYMEX), continuous front month, daily close, USD/barrel |
 | `OVX` | Yahoo Finance, `^OVX` | CBOE Crude Oil ETF Volatility Index, daily close |
 | `GPRD` | Caldara & Iacoviello (2022) | Daily geopolitical risk index, overall |
 | `GPRD_THREAT` | Caldara & Iacoviello (2022) | Daily geopolitical risk index, threat component |
