@@ -2037,3 +2037,41 @@ Sayılar:
 - Gerçekleşen σ = 0.013080, HAR-X tahmini σ̂ = 0.001172. σ/σ̂ = 11.2, QLIKE = 118.7.
 - Fold tabanı 0.001120; tahmin tabanın %4.67 üstünde, tabanlanmamış.
 - Hedef, ham fiyatlardan yeniden hesaplanıp kayıtlı değerle karşılaştırıldı (assert).
+
+---
+
+# Aşama 21 (2026-09-29): h=5 QLIKE yön dönmesi — keşifsel kontroller
+
+**Statü: keşifsel ve post hoc.** İki kontrol de Aşama 19'daki QLIKE sonucu (h=5'te HAR vs
+HAR-X yönünün RMSE'ye göre ters dönmesi) görüldükten sonra tasarlandı. Eşikler (1.25 ×
+taban, 0.5 × σ̂_HAR) sonuçlara bakılarak seçildi. Test yok. Kod `scripts/18_paper_numbers.py`,
+Bölüm 12e (commit `f544558`). Hesaplar ana fold'lar üzerinden, havuzlanmış.
+
+## 21.1 Tabana yakınlık (h=5)
+
+h=5'te fold tabanı her fold'da 0.00111966.
+
+| küme | n | HAR-X σ̂/taban, medyan (min–maks) | HAR-X ≤ 1.25 × taban | HAR σ̂/taban, medyan (min–maks) | HAR ≤ 1.25 × taban |
+| --- | --- | --- | --- | --- | --- |
+| HAR-X'in en büyük %1 QLIKE satırı | 36 | 3.77 (1.05–25.94) | 2 | 11.02 (5.35–20.89) | 0 |
+| bütün h=5 test gözlemleri | 3662 | 15.64 (1.05–182.79) | 2 | 14.93 (2.79–77.25) | 0 |
+
+- En büyük %1 satır, HAR-X'in h=5 QLIKE toplamının %30.0'ını oluşturuyor.
+- σ̂ ≤ 1.25 × taban olan 2 satır (27.11.2013 ve 25.07.2014) toplamın %5.5'ini oluşturuyor.
+- Bu 2 satır hariç ortalama QLIKE: HAR-X 0.6292, HAR 0.5751. Tüm satırlarla 0.6654 ve
+  0.5749.
+
+## 21.2 Mekanik kural: σ̂_HAR-X < 0.5 × σ̂_HAR ("HAR-X belirgin düşük")
+
+"Pay", kural satırlarının Σ(QLIKE_HAR-X − QLIKE_HAR) içindeki payı. Toplam fark
+negatifse pay işaretiyle okunur.
+
+| ufuk | kural satırı | yıllar | Σ fark, tümü | Σ fark, kural satırları | pay | hariç ort. QLIKE, havuz (HAR-X / HAR) | hariç, fold ort. (HAR-X / HAR) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| h=5 | 82 / 3662 | 2013 (46), 2014 (34), 2017 (2) | +331.56 | +580.01 | %174.9 | 0.5072 / 0.5766 | 0.5094 / 0.5777 |
+| h=22 | 9 / 3645 | 2014 (9) | −238.44 | +4.63 | %−1.9 | 0.2825 / 0.3494 | 0.2837 / 0.3576 |
+| h=66 | 0 / 3500 | — | −86.00 | 0 | — | 0.3602 / 0.3847 | 0.3581 / 0.3828 |
+| h=126 | 0 / 3500 | — | −9.10 | 0 | — | 0.4005 / 0.4031 | 0.3992 / 0.4020 |
+
+h=5'te kural satırları çıkarıldığında ortalama QLIKE'ta HAR-X daha düşük (havuzda ve fold
+ortalamasında). Kural h=66 ve h=126'da hiçbir satırda tetiklenmiyor.
