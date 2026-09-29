@@ -71,8 +71,13 @@ test as well.
 
 MULTIPLE TESTING
 ----------------
-5 pairs x 4 horizons = 20 tests. Holm-Bonferroni corrected values are reported alongside
-the raw p-values. No decision rests on a single p-value.
+8 pairs x 4 horizons = 32 tests, split into two families (see TEST FAMILIES below):
+the PRIMARY family (2 pairs x 4 horizons = 8 tests) and the SECONDARY / exploratory family
+(the remaining 6 pairs x 4 horizons = 24 tests). Holm (FWER) and Benjamini-Hochberg (FDR)
+corrections are computed separately WITHIN EACH FAMILY, for both the HLN p-value and the
+sign-test p-value, and reported alongside the raw p-values. Benjamini-Yekutieli (FDR under
+any dependence) is not computed here; it is added in scripts/18_paper_numbers.py. No
+decision rests on a single p-value.
 """
 import argparse
 import json
