@@ -1987,3 +1987,53 @@ XGBoost log-artık std'si medyan 0.190 / 0.097 / 0.181 / 0.204.
 **Kapsam boşluğu.** Log-artık std'si yalnızca XGBoost için kayıtlı. 05 ve 06 yalnızca
 katsayıyı kaydediyor. HAR-log ve HAR-X-log için OLS'nin yeniden tahmini, BiLSTM için
 yeniden eğitim gerekir. Bu aşamada yapılmadı; pakette "—" olarak gösteriliyor.
+
+---
+
+# Aşama 20 (2026-09-29): Log-artık std'si ve h=5 HAR-X'in en büyük QLIKE satırı
+
+Aşama 19'un iki açık ucu. Kod: `scripts/20_log_residual_std.py` (yeni) ve
+`scripts/18_paper_numbers.py`, Bölüm 12c–12d. Commit `7e4084d`.
+
+## 20.1 HAR-log ve HAR-X-log log-artık std'si
+
+05 bu iki model için yalnızca smearing katsayısını kaydediyor. `20_log_residual_std.py
+--gpr-alignment publication` OLS'yi yeniden tahmin ediyor. Veri hazırlığı, fold, embargo,
+NaN maskeleri, `LOG_FLOOR` ve `ols_fit` 05'ten import ediliyor, kopyalanmıyor.
+
+**Önce eşitlik kontrolü (assert):** her fold'da yeniden tahmin, kayıtlı test tahminlerini
+(`pred_har_log`, `pred_har_x_log`) ve smearing katsayısını (`har_smearing`,
+`har_x_smearing`) **bit düzeyinde** üretti: 120/120 model × ufuk × fold. Uyuşmazlık olsaydı
+script dururdu.
+
+Std ddof=1 ile hesaplandı (03'teki `resid_log_std` gibi). Ana fold'larda medyan (h=5 / 22 /
+66 / 126):
+
+| model | medyan log-artık std |
+| --- | --- |
+| HAR-log | 0.500 / 0.323 / 0.303 / 0.327 |
+| HAR-X-log | 0.466 / 0.277 / 0.274 / 0.309 |
+
+Bu değerler XGBoost'un 0.190 / 0.097 / 0.181 / 0.204'üyle doğrudan karşılaştırılamaz:
+XGBoost'un hedefi `log(σ_h / past_vol_h)`, HAR-log ailesininki `log(σ_h)`.
+
+## 20.2 BiLSTM log-artık std'si: kaydedilmedi
+
+06 eğitilmiş ağırlıkları saklamıyor. Script'lerde `torch.save` yok, depoda
+`.pt/.pth/.ckpt/.pkl` dosyası yok. Hesaplamak yeniden eğitim gerektirir; yapılmadı. Pakette
+"kaydedilmedi" olarak duruyor.
+
+## 20.3 h=5 HAR-X'in en büyük tek QLIKE satırı (27.11.2013)
+
+27.11.2013 satırın kendi tarihi t'dir, yani **tahmin kökeni**; hedef penceresinin başı
+değildir.
+- **Özellikler:** `.shift(1)` ile t−1'e (26.11.2013) kadarki bilgiyi kullanır.
+- **Hedef:** `std(r_{t+1}, …, r_{t+5})`. Pencere t'den sonraki beş işlem günü: 29.11.2013,
+  02.12.2013, 03.12.2013, 04.12.2013, 05.12.2013. İlk getiri 27.11.2013 kapanışından
+  29.11.2013 kapanışına; veri setinde 28.11.2013 satırı yok. t günü getirisi ne
+  özelliklerde ne hedefte yer alır.
+
+Sayılar:
+- Gerçekleşen σ = 0.013080, HAR-X tahmini σ̂ = 0.001172. σ/σ̂ = 11.2, QLIKE = 118.7.
+- Fold tabanı 0.001120; tahmin tabanın %4.67 üstünde, tabanlanmamış.
+- Hedef, ham fiyatlardan yeniden hesaplanıp kayıtlı değerle karşılaştırıldı (assert).
