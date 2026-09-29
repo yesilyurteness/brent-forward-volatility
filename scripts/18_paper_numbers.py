@@ -25,6 +25,11 @@ Aggregation: fold mean of RMSE / MAE / R2_oos (CLAUDE.md main metric). Standard 
 footnote metric, given both as fold mean (not comparable across folds, see CLAUDE.md) and
 pooled over all main-fold test rows.
 
+LANGUAGE: the package text is English. It was translated from Turkish after the analysis
+freeze (presentation only); scripts/check_translation.py verifies that every number,
+commit hash and file path is unchanged in value and order. Turkish free-text values read
+from saved outputs are shown through EN_VALUES; the outputs themselves are not changed.
+
 Inputs : outputs/*_publication_aligned.* and their unsuffixed counterparts,
          outputs/gpr_alignment_comparison*.csv, outputs/gpr_alignment_decomposition.csv
 Outputs: outputs/paper_numbers_publication_aligned.md
@@ -50,23 +55,23 @@ PUB, TS = "publication", "timestamp"
 
 # (model id, label, role) -- same ids as scripts/17_gpr_alignment_comparison.py
 MODELS = [
-    ("xgboost", "XGBoost (birincil, 65 özellik)", "birincil"),
-    ("bilstm", "Attention BiLSTM", "birincil"),
-    ("h1_xgb_bilstm", "Hibrit H1: 0.5 XGB + 0.5 BiLSTM", "hibrit"),
-    ("h2_harx_xgb", "Hibrit H2: 0.5 HAR-X + 0.5 XGB", "hibrit"),
-    ("h3_harx_resid", "Hibrit H3: HAR-X + XGB artığı", "hibrit"),
-    ("har_x", "HAR-X", "ekonometrik"),
-    ("har_x_log", "HAR-X-log", "ekonometrik"),
-    ("har", "HAR", "ekonometrik"),
-    ("har_log", "HAR-log", "ekonometrik"),
-    ("garch", "GARCH(1,1)", "ekonometrik"),
-    ("train_mean", "Train-mean", "naif"),
-    ("past_vol", "Past-volatility", "naif"),
-    ("har_ovx", "HAR + OVX", "ablasyon"),
-    ("har_gpr", "HAR + GPR", "ablasyon"),
-    ("xgb6", "XGBoost-6", "keşifsel"),
-    ("xgboost_optuna", "XGBoost, Optuna + büzülmüş smearing", "sağlamlık"),
-    ("xgboost_optuna_raw", "XGBoost, Optuna + ham smearing", "ek (appendix)"),
+    ("xgboost", "XGBoost (primary, 65 features)", "primary"),
+    ("bilstm", "Attention BiLSTM", "primary"),
+    ("h1_xgb_bilstm", "Hybrid H1: 0.5 XGB + 0.5 BiLSTM", "hybrid"),
+    ("h2_harx_xgb", "Hybrid H2: 0.5 HAR-X + 0.5 XGB", "hybrid"),
+    ("h3_harx_resid", "Hybrid H3: HAR-X + XGB residual", "hybrid"),
+    ("har_x", "HAR-X", "econometric"),
+    ("har_x_log", "HAR-X-log", "econometric"),
+    ("har", "HAR", "econometric"),
+    ("har_log", "HAR-log", "econometric"),
+    ("garch", "GARCH(1,1)", "econometric"),
+    ("train_mean", "Train-mean", "naive"),
+    ("past_vol", "Past-volatility", "naive"),
+    ("har_ovx", "HAR + OVX", "ablation"),
+    ("har_gpr", "HAR + GPR", "ablation"),
+    ("xgb6", "XGBoost-6", "exploratory"),
+    ("xgboost_optuna", "XGBoost, Optuna + shrunk smearing", "robustness"),
+    ("xgboost_optuna_raw", "XGBoost, Optuna + raw smearing", "appendix"),
 ]
 LABEL = {m: lab for m, lab, _ in MODELS}
 ROLE = {m: r for m, _, r in MODELS}
@@ -74,6 +79,44 @@ HYBRID_MODELS = ["har_x", "har_x_log", "har", "xgboost", "bilstm", "train_mean",
                  "past_vol", "h1_xgb_bilstm", "h2_harx_xgb", "h3_harx_resid"]
 MCOLS = ["model", "horizon", "test_year", "include_in_main", "n", "rmse", "mae",
          "r2_oos", "r2"]
+
+# English display text for the Turkish free-text values this script prints from saved
+# outputs. The outputs keep their Turkish text (outputs/README.md, "A note on language");
+# a value missing here stops the script instead of printing untranslated text.
+EN_VALUES = {
+    "iç içe yapıya uygun istatistik; birincil DM testleri görüldükten sonra, CW sonuçları "
+    "görülmeden eklendi":
+        "statistic suited to the nested structure; added after the primary DM tests were "
+        "seen, before the CW results were seen",
+    "TreeSHAP via xgboost pred_contribs (shap paketi kullanilmadi)":
+        "TreeSHAP via xgboost pred_contribs (shap package not used)",
+    "log-oran uzayi (log(vol)-log(past_vol)); ham volatilite birimi DEGIL":
+        "log-ratio space (log(vol)-log(past_vol)); NOT raw volatility units",
+    "karesel hata": "squared error",
+    "Newey-West, Bartlett, L = h-1 (onceden ilan edilmis)":
+        "Newey-West, Bartlett, L = h-1 (declared in advance)",
+    "Brent günlük log getirisi": "Brent daily log return",
+    "Hedef, h=5": "Target, h=5",
+    "Hedef, h=22": "Target, h=22",
+    "Hedef, h=66": "Target, h=66",
+    "Hedef, h=126": "Target, h=126",
+    "OVX": "OVX",
+    "GPRD (model girdisi, publication)": "GPRD (model input, publication)",
+    "GPRD_THREAT (model girdisi, publication)": "GPRD_THREAT (model input, publication)",
+    "GPRD (gözlem tarihli, işlem günleri)": "GPRD (observation-dated, trading days)",
+    "GPRD_THREAT (gözlem tarihli, işlem günleri)":
+        "GPRD_THREAT (observation-dated, trading days)",
+    "GPRD (kendi takvimi, tüm takvim günleri)": "GPRD (own calendar, all calendar days)",
+    "GPRD_THREAT (kendi takvimi, tüm takvim günleri)":
+        "GPRD_THREAT (own calendar, all calendar days)",
+    "birincil": "primary",
+    "ikincil": "secondary",
+}
+
+
+def en(v):
+    assert v in EN_VALUES, f"no English display text for {v!r} (add it to EN_VALUES)"
+    return EN_VALUES[v]
 
 
 def provenance():
@@ -165,8 +208,8 @@ def check_preds_vs_metrics(pr, fm, al):
     assert (j["n"] == j["n_rec"]).all(), f"[{al}] test sizes differ"
     assert np.allclose(j["rmse"], j["rmse_rec"], rtol=1e-9, atol=0), \
         f"[{al}] fold RMSE from predictions != stored metric"
-    print(f"[kontrol] {al}: {len(j)} model x ufuk x fold satirinda tahminlerden "
-          "yeniden hesaplanan RMSE kayitli metrikle ayni")
+    print(f"[check] {al}: in {len(j)} model x horizon x fold rows the RMSE recomputed "
+          "from the predictions equals the stored metric")
 
 
 def common_r2_oos(pr, fm):
@@ -254,7 +297,7 @@ def signed(x, d=3):
 def wide(agg, col, fmt, models, bold_min=False):
     t = agg.pivot(index="model", columns="horizon", values=col).loc[models, HORIZONS]
     out = pd.DataFrame({"model": [LABEL[m] for m in models],
-                        "rol": [ROLE[m] for m in models]})
+                        "role": [ROLE[m] for m in models]})
     for h in HORIZONS:
         best = t[h].min()
         out[f"h={h}"] = [(f"**{fmt(v)}**" if bold_min and v == best else fmt(v))
@@ -282,54 +325,54 @@ def section_12e(w, qm, b):
                               validate="1:1")
     x["kx"] = x["pred_har_x"] / x["pred_floor"]
     x["kh"] = x["pred_har"] / x["pred_floor"]
-    w("### 12e. Keşifsel: h=5 QLIKE yön dönmesi ve HAR-X'in düşük tahminleri")
+    w("### 12e. Exploratory: the h=5 QLIKE direction reversal and HAR-X's low forecasts")
     w("")
-    w("**Statü: keşifsel ve post hoc.** Her iki kontrol de QLIKE sonuçları görüldükten sonra "
-      "tasarlandı; eşikler (1.25 × taban, 0.5 × σ̂_HAR) sonuçlara bakılarak seçildi. Test "
-      "yok. Havuzlanmış, ana fold'lar.")
+    w("**Status: exploratory and post hoc.** Both checks were designed after the QLIKE "
+      "results were seen; the thresholds (1.25 × floor, 0.5 × σ̂_HAR) were chosen by "
+      "looking at the results. No test. Pooled, main folds.")
     w("")
-    w("**(1) Tabana yakınlık, h=5.** σ̂ / fold tabanı; eşik σ̂ ≤ 1.25 × taban.")
+    w("**(1) Closeness to the floor, h=5.** σ̂ / fold floor; threshold σ̂ ≤ 1.25 × floor.")
     w("")
     g = x[x["horizon"] == 5]
     k1 = max(1, int(len(g) * 0.01))
     top = g.sort_values("ql_har_x", ascending=False).iloc[:k1]
     rows = []
-    for lab, s in ((f"HAR-X'in en büyük %1 QLIKE satırı", top),
-                   ("bütün h=5 test gözlemleri", g)):
+    for lab, s in ((f"HAR-X's largest 1% QLIKE rows", top),
+                   ("all h=5 test observations", g)):
         nx, nh = int((s["kx"] <= 1.25).sum()), int((s["kh"] <= 1.25).sum())
         rows.append({
-            "küme": lab, "n": len(s),
-            "HAR-X σ̂/taban, medyan (min–maks)":
+            "set": lab, "n": len(s),
+            "HAR-X σ̂/floor, median (min–max)":
                 f"{s['kx'].median():.2f} ({s['kx'].min():.2f}–{s['kx'].max():.2f})",
-            "HAR-X ≤ 1.25 × taban": f"{nx} (%{100 * nx / len(s):.1f})",
-            "HAR σ̂/taban, medyan (min–maks)":
+            "HAR-X ≤ 1.25 × floor": f"{nx} ({100 * nx / len(s):.1f}%)",
+            "HAR σ̂/floor, median (min–max)":
                 f"{s['kh'].median():.2f} ({s['kh'].min():.2f}–{s['kh'].max():.2f})",
-            "HAR ≤ 1.25 × taban": f"{nh} (%{100 * nh / len(s):.1f})"})
+            "HAR ≤ 1.25 × floor": f"{nh} ({100 * nh / len(s):.1f}%)"})
     w(md_table(pd.DataFrame(rows)))
     w("")
     near = g["kx"] <= 1.25
-    w(f"En büyük %1 satır HAR-X'in h=5 QLIKE toplamının "
-      f"%{100 * top['ql_har_x'].sum() / g['ql_har_x'].sum():.1f}'ini, σ̂ ≤ 1.25 × taban "
-      f"olan {int(near.sum())} satır %{100 * g.loc[near, 'ql_har_x'].sum() / g['ql_har_x'].sum():.1f}'ini "
-      f"oluşturuyor. Bu satırlar hariç ortalama QLIKE: HAR-X "
+    w(f"The largest 1% of rows: share of HAR-X's h=5 QLIKE total "
+      f"{100 * top['ql_har_x'].sum() / g['ql_har_x'].sum():.1f}%; rows with σ̂ ≤ 1.25 × floor "
+      f"({int(near.sum())} rows): {100 * g.loc[near, 'ql_har_x'].sum() / g['ql_har_x'].sum():.1f}%. "
+      f"Mean QLIKE excluding these rows: HAR-X "
       f"{g.loc[~near, 'ql_har_x'].mean():.4f}, HAR {g.loc[~near, 'ql_har'].mean():.4f} "
-      f"(tümü: {g['ql_har_x'].mean():.4f} / {g['ql_har'].mean():.4f}).")
+      f"(all: {g['ql_har_x'].mean():.4f} / {g['ql_har'].mean():.4f}).")
     w("")
     tt = top.merge(qm[(qm["model"] == "har_x") & (qm["horizon"] == 5)][["Date", "y_true"]],
                    on="Date", validate="1:1")
     w(md_table(pd.DataFrame({
-        "tarih": tt["Date"], "σ": tt["y_true"].map(lambda v: f"{v:.5f}"),
+        "date": tt["Date"], "σ": tt["y_true"].map(lambda v: f"{v:.5f}"),
         "σ̂ HAR-X": tt["pred_har_x"].map(lambda v: f"{v:.6f}"),
-        "HAR-X/taban": tt["kx"].map(lambda v: f"{v:.2f}"),
+        "HAR-X/floor": tt["kx"].map(lambda v: f"{v:.2f}"),
         "QLIKE HAR-X": tt["ql_har_x"].map(lambda v: f"{v:.1f}"),
         "σ̂ HAR": tt["pred_har"].map(lambda v: f"{v:.5f}"),
-        "HAR/taban": tt["kh"].map(lambda v: f"{v:.2f}"),
+        "HAR/floor": tt["kh"].map(lambda v: f"{v:.2f}"),
         "QLIKE HAR": tt["ql_har"].map(lambda v: f"{v:.3f}")})))
     w("")
-    w("**(2) Mekanik kural: \"HAR-X belirgin düşük\" = σ̂_HAR-X < 0.5 × σ̂_HAR.** Pay: "
-      "kural satırlarının Σ(QLIKE_HAR-X − QLIKE_HAR) içindeki payı (toplam fark negatifse "
-      "pay işaretiyle okunmalı). Çıkarma sonrası ortalamalar havuzlanmış ve fold "
-      "ortalaması olarak verilir.")
+    w("**(2) Mechanical rule: \"HAR-X markedly low\" = σ̂_HAR-X < 0.5 × σ̂_HAR.** Share: "
+      "the rule rows' share of Σ(QLIKE_HAR-X − QLIKE_HAR) (if the total difference is "
+      "negative, the share must be read with its sign). The means after removal are given "
+      "pooled and as fold means.")
     w("")
     rows = []
     for h in HORIZONS:
@@ -340,15 +383,15 @@ def section_12e(w, qm, b):
         rest = g[~rule]
         fm_ = rest.groupby("test_year")[["ql_har_x", "ql_har"]].mean().mean()
         rows.append({
-            "ufuk": f"h={h}", "kural satırı": f"{int(rule.sum())} / {len(g)}",
-            "yıllar": ", ".join(f"{y} ({n})" for y, n in yrs.items()) or "—",
-            "Σ fark (tümü)": f"{d.sum():+.2f}".replace("-", "−"),
-            "Σ fark (kural satırları)": f"{d[rule].sum():+.2f}".replace("-", "−"),
-            "pay": (f"%{100 * d[rule].sum() / d.sum():.1f}".replace("-", "−")
-                    if rule.any() else "—"),
-            "hariç ort. QLIKE, havuz (HAR-X / HAR)":
+            "horizon": f"h={h}", "rule rows": f"{int(rule.sum())} / {len(g)}",
+            "years": ", ".join(f"{y} ({n})" for y, n in yrs.items()) or "—",
+            "Σ difference (all)": f"{d.sum():+.2f}".replace("-", "−"),
+            "Σ difference (rule rows)": f"{d[rule].sum():+.2f}".replace("-", "−"),
+            "share": (f"{100 * d[rule].sum() / d.sum():.1f}%".replace("-", "−")
+                      if rule.any() else "—"),
+            "mean QLIKE excl., pooled (HAR-X / HAR)":
                 f"{rest['ql_har_x'].mean():.4f} / {rest['ql_har'].mean():.4f}",
-            "hariç ort. QLIKE, fold ort. (HAR-X / HAR)":
+            "mean QLIKE excl., fold mean (HAR-X / HAR)":
                 f"{fm_['ql_har_x']:.4f} / {fm_['ql_har']:.4f}"})
     w(md_table(pd.DataFrame(rows)))
     w("")
@@ -375,35 +418,36 @@ def section_13(w, pr, F):
         r = cw[cw["horizon"] == h].iloc[0]
         assert len(f) == r["n"] and np.isclose(f.mean(), r["f_mean"], rtol=1e-10, atol=0)
 
-    w("## 13. Ek aile: Clark–West; XGBoost-6 vs HAR; 2026 dipnotu")
+    w("## 13. Supplementary family: Clark–West; XGBoost-6 vs HAR; 2026 footnote")
     w("")
-    w("### 13a. Clark–West testi, HAR ⊂ HAR-X (ek aile, 4 test)")
+    w("### 13a. Clark–West test, HAR ⊂ HAR-X (supplementary family, 4 tests)")
     w("")
-    w(f"**Etiket:** {meta['label']}. Aile {meta['declared']['date']} tarihinde "
-      f"CLAUDE.md'de ilan edildi (commit `{meta['declared']['commit']}`); CW istatistiği "
-      "depoda bundan önce hesaplanmamıştı. **Birincil aile 8 testle sabittir; CW oraya "
-      "eklenmez ve DM testlerinin yerine geçmez.** Holm/BH/BY bu 4 test içinde.")
+    w(f"**Label:** {en(meta['label'])}. The family was declared on {meta['declared']['date']} "
+      f"in CLAUDE.md (commit `{meta['declared']['commit']}`); the CW statistic had not been "
+      "computed in the repository before that. **The primary family is fixed at 8 tests; CW "
+      "is not added to it and does not replace the DM tests.** Holm/BH/BY within these 4 "
+      "tests.")
     w("")
-    w("`f_t = e_HAR,t² − [e_HARX,t² − (ŷ_HAR,t − ŷ_HARX,t)²]`; H1: E[f] > 0 (HAR-X daha iyi), "
-      "**tek yanlı**. Kayıtlı (yayımlanan, tabanlanmış) tahminler, ana fold'lar, "
-      "havuzlanmış seri (DM gibi). HAC: Newey-West, Bartlett, L = h−1. Çıkarım DM "
-      "birincil ailesiyle aynı: HLN çarpanı ve t(n−1); düzeltmeler HLN p değerine "
-      "uygulanır. HLN'siz normal p yan sütunda. Kaynak: `21_clark_west.py`, "
+    w("`f_t = e_HAR,t² − [e_HARX,t² − (ŷ_HAR,t − ŷ_HARX,t)²]`; H1: E[f] > 0 (HAR-X better), "
+      "**one-sided**. Saved (published, floored) forecasts, main folds, pooled series (as "
+      "for DM). HAC: Newey-West, Bartlett, L = h−1. Inference as in the DM primary family: "
+      "HLN factor and t(n−1); the corrections are applied to the HLN p-value. The normal p "
+      "without HLN is in a side column. Source: `21_clark_west.py`, "
       "`clark_west_publication_aligned.csv`.")
     w("")
     sci = lambda v: f"{v:.2e}".replace("-", "−")
     t = pd.DataFrame({
-        "ufuk": [f"h={h}" for h in cw["horizon"]], "n": cw["n"],
-        "ort. (e²_HAR − e²_HARX)": cw["mean_mse_diff"].map(sci),
-        "ort. düzeltme (ŷ_HAR − ŷ_HARX)²": cw["mean_adjustment"].map(sci),
-        "ort. f": cw["f_mean"].map(sci),
+        "horizon": [f"h={h}" for h in cw["horizon"]], "n": cw["n"],
+        "mean (e²_HAR − e²_HARX)": cw["mean_mse_diff"].map(sci),
+        "mean adjustment (ŷ_HAR − ŷ_HARX)²": cw["mean_adjustment"].map(sci),
+        "mean f": cw["f_mean"].map(sci),
         "CW": cw["CW"].map(lambda v: f"{v:.3f}"),
         "CW (HLN)": cw["CW_HLN"].map(lambda v: f"{v:.3f}"),
-        "p normal (ham)": cw["p_normal_one_sided"].map(fp),
-        "p HLN (ham)": cw["p_HLN_one_sided"].map(fp),
+        "p normal (raw)": cw["p_normal_one_sided"].map(fp),
+        "p HLN (raw)": cw["p_HLN_one_sided"].map(fp),
         "Holm": cw["p_HLN_holm"].map(fp), "BH": cw["p_HLN_bh"].map(fp),
         "BY": cw["p_HLN_by"].map(fp),
-        "HAC şişme": cw["variance_inflation"].map(lambda v: f"{v:.2f}")})
+        "HAC inflation": cw["variance_inflation"].map(lambda v: f"{v:.2f}")})
     w(md_table(t))
     w("")
     # The note below claims the HLN choice does not change the result: check it.
@@ -414,25 +458,26 @@ def section_13(w, pr, F):
     for fn_n, col in ((holm_, "p_HLN_holm"), (step_up, "p_HLN_bh"),
                       (lambda x: step_up(x, c4), "p_HLN_by")):
         assert ((fn_n(pn) < 0.05) == (cw[col].to_numpy() < 0.05)).all(), col
-    w("Not: Clark & West (2007) standart normal kullanır; burada DM ailesiyle tutarlılık "
-      "için HLN uygulandı, sonuç değişmiyor (normal p'lerle Holm, BH ve BY altında %5'te "
-      "reddedilen testler aynı; kontrol edildi).")
+    w("Note: Clark & West (2007) use the standard normal; here HLN was applied for "
+      "consistency with the DM family, and the result does not change (with the normal "
+      "p-values the tests rejected at 5% under Holm, BH and BY are the same; checked).")
     w("")
-    w("**Fold düzeyinde (betimleyici, test değil):** f'nin fold ortalamalarının ortalaması "
-      "ve f ortalaması pozitif olan fold sayısı: "
+    w("**At fold level (descriptive, not a test):** the mean of f's fold means and the "
+      "number of folds with a positive mean f: "
       + "; ".join(f"h={r.horizon}: {sci(r.f_fold_mean)}, {r.folds_f_positive}/{r.n_folds}"
                   for r in cw.itertuples()) + ".")
     w("")
-    w("Okuma notu: ilk sütun DM'nin kullandığı ham MSE farkıdır; h=66 ve h=126'da negatiftir "
-      "(havuzlanmış seride HAR'ın MSE'si daha düşük). CW istatistiği buna tahmin farkının "
-      "karesini ekler.")
+    w("Reading note: the first column is the raw MSE difference that DM uses; at h=66 and "
+      "h=126 it is negative (HAR's MSE is lower in the pooled series). The CW statistic "
+      "adds the square of the forecast difference to it.")
     w("")
 
-    w("### 13b. XGBoost-6 vs HAR, fold bazında (keşifsel; test yok)")
+    w("### 13b. XGBoost-6 vs HAR, by fold (exploratory; no test)")
     w("")
-    w("XGBoost-6 keşifseldir; p değeri verilmez. Kazanma: fold RMSE'si HAR'ınkinden düşük. "
-      "Uyuşma: kazanma çoğunluğunun yönü ile fold ortalaması RMSE farkının yönü aynı mı. "
-      "`100 × (RMSE_XGB-6 / RMSE_HAR − 1)`, pozitif = XGBoost-6 daha kötü.")
+    w("XGBoost-6 is exploratory; no p-value is given. Win: fold RMSE lower than HAR's. "
+      "Agreement: whether the direction of the win majority and the direction of the "
+      "fold-mean RMSE difference are the same. "
+      "`100 × (RMSE_XGB-6 / RMSE_HAR − 1)`, positive = XGBoost-6 worse.")
     w("")
     rows = []
     for h in HORIZONS:
@@ -442,27 +487,27 @@ def section_13(w, pr, F):
         k, n = int((d < 0).sum()), len(d)
         ties = int((d == 0).sum())
         mean_pct = 100 * (x["xgb6"].mean() / x["har"].mean() - 1)
-        cnt_dir = "XGB-6" if k > n - k - ties else ("HAR" if k < n - k - ties else "eşit")
+        cnt_dir = "XGB-6" if k > n - k - ties else ("HAR" if k < n - k - ties else "tie")
         mean_dir = "XGB-6" if mean_pct < 0 else "HAR"
-        r = {"ufuk": f"h={h}", "XGB-6 kazandığı yıl / fold": f"{k}/{n}",
-             "fold ort. farkı": pct(mean_pct),
-             "sayım yönü": cnt_dir, "ortalama yönü": mean_dir,
-             "uyuşuyor mu": "evet" if cnt_dir == mean_dir else "hayır"}
+        r = {"horizon": f"h={h}", "years XGB-6 wins / folds": f"{k}/{n}",
+             "fold-mean difference": pct(mean_pct),
+             "count direction": cnt_dir, "mean direction": mean_dir,
+             "agree?": "yes" if cnt_dir == mean_dir else "no"}
         if cnt_dir != mean_dir:
             top = d.reindex(d.abs().sort_values(ascending=False).index)
             top = top[np.sign(top) == np.sign(d.mean())].head(3)
-            r["ortalamayı taşıyan yıllar"] = ", ".join(
+            r["years carrying the mean"] = ", ".join(
                 f"{y} ({signed(v * 1e4, 2)}e−4)" for y, v in top.items())
         else:
-            r["ortalamayı taşıyan yıllar"] = "—"
+            r["years carrying the mean"] = "—"
         rows.append(r)
     w(md_table(pd.DataFrame(rows)))
     w("")
-    w("### 13c. 2026 kısmi yıl, h=66 ve h=126")
+    w("### 13c. 2026 partial year, h=66 and h=126")
     w("")
-    w("Bölüm 1e'de: tüm modellerin o fold'daki RMSE/MAE/R²_oos'u, n = 101 (h=66) ve 41 "
-      "(h=126). Birincil toplulaştırmadan dışlanmıştır; model karşılaştırması veya seçimi "
-      "için kullanılmaz.")
+    w("In Section 1e: every model's RMSE/MAE/R²_oos in that fold, n = 101 (h=66) and 41 "
+      "(h=126). Excluded from the primary aggregation; not used for model comparison or "
+      "selection.")
     w("")
 
 
@@ -482,46 +527,47 @@ def section_15(w):
             assert np.allclose(step_up(g[col].to_numpy()), g[f"{col}_bh"], rtol=1e-12)
             assert np.allclose(step_up(g[col].to_numpy(), c), g[f"{col}_by"], rtol=1e-12)
     cal = s["calendar"]
-    VN = {"A": "A (birincil sağlamlık varyantı)", "A2": "A′ (duyarlılık: iki satır)",
-          "B": "B (duyarlılık: yalnızca h=5)"}
-    w("## 15. Ek A: Roll-over sağlamlık analizi (HAR, HAR-X, XGBoost)")
+    VN = {"A": "A (primary robustness variant)", "A2": "A′ (sensitivity: two rows)",
+          "B": "B (sensitivity: h=5 only)"}
+    w("## 15. Appendix A: Roll-over robustness analysis (HAR, HAR-X, XGBoost)")
     w("")
-    w(f"**Statüler koşudan önce yazıldı** ({s['design_registered']}) ve sonuçlara göre "
-      "değiştirilmedi; üç varyant da sonuç ne çıkarsa çıksın raporlanır. Kaynak: "
-      "`24_rollover_robustness.py`, `rollover_*_publication_aligned`.")
+    w(f"**The statuses were written before the run** ({s['design_registered']}) and were not "
+      "changed according to the results; all three variants are reported whatever the "
+      "result. Source: `24_rollover_robustness.py`, `rollover_*_publication_aligned`.")
     w("")
-    w(f"- **Vade takvimi:** ICE Brent kuralı (Şubat 2016'ya kadar 15 gün kuralı, Mart "
-      f"2016'dan itibaren ay-öncesi kuralı; ICE sözleşme spesifikasyonu ve Circular "
-      f"15/235). ICE'ın resmi tablosundaki {cal['official_expiries_matched']} vadenin "
-      f"(Aralık 2015 – Mart 2023) tümü birebir üretiliyor (assert); 2008–2015 için resmi "
-      f"tablo bulunamadı. Örneklemde {cal['expiries_in_sample']} vade; "
-      f"{cal['expiry_days_missing_in_data']} vade günü veride yok. Varsayım (CME "
-      "belgesinden doğrulanmadı): `BZ=F`'in dayandığı NYMEX BZ kontratı bu takvimi izler.")
-    w("- **Geçiş satırı:** vade gününden sonraki ilk veri satırı. **A:** o satırın getirisi "
-      f"çıkarılır ({cal['rows_removed_A']} satır); hedef aynı pencerede kalan getirilerin "
-      "std'si; getiri özellikleri ve past-vol baseline temiz getirilerle. **A′:** vade "
-      f"sonrası iki satır ({cal['rows_removed_A2']} satır). **B (yalnızca h=5):** getiri "
-      f"çıkarılmaz; hedef penceresinde geçiş olan {s['B_rows_dropped_h5']} satır örneklemden "
-      "atılır. Penceresinde çıkarılmış getiri olmayan satırlarda hedef ve özellikler "
-      "birincil değerlerle birebir aynı.")
-    w("- **Doğrulama:** boş maskeyle hedefler, getiri özellikleri ve HAR/HAR-X/XGBoost "
-      "tahminleri bit düzeyinde, 8 testin değerleri kayıtlı birincil değerlerle aynı "
-      "üretiliyor (assert).")
-    w("- **Sınırlılık:** kontrol hedefteki ve getiri özelliklerindeki geçiş etkisini "
-      "temizler; XGBoost'un fiyat düzeyi özelliklerindeki (`brent_lag1-5`, "
-      "`brent_ema5/10/20`) etkiyi temizlemez, çünkü bu geri ayarlanmış bir seri gerektirir.")
+    w(f"- **Expiry calendar:** ICE Brent rule (up to February 2016 the 15-day rule, from March "
+      f"2016 the month-before rule; ICE contract specification and Circular "
+      f"15/235). All {cal['official_expiries_matched']} expiries in ICE's official table "
+      f"(December 2015 – March 2023) are reproduced exactly (assert); no official "
+      f"table was found for 2008–2015. {cal['expiries_in_sample']} expiries in the sample; "
+      f"{cal['expiry_days_missing_in_data']} expiry days are absent from the data. Assumption "
+      "(not verified from a CME document): the NYMEX BZ contract underlying `BZ=F` follows "
+      "this calendar.")
+    w("- **Roll-over row:** the first data row after the expiry day. **A:** that row's return "
+      f"is removed ({cal['rows_removed_A']} rows); the target is the std of the returns "
+      "remaining in the same window; the return features and the past-vol baseline use "
+      f"clean returns. **A′:** two rows after expiry ({cal['rows_removed_A2']} rows). **B "
+      f"(h=5 only):** no return is removed; the {s['B_rows_dropped_h5']} rows with a roll-over "
+      "in their target window are dropped from the sample. In rows with no removed return "
+      "in their window, target and features are identical to the primary values.")
+    w("- **Verification:** with an empty mask the targets, the return features and the "
+      "HAR/HAR-X/XGBoost forecasts are reproduced bit for bit, and the values of the 8 "
+      "tests identical to the stored primary values (assert).")
+    w("- **Limitation:** the check removes the roll-over effect in the target and in the "
+      "return features; it does not remove the effect in XGBoost's price-level features "
+      "(`brent_lag1-5`, `brent_ema5/10/20`), because that requires a back-adjusted series.")
     gr = s["gap_rows_removed"]
-    w(f"- **Tarih boşluklarıyla örtüşme:** belgelenmiş {s['documented_gaps']} boşluk "
-      f"satırının **{gr['A']['n']}**'i A'da, **{gr['A2']['n']}**'si A′'de getirisi "
-      "çıkarılan satırlardır. *Hipotez, kanıtlanmış değil:* boşlukların bir kısmı geçiş "
-      "kaynaklı olabilir (Yahoo vade günü veya ertesi günü satırını atlıyor olabilir); "
-      "örtüşme sayısı nedeni göstermez.")
+    w(f"- **Overlap with date gaps:** of the {s['documented_gaps']} documented gap "
+      f"rows, **{gr['A']['n']}** are rows whose return is removed in A, **{gr['A2']['n']}** in "
+      "A′. *Hypothesis, not proven:* some of the gaps may stem from roll-overs (Yahoo may "
+      "be skipping the row of the expiry day or of the day after); the overlap count does "
+      "not show the cause.")
     w("")
-    w("### 15a. Varyant içi model farkları (fold ortalaması)")
+    w("### 15a. Within-variant model differences (fold mean)")
     w("")
-    w("`100 × (RMSE_a / RMSE_b − 1)`, pozitif = a daha kötü. **Mutlak RMSE birincil "
-      "sonuçla karşılaştırılmaz** (hedef değişiyor); yalnızca varyant içi farklar "
-      "verilir. Referans satırı, aynı kod yolunun maskesiz koşusudur (= birincil sonuç).")
+    w("`100 × (RMSE_a / RMSE_b − 1)`, positive = a worse. **Absolute RMSE is not compared "
+      "with the primary result** (the target changes); only within-variant differences "
+      "are given. The reference row is the unmasked run of the same code path (= primary result).")
     w("")
     fm = FM[FM["include_in_main"]].groupby(["variant", "horizon", "model"])[
         ["rmse", "mae"]].mean().unstack("model")
@@ -531,53 +577,53 @@ def section_15(w):
             if (v, h) not in fm.index:
                 continue
             r, m = fm.loc[(v, h), "rmse"], fm.loc[(v, h), "mae"]
-            rows.append({"varyant": VN.get(v, "birincil (referans)"), "ufuk": f"h={h}",
+            rows.append({"variant": VN.get(v, "primary (reference)"), "horizon": f"h={h}",
                          "HAR vs HAR-X, RMSE": pct(100 * (r["har"] / r["har_x"] - 1)),
                          "XGBoost vs HAR-X, RMSE": pct(100 * (r["xgboost"] / r["har_x"] - 1)),
                          "HAR vs HAR-X, MAE": pct(100 * (m["har"] / m["har_x"] - 1)),
                          "XGBoost vs HAR-X, MAE": pct(100 * (m["xgboost"] / m["har_x"] - 1))})
     w(md_table(pd.DataFrame(rows)))
     w("")
-    w("### 15b. Birincil ailenin testleri, her varyantta kendi düzeltmeleriyle")
+    w("### 15b. Tests of the primary family, in each variant with its own corrections")
     w("")
-    w("Kurulum 08 ile aynı: DM (Newey-West Bartlett, L = h−1, HLN, t(n−1)) ve fold "
-      "düzeyinde işaret testi. Holm/BH/BY her varyantın kendi testleri içinde (A ve A′: 8, "
-      "B: 2, çünkü B tasarım gereği yalnızca h=5). CLAUDE.md: varyant veri üzerindeki "
-      "tekrarlar yeni aile değildir ve birincil aileyle havuzlanmaz.")
+    w("Setup as in 08: DM (Newey-West Bartlett, L = h−1, HLN, t(n−1)) and a fold-level "
+      "sign test. Holm/BH/BY within each variant's own tests (A and A′: 8, "
+      "B: 2, because B is by design h=5 only). CLAUDE.md: replications on variant data "
+      "are not new families and are not pooled with the primary family.")
     w("")
     for v in ("A", "A2", "B"):
         g = T[T["variant"] == v]
         w(f"**{VN[v]}**")
         w("")
         w(md_table(pd.DataFrame({
-            "karşılaştırma": g["comparison"].str.replace("har_x", "HAR-X").str.replace(
+            "comparison": g["comparison"].str.replace("har_x", "HAR-X").str.replace(
                 "har", "HAR").str.replace("xgboost", "XGBoost"),
-            "ufuk": g["horizon"].map(lambda h: f"h={h}"),
+            "horizon": g["horizon"].map(lambda h: f"h={h}"),
             "DM (HLN)": g["DM_HLN"].map(lambda x: signed(x, 3)),
             "p": g["p_HLN"].map(fp), "Holm": g["p_HLN_holm"].map(fp),
             "BH": g["p_HLN_bh"].map(fp), "BY": g["p_HLN_by"].map(fp),
-            "HAR-X kazanır": [f"{a}/{b}" for a, b in zip(g["harx_fold_wins"], g["n_folds"])],
-            "işaret p": g["p_sign"].map(fp), "işaret Holm": g["p_sign_holm"].map(fp),
-            "işaret BH": g["p_sign_bh"].map(fp), "işaret BY": g["p_sign_by"].map(fp)})))
+            "HAR-X wins": [f"{a}/{b}" for a, b in zip(g["harx_fold_wins"], g["n_folds"])],
+            "sign p": g["p_sign"].map(fp), "sign Holm": g["p_sign_holm"].map(fp),
+            "sign BH": g["p_sign_bh"].map(fp), "sign BY": g["p_sign_by"].map(fp)})))
         w("")
         k = {c: int((g[c] < 0.05).sum()) for c in ("p_HLN_holm", "p_HLN_bh", "p_HLN_by",
                                                   "p_sign_holm", "p_sign_bh", "p_sign_by")}
-        w(f"%5'te ayakta kalan: DM Holm {k['p_HLN_holm']}, BH {k['p_HLN_bh']}, BY "
-          f"{k['p_HLN_by']}; işaret Holm {k['p_sign_holm']}, BH {k['p_sign_bh']}, BY "
-          f"{k['p_sign_by']} (toplam {len(g)} test).")
+        w(f"Surviving at 5%: DM Holm {k['p_HLN_holm']}, BH {k['p_HLN_bh']}, BY "
+          f"{k['p_HLN_by']}; sign Holm {k['p_sign_holm']}, BH {k['p_sign_bh']}, BY "
+          f"{k['p_sign_by']} (total {len(g)} tests).")
         w("")
 
     # ---- 15c. Clark-West family replicated on the variants (25_rollover_clark_west.py) --
     C = rd("rollover_clark_west.csv", PUB)
-    w("### 15c. Clark–West ek ailesinin (HAR ⊂ HAR-X) varyantlarda tekrarı")
+    w("### 15c. Replication of the Clark–West supplementary family (HAR ⊂ HAR-X) on the variants")
     w("")
-    w("Tasarım ve statüler koşudan önce yazıldı (günlük Aşama 26, commit `15ff613`); "
-      "statüler roll-over'daki gibi. Kurulum §13a ile aynı (tek yanlı, Newey-West "
-      "Bartlett L = h−1, HLN ve t(n−1); düzeltmeler HLN p'sine). Holm/BH/BY her varyantın "
-      "kendi testleri içinde: A ve A′'de 4, B'de 1 (tek testte düzeltilmiş p = ham p). "
-      "CLAUDE.md: ilan edilmiş bir ailenin varyant veri üzerindeki tekrarı yeni aile "
-      "değildir ve birincil aileyle havuzlanmaz. Maskesiz tahminler §13a'yı yeniden "
-      "üretiyor (assert). Kaynak: `25_rollover_clark_west.py`.")
+    w("Design and statuses were written before the run (log Stage 26, commit `15ff613`); "
+      "statuses as in the roll-over analysis. Setup as in §13a (one-sided, Newey-West "
+      "Bartlett L = h−1, HLN and t(n−1); corrections to the HLN p). Holm/BH/BY within each "
+      "variant's own tests: 4 in A and A′, 1 in B (with a single test, corrected p = raw p). "
+      "CLAUDE.md: a replication of a declared family on variant data is not a new family "
+      "and is not pooled with the primary family. The unmasked forecasts reproduce "
+      "§13a (assert). Source: `25_rollover_clark_west.py`.")
     w("")
     sci = lambda v: f"{v:.2e}".replace("-", "−")
     diffs = []
@@ -591,24 +637,24 @@ def section_15(w):
         w(f"**{VN[v]}**")
         w("")
         w(md_table(pd.DataFrame({
-            "ufuk": g["horizon"].map(lambda h: f"h={h}"), "n": g["n"],
-            "ort. (e²_HAR − e²_HARX)": g["mean_mse_diff"].map(sci),
-            "ort. düzeltme": g["mean_adjustment"].map(sci),
+            "horizon": g["horizon"].map(lambda h: f"h={h}"), "n": g["n"],
+            "mean (e²_HAR − e²_HARX)": g["mean_mse_diff"].map(sci),
+            "mean adjustment": g["mean_adjustment"].map(sci),
             "CW": g["CW"].map(lambda x: f"{x:.3f}"),
             "CW (HLN)": g["CW_HLN"].map(lambda x: f"{x:.3f}"),
-            "p normal (ham)": g["p_normal_one_sided"].map(fp),
-            "p HLN (ham)": g["p_HLN_one_sided"].map(fp),
+            "p normal (raw)": g["p_normal_one_sided"].map(fp),
+            "p HLN (raw)": g["p_HLN_one_sided"].map(fp),
             "Holm": g["p_HLN_holm"].map(fp), "BH": g["p_HLN_bh"].map(fp),
             "BY": g["p_HLN_by"].map(fp),
-            "f > 0 olan fold": [f"{a}/{b}" for a, b in zip(g["folds_f_positive"],
-                                                           g["n_folds"])]})))
+            "folds with f > 0": [f"{a}/{b}" for a, b in zip(g["folds_f_positive"],
+                                                            g["n_folds"])]})))
         w("")
         # Would the standard-normal p-values (Clark & West 2007) change a 5% decision?
         pn = g["p_normal_one_sided"].to_numpy()
         m = len(pn)
         holm_n = np.minimum(1, np.maximum.accumulate(
             np.sort(pn) * (m - np.arange(m))))[np.argsort(np.argsort(pn))]
-        for lab, a_, b_ in (("ham", pn, g["p_HLN_one_sided"].to_numpy()),
+        for lab, a_, b_ in (("raw", pn, g["p_HLN_one_sided"].to_numpy()),
                             ("Holm", holm_n, g["p_HLN_holm"].to_numpy()),
                             ("BH", step_up(pn), g["p_HLN_bh"].to_numpy()),
                             ("BY", step_up(pn, c_), g["p_HLN_by"].to_numpy())):
@@ -616,10 +662,11 @@ def section_15(w):
                 if (x < 0.05) != (y < 0.05):
                     diffs.append(f"{VN[v].split(' ')[0]}, h={h}, {lab}: normal p "
                                  f"{x:.4f}, HLN p {y:.4f}")
-    w("**HLN seçiminin etkisi.** §13a'daki notun (\"sonuç değişmiyor\") varyantlardaki "
-      "karşılığı: standart normal p'lerle %5 kararının farklı olacağı hücreler — "
-      + ("; ".join(diffs) if diffs else "yok") + ". Birincil çıkarım HLN'dir (Aşama 26'da "
-      "koşudan önce yazılan kurulum); bu hücreler HLN'ye göre raporlanır.")
+    w("**Effect of the HLN choice.** The counterpart on the variants of the note in §13a "
+      "(\"the result does not change\"): cells where the 5% decision would differ with "
+      "standard-normal p-values — "
+      + ("; ".join(diffs) if diffs else "none") + ". The primary inference is HLN (the "
+      "setup written before the run in Stage 26); these cells are reported according to HLN.")
     w("")
 
 
@@ -636,34 +683,35 @@ def section_17(w, pr, A):
     P = A[["model", "horizon", "r2_oos_common"]].merge(pooled, on=["model", "horizon"],
                                                        validate="1:1")
     assert (P.loc[P["model"] == "train_mean", "r2_oos_pooled"].abs() < 1e-12).all()
-    w("## 17. Havuzlanmış R²_oos (ortak referans) ve H3 artık aşamasının R²'si")
+    w("## 17. Pooled R²_oos (common reference) and the R² of the H3 residual stage")
     w("")
-    w("### 17a. Havuzlanmış R²_oos, ortak referans — §1d'deki standart R² DEĞİLDİR")
+    w("### 17a. Pooled R²_oos, common reference — NOT the standard R² of §1d")
     w("")
-    w("`R²_oos,havuz = 1 − Σ SSE_model / Σ (y − train_mean_fold)²`; toplamlar ana metriğe "
-      "giren tüm test gözlemleri üzerinden. Referans her fold'da train-mean baseline'ının "
-      "tahmini (§1c ile aynı ortak referans; XGBoost train penceresinin hedef ortalaması), "
-      "yani tahmin anında bilinen bir sabit. §1d'deki standart R² ise test diliminin kendi "
-      "ortalamasına göredir (ex post); bu tablo onunla karıştırılmamalı. Train-mean satırı "
-      "tanım gereği 0 (assert). Fold ortalaması sütunu §1c'nin ortak referanslı "
-      "değeridir. Havuzlanmış değer yüksek volatiliteli yılları daha çok ağırlıklandırır.")
+    w("`R²_oos,pooled = 1 − Σ SSE_model / Σ (y − train_mean_fold)²`; sums over all test "
+      "observations entering the main metric. The reference in each fold is the forecast of "
+      "the train-mean baseline (the same common reference as §1c; the target mean of the "
+      "XGBoost training window), i.e. a constant known at forecast time. The standard R² of "
+      "§1d, by contrast, is relative to the test slice's own mean (ex post); this table must "
+      "not be confused with it. The train-mean row is 0 by definition (assert). The "
+      "fold-mean column is §1c's common-reference value. The pooled value weights "
+      "high-volatility years more.")
     w("")
     rows = []
     for m in models:
         r = {"model": LABEL[m]}
         for h in HORIZONS:
             q = P[(P["model"] == m) & (P["horizon"] == h)].iloc[0]
-            r[f"h={h} fold ort."] = f3(q["r2_oos_common"])
-            r[f"h={h} havuz"] = f3(q["r2_oos_pooled"])
+            r[f"h={h} fold mean"] = f3(q["r2_oos_common"])
+            r[f"h={h} pooled"] = f3(q["r2_oos_pooled"])
         rows.append(r)
     w(md_table(pd.DataFrame(rows)))
     w("")
     flip = P[(P["model"] != "train_mean")
              & (np.sign(P["r2_oos_common"]) != np.sign(P["r2_oos_pooled"]))]
-    w("**İşareti iki ölçütte farklı olan hücreler** (fold ortalaması → havuz): "
+    w("**Cells whose sign differs between the two measures** (fold mean → pooled): "
       + ("; ".join(f"{LABEL[r.model]}, h={r.horizon}: {f3(r.r2_oos_common)} → "
                    f"{f3(r.r2_oos_pooled)}" for r in flip.sort_values(
-                       ["horizon", "model"]).itertuples()) if len(flip) else "yok") + ".")
+                       ["horizon", "model"]).itertuples()) if len(flip) else "none") + ".")
     w("")
 
     # ---- 17b. H3 residual stage ----
@@ -680,27 +728,28 @@ def section_17(w, pr, A):
         assert np.isclose(r2, r.resid_r2_oos, rtol=1e-9, atol=1e-12), (r.horizon, r.test_year)
         chk += 1
     m = hf[hf["include_in_main"]]
-    w("### 17b. H3 mekanizması: XGBoost'un HAR-X artıklarını modelleme R²'si (betimleyici)")
+    w("### 17b. H3 mechanism: R² of XGBoost modelling HAR-X's residuals (descriptive)")
     w("")
-    w("**Betimleyici; test yok.** `R²_artık = 1 − SSE(e − ê) / SSE(e)`, e = HAR-X artığı, ê = "
-      "XGBoost'un artık tahmini; taban \"artığı tahmin etmemek\" (0). Pozitif = artık "
-      "aşaması HAR-X'e bilgi ekliyor. Örneklem içi: XGBoost'un kendi eğitim satırlarında; "
-      "örneklem dışı: test yılında. Değerler `07_hybrid.py`'nin yayım modunda fold başına "
-      "kaydettiği `resid_r2_in_sample` ve `resid_r2_oos`; yeniden uyum gerekmedi. Kontrol: "
-      f"tabana takılan satırı olmayan {chk} fold'da örneklem dışı R², kayıtlı H3 ve HAR-X "
-      "tahminlerinden yeniden hesaplanıp kayıtlı değerle aynı çıkıyor (assert); tabanlı "
-      "fold'larda ê tahminlerden geri elde edilemez. Kaynak: "
+    w("**Descriptive; no test.** `R²_resid = 1 − SSE(e − ê) / SSE(e)`, e = HAR-X residual, "
+      "ê = XGBoost's residual forecast; the baseline is \"not forecasting the residual\" (0). "
+      "Positive = the residual stage adds information to HAR-X. In-sample: on XGBoost's own "
+      "training rows; out-of-sample: in the test year. The values are those that "
+      "`07_hybrid.py` recorded per fold in publication mode, `resid_r2_in_sample` and "
+      "`resid_r2_oos`; no refit was needed. Check: "
+      f"in the {chk} folds with no floored row, the out-of-sample R² recomputed from the saved H3 "
+      "and HAR-X forecasts equals the stored value (assert); in floored "
+      "folds ê cannot be recovered from the forecasts. Source: "
       "`hybrid_folds_all_publication_aligned.csv`.")
     w("")
     rows = []
     for h in HORIZONS:
         g = m[m["horizon"] == h]
-        rows.append({"ufuk": f"h={h}", "fold": len(g),
-                     "örneklem içi, fold ort.": f3(g["resid_r2_in_sample"].mean()),
-                     "örneklem dışı, fold ort.": f3(g["resid_r2_oos"].mean()),
-                     "örneklem dışı, medyan": f3(g["resid_r2_oos"].median()),
-                     "örneklem dışı > 0 olan fold": f"{int((g['resid_r2_oos'] > 0).sum())}/{len(g)}",
-                     "örneklem dışı, en küçük – en büyük":
+        rows.append({"horizon": f"h={h}", "fold": len(g),
+                     "in-sample, fold mean": f3(g["resid_r2_in_sample"].mean()),
+                     "out-of-sample, fold mean": f3(g["resid_r2_oos"].mean()),
+                     "out-of-sample, median": f3(g["resid_r2_oos"].median()),
+                     "folds with out-of-sample > 0": f"{int((g['resid_r2_oos'] > 0).sum())}/{len(g)}",
+                     "out-of-sample, min – max":
                          f"{f3(g['resid_r2_oos'].min())} – {f3(g['resid_r2_oos'].max())}"})
     w(md_table(pd.DataFrame(rows)))
     w("")
@@ -709,13 +758,14 @@ def section_17(w, pr, A):
 
 def section_18(w, pr):
     """Pooled squared-error difference HAR-X vs XGB-6 by year, h=66 and h=126."""
-    w("## 18. XGBoost-6 ile HAR-X: havuzlanmış kare hata farkının yıllara ayrışması "
-      "(h=66, h=126; betimleyici)")
+    w("## 18. XGBoost-6 and HAR-X: decomposition by year of the pooled squared-error "
+      "difference (h=66, h=126; descriptive)")
     w("")
-    w("**Betimleyici; test yok.** Katkı = fold'un Σ(e²_HAR-X − e²_XGB-6); pozitif = o yılda "
-      "XGBoost-6'nın kare hatası daha düşük. Pay = katkı / ufuktaki toplam (toplam = 100%; "
-      "negatif pay, toplamın aksi yönündeki yıllardır). Ana fold'lar; 2026 bu iki ufukta "
-      "hariç. Kayıtlı tahminlerden (`hybrid_predictions_all`, `exploratory_xgb6_predictions`).")
+    w("**Descriptive; no test.** Contribution = the fold's Σ(e²_HAR-X − e²_XGB-6); positive = "
+      "in that year XGBoost-6's squared error is lower. Share = contribution / total at the "
+      "horizon (total = 100%; a negative share marks years against the direction of the "
+      "total). Main folds; 2026 excluded at these two horizons. From saved forecasts "
+      "(`hybrid_predictions_all`, `exploratory_xgb6_predictions`).")
     w("")
     q = pr[pr["include_in_main"] & pr["model"].isin(["har_x", "xgb6"])
            & pr["horizon"].isin([66, 126])].pivot_table(
@@ -731,26 +781,26 @@ def section_18(w, pr):
         tot = g["sum"].sum()
         mse = q[q["horizon"] == h]["d"].mean()
         out[h] = g
-        w(f"**h={h}.** Toplam Σ(e²_HAR-X − e²_XGB-6) = "
+        w(f"**h={h}.** Total Σ(e²_HAR-X − e²_XGB-6) = "
           + f"{tot:+.4e} ".replace("-", "−")
-          + f"(n = {int(g['size'].sum())}; havuzlanmış MSE farkı "
-          + f"{mse:+.3e}".replace("-", "−") + "; toplam "
-          f"{'pozitif: XGBoost-6 havuzda daha iyi' if tot > 0 else 'negatif: HAR-X havuzda daha iyi'}).")
+          + f"(n = {int(g['size'].sum())}; pooled MSE difference "
+          + f"{mse:+.3e}".replace("-", "−") + "; total "
+          f"{'positive: XGBoost-6 better in the pool' if tot > 0 else 'negative: HAR-X better in the pool'}).")
         w("")
         srt = g.reindex(g["sum"].sort_values(ascending=False).index)
         cum = (srt["sum"].cumsum() / tot * 100)
         w(md_table(pd.DataFrame({
-            "yıl": srt.index, "n": srt["size"].values,
-            "katkı": [f"{v:+.3e}".replace("-", "−") for v in srt["sum"]],
-            "pay": [f"{100 * v / tot:+.1f}%".replace("-", "−") for v in srt["sum"]],
-            "kümülatif pay (büyükten küçüğe)": [f"{v:.1f}%".replace("-", "−") for v in cum]})))
+            "year": srt.index, "n": srt["size"].values,
+            "contribution": [f"{v:+.3e}".replace("-", "−") for v in srt["sum"]],
+            "share": [f"{100 * v / tot:+.1f}%".replace("-", "−") for v in srt["sum"]],
+            "cumulative share (largest to smallest)": [f"{v:.1f}%".replace("-", "−") for v in cum]})))
         w("")
     return out
 
 
 def section_16(w):
     """Appendix A additions: A1 feature list, volatility regime analysis (07b), A8."""
-    w("## 16. Ek A eklemeleri: özellik listesi, volatilite rejimi analizi, eğitim uzunluğu")
+    w("## 16. Appendix A additions: feature list, volatility regime analysis, training length")
     w("")
     # ---- A1 ----
     feat = pd.read_csv(alignment.features_path(PUB), nrows=1)
@@ -758,49 +808,49 @@ def section_16(w):
     fi = rd("shap_feature_importance.csv", PUB)
     grp = fi[fi["horizon"] == 5].set_index("ozellik")["grup"]
     assert len(cols) == 65 and set(cols) == set(grp.index)
-    GL = {"brent_fiyat": "Brent fiyat düzeyi ve getiri", "brent_vol": "Brent gerçekleşen "
-          "volatilite", "ovx": "OVX", "gpr": "GPR (yayım-hizalı)", "etkilesim": "Etkileşim",
-          "takvim": "Takvim"}
-    w("### 16a. A1: 65 özelliğin tam listesi")
+    GL = {"brent_fiyat": "Brent price level and return", "brent_vol": "Brent realized "
+          "volatility", "ovx": "OVX", "gpr": "GPR (publication-aligned)", "etkilesim": "Interaction",
+          "takvim": "Calendar"}
+    w("### 16a. A1: full list of the 65 features")
     w("")
-    w("Kaynak: `features_publication_aligned.csv` (`02_build_features.py`); grup eşlemesi "
-      "`shap_feature_importance_publication_aligned.csv`. Takvim dışındaki tüm özellikler "
-      "`.shift(1)` ile nedenseldir; GPR özellikleri ayrıca yayım tarihine göre hizalıdır.")
+    w("Source: `features_publication_aligned.csv` (`02_build_features.py`); group mapping "
+      "`shap_feature_importance_publication_aligned.csv`. All features except the calendar "
+      "ones are causal via `.shift(1)`; the GPR features are additionally aligned to their publication dates.")
     w("")
     rows = []
     for gkey in ("brent_vol", "brent_fiyat", "ovx", "gpr", "etkilesim", "takvim"):
         fs = [c for c in cols if grp[c] == gkey]
-        rows.append({"grup": GL[gkey], "sayı": len(fs), "özellikler": ", ".join(
+        rows.append({"group": GL[gkey], "count": len(fs), "features": ", ".join(
             f"`{c}`" for c in fs)})
     w(md_table(pd.DataFrame(rows)))
     w("")
     # ---- volatility regime analysis (script 07b) ----
     vs = json.load(open(alignment.out("explore_vol_regime_summary.json", PUB), encoding="utf-8"))
     gr = rd("explore_vol_regime_groups.csv", PUB)
-    w("### 16b. Volatilite rejimi analizi (`07b_exploratory_vol_regime.py`)")
+    w("### 16b. Volatility regime analysis (`07b_exploratory_vol_regime.py`)")
     w("")
-    w("**Keşifsel ve post hoc.** Aşama 7'de ölçülen çelişki (H2 havuzda HAR-X'ten iyi, fold "
-      "ortalamasında kötü) görüldükten sonra, onu açıklamak için tasarlandı (günlük, "
-      "açıklama notu 2026-09-27). Birincil bulguyu değiştirmez, model seçiminde "
-      "kullanılmaz. **Rejim sınırı mekaniktir:** her ufukta test yılının ortalama "
-      "gerçekleşen volatilitesi, yıllar arası medyana göre ikiye ayrılır; sınır "
-      "performansa bakılarak seçilmedi. (Paketin §7b'si ayrı bir şeydir: BiLSTM yakınsama "
-      "kontrolü.)")
+    w("**Exploratory and post hoc.** Designed after the contradiction measured in Stage 7 (H2 "
+      "better than HAR-X in the pool, worse in the fold mean) was seen, to explain it (log, "
+      "clarification note 2026-09-27). It does not change the primary finding and is not "
+      "used in model selection. **The regime boundary is mechanical:** at each horizon the "
+      "test year's mean realized volatility is split in two at the median across years; "
+      "the boundary was not chosen by looking at performance. (The package's §7b is a "
+      "different thing: the BiLSTM convergence check.)")
     w("")
     assert "Mekanik" in vs["split_rule"]
-    RJ = {"dusuk": "düşük", "yuksek": "yüksek"}
+    RJ = {"dusuk": "low", "yuksek": "high"}
     w(md_table(pd.DataFrame({
-        "ufuk": gr["horizon"].map(lambda h: f"h={h}"), "rejim": gr["rejim"].map(RJ),
-        "fold": gr["n_fold"], "ort. volatilite": gr["vol_ort"].map(f6),
-        "RMSE HAR-X (fold ort.)": gr["har_x_fold_ort"].map(f6),
-        "RMSE H2 (fold ort.)": gr["h2_harx_xgb_fold_ort"].map(f6),
-        "H2 vs HAR-X, fold ort.": gr["h2_vs_harx_fold_ort_pct"].map(pct),
-        "H2 vs HAR-X, havuz": gr["h2_vs_harx_havuz_pct"].map(pct),
-        "H2 kazanan fold": [f"{a}/{b}" for a, b in zip(gr["h2_kazanan_fold"], gr["n_fold"])],
-        "kareli hata payı": gr["kareli_hata_payi_pct"].map(lambda v: f"%{v:.1f}")})))
+        "horizon": gr["horizon"].map(lambda h: f"h={h}"), "regime": gr["rejim"].map(RJ),
+        "fold": gr["n_fold"], "mean volatility": gr["vol_ort"].map(f6),
+        "RMSE HAR-X (fold mean)": gr["har_x_fold_ort"].map(f6),
+        "RMSE H2 (fold mean)": gr["h2_harx_xgb_fold_ort"].map(f6),
+        "H2 vs HAR-X, fold mean": gr["h2_vs_harx_fold_ort_pct"].map(pct),
+        "H2 vs HAR-X, pooled": gr["h2_vs_harx_havuz_pct"].map(pct),
+        "H2 winning folds": [f"{a}/{b}" for a, b in zip(gr["h2_kazanan_fold"], gr["n_fold"])],
+        "squared-error share": gr["kareli_hata_payi_pct"].map(lambda v: f"{v:.1f}%")})))
     w("")
-    w("`100 × (RMSE_H2 / RMSE_HAR-X − 1)`, pozitif = H2 daha kötü. Kareli hata payı: o "
-      "rejimin HAR-X kareli hatalarının havuzdaki payı. Kaynak: "
+    w("`100 × (RMSE_H2 / RMSE_HAR-X − 1)`, positive = H2 worse. Squared-error share: that "
+      "regime's share of HAR-X's squared errors in the pool. Source: "
       "`explore_vol_regime_groups_publication_aligned.csv`.")
     w("")
     # ---- A8 ----
@@ -815,15 +865,15 @@ def section_16(w):
     assert (j["n_train_xgb_equiv"] == j["n_train_final"]).all()
     assert (j["n_train_harx"] == j["n_train_har"]).all()
     assert (j["garch_extra_vs_xgb"] == j["extra_from_embargo"] + j["extra_from_warmup"]).all()
-    w("### 16c. A8: Eğitim uzunluğu asimetrisi")
+    w("### 16c. A8: Training-length asymmetry")
     w("")
-    w("Her fold'da modellerin eğitim satırı sayıları. Test satırları tüm modellerde aynı; "
-      "fark yalnızca eğitim penceresinin başında ve embargoda. HAR ailesi satır 21'den, "
-      "XGBoost satır 127'den (126 günlük volatilite penceresi) başlar; BiLSTM'in 20 "
-      "günlük girdi dizisi (lookback) serinin başında bir kez 19 satır daha götürür; "
-      "GARCH getiri serisinin başından başlar ve etiket kullanmadığı için embargo "
-      "uygulanmaz. "
-      "Kaynak: `bench_folds_all` (`05_benchmarks.py`), `wf_summary_all` (`03_walkforward.py`), "
+    w("The models' training row counts in each fold. The test rows are the same for all "
+      "models; the difference is only at the start of the training window and in the "
+      "embargo. The HAR family starts at row 21, XGBoost at row 127 (126-day volatility "
+      "window); the BiLSTM's 20-day input sequence (lookback) costs another 19 rows once "
+      "at the start of the series; GARCH starts at the start of the return series and, "
+      "since it uses no labels, no embargo is applied. "
+      "Source: `bench_folds_all` (`05_benchmarks.py`), `wf_summary_all` (`03_walkforward.py`), "
       "`bilstm_folds_all` (`06_attention_bilstm.py`).")
     w("")
     rows = []
@@ -834,19 +884,19 @@ def section_16(w):
         assert len(d_har) == 1
         f0, f1 = g.iloc[0], g.iloc[-1]
         rows.append({
-            "ufuk": f"h={h}",
-            "XGBoost, ilk – son fold": f"{f0['n_train_final']} – {f1['n_train_final']}",
+            "horizon": f"h={h}",
+            "XGBoost, first – last fold": f"{f0['n_train_final']} – {f1['n_train_final']}",
             "BiLSTM − XGBoost": ", ".join(signed(int(x), 0) for x in d_bl),
             "HAR/HAR-X − XGBoost": f"+{int(d_har[0])}",
             "GARCH − XGBoost": f"+{int(g['garch_extra_vs_xgb'].iloc[0])} "
-                               f"({int(g['extra_from_warmup'].iloc[0])} ısınma + "
+                               f"({int(g['extra_from_warmup'].iloc[0])} warm-up + "
                                f"{int(g['extra_from_embargo'].iloc[0])} embargo)",
-            "HAR fazlası / XGBoost, ilk – son fold":
-                f"%{100 * d_har[0] / f0['n_train_final']:.1f} – "
-                f"%{100 * d_har[0] / f1['n_train_final']:.1f}"})
+            "HAR excess / XGBoost, first – last fold":
+                f"{100 * d_har[0] / f0['n_train_final']:.1f}% – "
+                f"{100 * d_har[0] / f1['n_train_final']:.1f}%"})
     w(md_table(pd.DataFrame(rows)))
     w("")
-    w("Bu asimetrinin sonuca etkisi §7a'da (veri eşitleme) ölçülmüştür.")
+    w("The effect of this asymmetry on the result is measured in §7a (data equalization).")
     w("")
 
 
@@ -858,65 +908,67 @@ def section_14(w):
 
     def table(x):
         return md_table(pd.DataFrame({
-            "değişken": x["label"], "N": x["N"], "ortalama": x["mean"].map(g4),
-            "std": x["std"].map(g4), "min": x["min"].map(g4), "maks": x["max"].map(g4),
-            "çarpıklık": x["skew"].map(lambda v: f"{v:.2f}".replace("-", "−")),
-            "fazla basıklık": x["excess_kurtosis"].map(lambda v: f"{v:.2f}".replace("-", "−")),
-            "ADF (gecikme)": [f"{s:.2f} ({k})".replace("-", "−")
-                              for s, k in zip(x["adf_stat"], x["adf_lag"])],
+            "variable": x["label"].map(en), "N": x["N"], "mean": x["mean"].map(g4),
+            "std": x["std"].map(g4), "min": x["min"].map(g4), "max": x["max"].map(g4),
+            "skewness": x["skew"].map(lambda v: f"{v:.2f}".replace("-", "−")),
+            "excess kurtosis": x["excess_kurtosis"].map(lambda v: f"{v:.2f}".replace("-", "−")),
+            "ADF (lag)": [f"{s:.2f} ({k})".replace("-", "−")
+                          for s, k in zip(x["adf_stat"], x["adf_lag"])],
             "ADF p": x["adf_p"].map(fp),
             f"Q({meta['ljung_box_lag']})": x["lb_q20"].map(lambda v: f"{v:.1f}"),
             "Q p": x["lb_p"].map(fp)}))
 
     s = meta["sample"]
-    w("## 14. Tablo 1: Tanımlayıcı istatistikler")
+    w("## 14. Table 1: Descriptive statistics")
     w("")
     w(table(d[d["role"] == "main"]))
     w("")
-    w("**Tablo notu.**")
-    w(f"- Örneklem: modelin kullandığı örneklem, {s['rows']} satır, işlem takvimi "
-      f"({s['first_date']} – {s['last_date']}). Getiri ilk satırı kaybeder; `target_vol_h` "
-      "son h satırda tanımsızdır (tamamlanmamış pencere, `skipna=False`).")
-    w("- Getiri: `log(P_t / P_{t−1})`. Hedef: sonraki h günlük log getirinin standart "
-      "sapması. Birim: günlük log getiri. OVX: düzey, endeks puanı.")
-    w("- **GPRD ve GPRD_THREAT modelin gördüğü haliyle, yani yayım-hizalı:** satır t'de, "
-      "t−1'e kadar yayımlanmış en son gözlem (`gprd_lag1`, `gprd_threat_lag1`). Seri iki "
-      "yayım arasında sabit kalır; ilk yayımdan önceki satırlarda tanımsızdır.")
-    w(f"- Çarpıklık ve fazla basıklık pandas'ın yanlılık düzeltmeli tahmincileri (normal "
-      f"dağılımda fazla basıklık 0). ADF: sabitli, gecikme AIC ile (statsmodels varsayılan "
-      f"en büyük gecikme 12(n/100)^(1/4)); H0 birim kök. Ljung–Box Q({meta['ljung_box_lag']}): "
-      "H0 20. gecikmeye kadar otokorelasyon yok.")
-    w("- **Hedeflerde Ljung–Box reddi mekaniktir.** Ardışık `target_vol_h` değerleri h "
-      "getirinin h−1'ini paylaşan örtüşen pencerelerden hesaplanır; otokorelasyon "
-      "yapıdan gelir. Bu red kalıcılık kanıtı olarak okunmamalıdır. Yayım-hizalı GPR "
-      "serisi de iki yayım arasında sabit kaldığından otokorelasyonunun bir kısmı "
-      "yapıdandır (Q(20): GPRD "
-      + f"{d.set_index('variable').loc['GPRD', 'lb_q20']:.1f}; gözlem tarihli seride "
-      + f"{d.set_index('variable').loc['GPRD_obs_trading', 'lb_q20']:.1f}, dipnot).")
+    w("**Table note.**")
+    w(f"- Sample: the sample the model uses, {s['rows']} rows, trading calendar "
+      f"({s['first_date']} – {s['last_date']}). The return loses the first row; `target_vol_h` "
+      "is undefined in the last h rows (incomplete window, `skipna=False`).")
+    w("- Return: `log(P_t / P_{t−1})`. Target: the standard deviation of the next h daily "
+      "log returns. Unit: daily log return. OVX: level, index points.")
+    w("- **GPRD and GPRD_THREAT as the model sees them, i.e. publication-aligned:** at row t, "
+      "the latest observation published up to t−1 (`gprd_lag1`, `gprd_threat_lag1`). The "
+      "series stays constant between two publications; it is undefined in the rows before "
+      "the first publication.")
+    w(f"- Skewness and excess kurtosis are pandas' bias-corrected estimators (excess "
+      f"kurtosis 0 under the normal distribution). ADF: with constant, lag by AIC (statsmodels default "
+      f"maximum lag 12(n/100)^(1/4)); H0 unit root. Ljung–Box Q({meta['ljung_box_lag']}): "
+      "H0 no autocorrelation up to lag 20.")
+    w("- **The Ljung–Box rejection for the targets is mechanical.** Consecutive `target_vol_h` "
+      "values are computed from overlapping windows that share h−1 of their h returns; the "
+      "autocorrelation comes from the construction. This rejection must not be read as "
+      "evidence of persistence. Since the publication-aligned GPR series also stays constant "
+      "between two publications, part of its autocorrelation is structural "
+      "(Q(20): GPRD "
+      + f"{d.set_index('variable').loc['GPRD', 'lb_q20']:.1f}; in the observation-dated series "
+      + f"{d.set_index('variable').loc['GPRD_obs_trading', 'lb_q20']:.1f}, footnote).")
     w("")
     oc = meta.get("own_calendar")
-    w("**Dipnot: GPR başka takvimlerde** (karşılaştırma için; model bunları görmez).")
+    w("**Footnote: GPR on other calendars** (for comparison; the model does not see these).")
     w("")
     w(table(d[d["role"] == "footnote"]))
     w("")
-    note = ("Gözlem tarihli satırlar `data/veriseti.xlsx`'in kaydırılmamış GPR sütunlarıdır "
-            "(işlem günleri).")
+    note = ("The observation-dated rows are the unshifted GPR columns of `data/veriseti.xlsx` "
+            "(trading days).")
     if oc:
         mad = max(oc["max_abs_diff_vs_dataset"].values())
         zg, zt = oc["zero_days"]["GPRD"], oc["zero_days"]["GPRD_THREAT"]
-        note += (f" Kendi takvimi satırları endeksin her takvim gününü (hafta sonları dahil, "
-                 f"{oc['calendar_days']} gün) kapsar; kaynak, veri setinin üretildiği "
-                 f"{oc['vintage']} arşiv sürümü `{Path(oc['file']).name}` (SHA-256 "
-                 f"`{oc['sha256'][:16]}…`, git dışı). Bu sürüm veri setinin GPR değerlerini "
-                 f"{oc['trading_days_checked']} işlem gününün hepsinde yeniden üretir (en "
-                 f"büyük mutlak fark {mad:.1e}, kayan nokta yuvarlaması; kontrol edildi).")
+        note += (f" The own-calendar rows cover every calendar day of the index (weekends included, "
+                 f"{oc['calendar_days']} days); the source is the {oc['vintage']} archive "
+                 f"vintage from which the dataset was built, `{Path(oc['file']).name}` (SHA-256 "
+                 f"`{oc['sha256'][:16]}…`, outside git). This vintage reproduces the dataset's GPR values "
+                 f"on all {oc['trading_days_checked']} trading days (largest "
+                 f"absolute difference {mad:.1e}, floating-point rounding; checked).")
         if zg:
             note += (" " + ", ".join(z["date"] for z in zg)
-                     + (" tarihinde" if len(zg) == 1 else " tarihlerinde") + " GPRD 0 (aynı "
-                     + ("gün" if len(zg) == 1 else "günlerde") + " GPRD_THREAT "
+                     + (": on this date" if len(zg) == 1 else ": on these dates") + " GPRD 0 (on the same "
+                     + ("day" if len(zg) == 1 else "days") + " GPRD_THREAT "
                      + ", ".join(f"{z['GPRD_THREAT']:g}" for z in zg) + ").")
         if zt:
-            note += (f" GPRD_THREAT {len(zt)} günde 0: "
+            note += (f" GPRD_THREAT on {len(zt)} days is 0: "
                      + ", ".join(z["date"] for z in zt) + ".")
     w(note)
     w("")
@@ -983,40 +1035,41 @@ def section_12(w, pr, A):
         gaps.append((d.min(), (d / g.loc[d.index, "pred_floor"]).min()))
     gap_abs, gap_rel = min(x[0] for x in gaps), min(x[1] for x in gaps)
 
-    w("## 12. Taban sıklığı, QLIKE ve fold başına smearing (yayım-hizalı)")
+    w("## 12. Floor frequency, QLIKE and per-fold smearing (publication-aligned)")
     w("")
-    w("Yeniden eğitim yok; her şey kayıtlı tahmin ve fold dosyalarından. QLIKE yalnızca "
-      "betimleyicidir: QLIKE kaybıyla DM veya işaret testi koşulmadı, birincil aile 8 testle "
-      "sabittir.")
+    w("No retraining; everything comes from the saved prediction and fold files. QLIKE is "
+      "descriptive only: no DM or sign test was run with the QLIKE loss, the primary family "
+      "is fixed at 8 tests.")
     w("")
-    w("### 12a. Tahmin tabanının devreye girme sıklığı")
+    w("### 12a. How often the prediction floor binds")
     w("")
-    w("Düzey ölçekli OLS tahminleri (HAR, HAR-X, ablasyon basamakları) ve Hibrit H3, "
-      "fold'un **eğitim hedefinin minimumunda** tabanlanır: `max(tahmin, min(y_train))` "
-      "(train-only). Log ölçekli HAR-log ve HAR-X-log tahminleri `exp(·) × smearing` "
-      "olduğu için yapısal olarak pozitiftir; tahmine taban uygulanmaz (0 tanım gereği). "
-      "(Log spesifikasyonların *regresörlerine* uygulanan `LOG_FLOOR = 1e-4` ayrı bir "
-      "şeydir ve burada sayılmaz.)")
+    w("The level-scale OLS forecasts (HAR, HAR-X, the ablation steps) and Hybrid H3 are "
+      "floored at the **minimum of the fold's training target**: `max(forecast, min(y_train))` "
+      "(train-only). The log-scale HAR-log and HAR-X-log forecasts are structurally "
+      "positive because they are `exp(·) × smearing`; no floor is applied to the forecast (0 by definition). "
+      "(The `LOG_FLOOR = 1e-4` applied to the *regressors* of the log specifications is a "
+      "separate thing and is not counted here.)")
     w("")
-    w("**Tespit yöntemi.** Tahmin dosyalarında taban işareti yok. Tabanlanmış satır, "
-      "tahminin o fold'un kayıtlı tabanına (`bench_folds_all.pred_floor`, H3 için "
-      "`hybrid_folds_all.pred_floor`) **tam eşit** olduğu satır olarak tespit edildi. "
-      "Kontroller (assert):")
-    w("- Her fold'da eşitlik sayısı, uyum anında kaydedilen sayaçla birebir aynı "
-      "(`n_clipped_har`, `n_clipped_har_x`, ablasyon `n_clipped`, H3 `n_floored`).")
-    w(f"- Tesadüfi eşitlik yok: tabansız modellerde (HAR-log, HAR-X-log, GARCH, "
-      f"past-volatility) fold tabanına tam eşit tahmin sayısı "
-      f"{sum(chance.values())}. Oysa HAR-log {below['har_log']}, HAR-X-log "
-      f"{below['har_x_log']} satırda tabanın **altında** tahmin veriyor; yani eşitlik "
-      "ancak `max()` işleminden doğuyor.")
-    w(f"- Tabanlı modellerde tabanlanmamış en yakın tahmin, tabanın {gap_abs:.2e} "
-      f"(göreli %{100 * gap_rel:.3f}) üstünde; sürekli bir OLS tahmininin tabana bit "
-      "düzeyinde tesadüfen eşit çıkması pratikte olanaksız.")
-    w("- Pakette kullanılan HAR-X (hibrit dosyası) aynı satırlarda tabanlanıyor.")
+    w("**Detection method.** The prediction files carry no floor flag. A floored row was "
+      "detected as a row where the forecast is **exactly equal** to that fold's recorded floor "
+      "(`bench_folds_all.pred_floor`, for H3 "
+      "`hybrid_folds_all.pred_floor`). "
+      "Checks (assert):")
+    w("- In every fold the number of equalities is identical to the counter recorded at "
+      "fit time (`n_clipped_har`, `n_clipped_har_x`, ablation `n_clipped`, H3 `n_floored`).")
+    w(f"- No chance equality: in the models without a floor (HAR-log, HAR-X-log, GARCH, "
+      f"past-volatility) the number of forecasts exactly equal to the fold floor is "
+      f"{sum(chance.values())}. Yet HAR-log in {below['har_log']}, HAR-X-log in "
+      f"{below['har_x_log']} rows gives forecasts **below** the floor; so the equality "
+      "arises only from the `max()` operation.")
+    w(f"- In the floored models the closest non-floored forecast is {gap_abs:.2e} "
+      f"(relative {100 * gap_rel:.3f}%) above the floor; a continuous OLS forecast equalling "
+      "the floor bit for bit by chance is practically impossible.")
+    w("- The HAR-X used in the package (hybrid file) is floored on the same rows.")
     w("")
     specs = [("har", "HAR"), ("har_ovx", "HAR + OVX"), ("har_gpr", "HAR + GPR"),
              ("har_x", "HAR-X"), ("har_log", "HAR-log"), ("har_x_log", "HAR-X-log"),
-             ("h3_harx_resid", "Hibrit H3 (ek)")]
+             ("h3_harx_resid", "Hybrid H3 (additional)")]
     rows = []
     for m, lab in specs:
         r = {"model": lab}
@@ -1025,25 +1078,25 @@ def section_12(w, pr, A):
                 g = flo[m][(flo[m]["horizon"] == h) & flo[m]["include_in_main"]]
                 k, n = int(g["floored"].sum()), len(g)
                 pf = g.groupby("test_year")["floored"].mean()
-                top = (f"; en yoğun {pf.idxmax()} %{100 * pf.max():.1f}" if k else "")
-                r[f"h={h}"] = f"{k} / {n} (%{100 * k / n:.2f}{top})"
+                top = (f"; densest {pf.idxmax()} {100 * pf.max():.1f}%" if k else "")
+                r[f"h={h}"] = f"{k} / {n} ({100 * k / n:.2f}%{top})"
             else:
                 g = b[(b["horizon"] == h) & b["include_in_main"]]
-                r[f"h={h}"] = f"0 / {len(g)} (taban yok)"
+                r[f"h={h}"] = f"0 / {len(g)} (no floor)"
         rows.append(r)
     w(md_table(pd.DataFrame(rows)))
     w("")
     tot = {m: (int(f["floored"].sum()), len(f)) for m, f in flo.items()}
-    w("Ana metriğe giren fold'lar (h=66/126'da 2026 hariç). 2026 dahil tüm fold'lar: "
+    w("Folds entering the main metric (at h=66/126, 2026 excluded). All folds including 2026: "
       + ", ".join(f"{lab} {tot[m][0]}/{tot[m][1]}" for m, lab in specs if m in tot)
-      + f". XGBoost-6 aynı train-min tabanını kullanır; kayıtlı sayaç "
-        f"{int(x6f['n_clipped'].sum())} (tabana takılan tahmin yok).")
+      + f". XGBoost-6 uses the same train-min floor; the recorded counter is "
+        f"{int(x6f['n_clipped'].sum())} (no floored forecast).")
     w("")
 
     # --- QLIKE ------------------------------------------------------------------------
     bad = pr[~(pr["pred"] > 0)]
     if len(bad):
-        raise SystemExit("QLIKE durduruldu: pozitif olmayan tahmin\n"
+        raise SystemExit("QLIKE stopped: non-positive forecast\n"
                          + bad.groupby(["model", "horizon"]).size().to_string())
     assert (pr["y_true"] > 0).all(), "non-positive realized target"
     q = pr.assign(ql=qlike(pr["y_true"].to_numpy(), pr["pred"].to_numpy()))
@@ -1055,26 +1108,26 @@ def section_12(w, pr, A):
         A[["model", "horizon", "rmse"]], on=["model", "horizon"], validate="1:1")
     models = [m for m, _, _ in MODELS]
     f4 = lambda x: f"{x:.4f}"
-    w("### 12b. QLIKE (Patton 2011), varyans ölçeğinde")
+    w("### 12b. QLIKE (Patton 2011), on the variance scale")
     w("")
-    w("`QLIKE = σ²/σ̂² − log(σ²/σ̂²) − 1`, σ = gerçekleşen hedef, σ̂ = tahmin. Hedef bir "
-      "standart sapma olduğu için ikisi de karelenir. Düşük = iyi; mükemmel tahminde 0. "
-      "**Taban bağlanan gözlemlerde QLIKE yayımlanan (tabanlanmış) tahmin üzerinden "
-      "hesaplanır** — değerlendirilen şey modelin verdiği tahmindir. Tüm tahminler ve "
-      f"hedefler pozitif (en küçük tahmin {pr['pred'].min():.6f}); durdurma koşulu "
-      "tetiklenmedi. Kalın = sütundaki en düşük.")
+    w("`QLIKE = σ²/σ̂² − log(σ²/σ̂²) − 1`, σ = realized target, σ̂ = forecast. Both are "
+      "squared because the target is a standard deviation. Lower = better; 0 for a perfect forecast. "
+      "**For observations where the floor binds, QLIKE is computed on the published (floored) "
+      "forecast** — what is evaluated is the forecast the model gives. All forecasts and "
+      f"targets are positive (smallest forecast {pr['pred'].min():.6f}); the stop condition "
+      "was not triggered. Bold = lowest in the column.")
     w("")
-    w("**Fold ortalaması (birincil):**")
+    w("**Fold mean (primary):**")
     w("")
     w(md_table(wide(Q, "qlike_fold", f4, models, bold_min=True)))
     w("")
-    w("**Havuzlanmış (ikincil):** ana metriğe giren tüm test satırları üzerinden ortalama.")
+    w("**Pooled (secondary):** mean over all test rows entering the main metric.")
     w("")
     w(md_table(wide(Q, "qlike_pooled", f4, models, bold_min=True)))
     w("")
-    w("**Tabanlanmış satırların QLIKE payı** (havuzlanmış, ana fold'lar): tabanlanmış "
-      "satırların toplam QLIKE içindeki payı / satır payı. Taban, eğitim hedefinin "
-      "minimumu olduğundan bu satırlarda σ̂ küçüktür ve QLIKE büyür.")
+    w("**QLIKE share of the floored rows** (pooled, main folds): the floored rows' share of "
+      "total QLIKE / their share of rows. Since the floor is the minimum of the training "
+      "target, σ̂ is small in these rows and QLIKE grows.")
     w("")
     rows = []
     for m, lab in specs:
@@ -1087,16 +1140,16 @@ def section_12(w, pr, A):
             x = g[g["horizon"] == h]
             k = int(x["floored"].sum())
             r[f"h={h}"] = ("—" if k == 0 else
-                           f"%{100 * x.loc[x['floored'], 'ql'].sum() / x['ql'].sum():.1f} / "
-                           f"%{100 * k / len(x):.2f}")
+                           f"{100 * x.loc[x['floored'], 'ql'].sum() / x['ql'].sum():.1f}% / "
+                           f"{100 * k / len(x):.2f}%")
         rows.append(r)
     w(md_table(pd.DataFrame(rows)))
     w("")
-    w("### 12c. QLIKE ve RMSE sıralamaları (fold ortalaması)")
+    w("### 12c. QLIKE and RMSE rankings (fold mean)")
     w("")
-    w("Sıra 1 = en iyi. Yalnızca iki kayıpta sırası farklı olan modeller listelenir. İki "
-      "tutarlı kayıp farklı sıralayabilir (Patton 2011); farklılık bir bulgu olarak "
-      "raporlanır.")
+    w("Rank 1 = best. Only the models whose rank differs between the two losses are listed. "
+      "Two consistent losses can rank differently (Patton 2011); the difference is "
+      "reported as a finding.")
     w("")
     from scipy import stats as _st
     rows, diffs = [], []
@@ -1106,22 +1159,22 @@ def section_12(w, pr, A):
         rq = g["qlike_fold"].rank(method="min").astype(int)
         tau = float(_st.kendalltau(g["rmse"], g["qlike_fold"])[0])
         ch = [m for m in models if rr[m] != rq[m]]
-        rows.append({"ufuk": f"h={h}", "Kendall τ (17 model)": f"{tau:.3f}",
-                     "sırası değişen model": f"{len(ch)}/17",
-                     "RMSE'de en iyi": LABEL[rr.idxmin()],
-                     "QLIKE'ta en iyi": LABEL[rq.idxmin()]})
+        rows.append({"horizon": f"h={h}", "Kendall τ (17 models)": f"{tau:.3f}",
+                     "models whose rank changes": f"{len(ch)}/17",
+                     "best in RMSE": LABEL[rr.idxmin()],
+                     "best in QLIKE": LABEL[rq.idxmin()]})
         for m in sorted(ch, key=lambda m: rr[m]):
-            diffs.append({"ufuk": f"h={h}", "model": LABEL[m], "RMSE sırası": rr[m],
-                          "QLIKE sırası": rq[m],
-                          "fark": f"{rq[m] - rr[m]:+d}".replace("-", "−")})
+            diffs.append({"horizon": f"h={h}", "model": LABEL[m], "RMSE rank": rr[m],
+                          "QLIKE rank": rq[m],
+                          "difference": f"{rq[m] - rr[m]:+d}".replace("-", "−")})
     w(md_table(pd.DataFrame(rows)))
     w("")
     w(md_table(pd.DataFrame(diffs)))
     w("")
-    w("**QLIKE'ın yoğunlaşması** (havuzlanmış, ana fold'lar): QLIKE eksik tahmini "
-      "(σ̂ ≪ σ) sert cezalandırır, bu yüzden ortalama birkaç gözleme dayanabilir. Hücre: "
-      "en büyük %1 satırın QLIKE toplamındaki payı; parantezde en büyük tek satırın σ/σ̂ "
-      "oranı ve tarihi. Betimleyicidir.")
+    w("**Concentration of QLIKE** (pooled, main folds): QLIKE penalizes under-prediction "
+      "(σ̂ ≪ σ) harshly, so the mean can rest on a few observations. Cell: "
+      "the share of the largest 1% of rows in the QLIKE total; in parentheses the σ/σ̂ "
+      "ratio and the date of the largest single row. Descriptive.")
     w("")
     rows = []
     for m in models:
@@ -1131,24 +1184,24 @@ def section_12(w, pr, A):
             s = g["ql"].sort_values(ascending=False)
             k1 = max(1, int(len(s) * 0.01))
             i0 = s.index[0]
-            r[f"h={h}"] = (f"%{100 * s.iloc[:k1].sum() / s.sum():.1f} "
+            r[f"h={h}"] = (f"{100 * s.iloc[:k1].sum() / s.sum():.1f}% "
                            f"({g.loc[i0, 'y_true'] / g.loc[i0, 'pred']:.1f}×, "
                            f"{g.loc[i0, 'Date']})")
         rows.append(r)
     w(md_table(pd.DataFrame(rows)))
     w("")
-    w("**Birincil ailenin iki karşılaştırmasında yön** (betimleyici; test değil). "
-      "`100 × (kayıp_a / kayıp_b − 1)`, pozitif = a daha kötü.")
+    w("**Direction in the primary family's two comparisons** (descriptive; not a test). "
+      "`100 × (loss_a / loss_b − 1)`, positive = a worse.")
     w("")
     rows = []
     for a_, b_ in (("har", "har_x"), ("xgboost", "har_x")):
         for h in HORIZONS:
             g = Q[Q["horizon"] == h].set_index("model")
-            rows.append({"a vs b": f"{LABEL[a_]} vs {LABEL[b_]}", "ufuk": f"h={h}",
-                         "RMSE (fold ort.)": pct(100 * (g.loc[a_, "rmse"] / g.loc[b_, "rmse"] - 1)),
-                         "QLIKE (fold ort.)": pct(100 * (g.loc[a_, "qlike_fold"]
+            rows.append({"a vs b": f"{LABEL[a_]} vs {LABEL[b_]}", "horizon": f"h={h}",
+                         "RMSE (fold mean)": pct(100 * (g.loc[a_, "rmse"] / g.loc[b_, "rmse"] - 1)),
+                         "QLIKE (fold mean)": pct(100 * (g.loc[a_, "qlike_fold"]
                                                           / g.loc[b_, "qlike_fold"] - 1)),
-                         "QLIKE (havuz)": pct(100 * (g.loc[a_, "qlike_pooled"]
+                         "QLIKE (pooled)": pct(100 * (g.loc[a_, "qlike_pooled"]
                                                       / g.loc[b_, "qlike_pooled"] - 1))})
     w(md_table(pd.DataFrame(rows)))
     w("")
@@ -1163,17 +1216,17 @@ def section_12(w, pr, A):
     fl5 = b.loc[(b["horizon"] == 5) & (b["Date"] == top["Date"])]
     assert len(fl5) == 1 and not bool(flo["har_x"].loc[fl5.index[0], "floored"])
     fl5 = float(fl5["pred_floor"].iloc[0])
-    w(f"**h=5 HAR-X'in en büyük tek QLIKE satırı ({top['Date']}).** Tarih, satırın kendi "
-      f"tarihi t'dir, yani **tahmin kökeni**; hedef penceresinin başı değildir. Özellikler "
-      f"`.shift(1)` ile t−1'e ({raw['Date'].iloc[rix - 1]}) kadarki bilgiyi kullanır. Hedef "
-      "`std(r_{t+1}, …, r_{t+5})` olduğundan pencere, t'den sonraki beş işlem gününün "
-      "getirileridir: " + ", ".join(win) + f" (her getiri bir önceki işlem gününün "
-      f"kapanışından; ilki {raw['Date'].iloc[rix]} kapanışından {win[0]} kapanışına). "
-      f"t günü getirisi ne özelliklerde ne hedefte yer alır. Gerçekleşen σ = "
-      f"{top['y_true']:.6f}, HAR-X tahmini σ̂ = {top['pred']:.6f} (σ/σ̂ = "
-      f"{top['y_true'] / top['pred']:.1f}, QLIKE = {top['ql']:.1f}). Fold tabanı "
-      f"{fl5:.6f}; tahmin tabanın %{100 * (top['pred'] / fl5 - 1):.2f} üstünde, "
-      "tabanlanmamış.")
+    w(f"**h=5 HAR-X's largest single QLIKE row ({top['Date']}).** The date is the row's own "
+      f"date t, i.e. the **forecast origin**; it is not the start of the target window. The features, "
+      f"via `.shift(1)`, use information up to t−1 ({raw['Date'].iloc[rix - 1]}). Since the target "
+      "is `std(r_{t+1}, …, r_{t+5})`, the window is the returns of the five trading days "
+      "after t: " + ", ".join(win) + f" (each return from the previous trading day's "
+      f"close; the first from the {raw['Date'].iloc[rix]} close to the {win[0]} close). "
+      f"The return of day t enters neither the features nor the target. Realized σ = "
+      f"{top['y_true']:.6f}, HAR-X forecast σ̂ = {top['pred']:.6f} (σ/σ̂ = "
+      f"{top['y_true'] / top['pred']:.1f}, QLIKE = {top['ql']:.1f}). Fold floor "
+      f"{fl5:.6f}; the forecast is {100 * (top['pred'] / fl5 - 1):.2f}% above the floor, "
+      "not floored.")
     w("")
     # --- smearing -----------------------------------------------------------------------
     wfs = json.load(open(alignment.out("wf_summary_all.json", PUB), encoding="utf-8"))
@@ -1193,47 +1246,48 @@ def section_12(w, pr, A):
     S = S.merge(lw.reset_index(), on=["horizon", "test_year"], validate="1:1")
     assert len(S) == 60
     assert (S["har_log_chk"] == S["har_log"]).all() and         (S["har_x_log_chk"] == S["har_x_log"]).all(), "re-estimated smearing != bench_folds"
-    w("### 12d. Fold başına Duan smearing katsayısı ve log-artık std'si")
+    w("### 12d. Per-fold Duan smearing coefficient and log-residual std")
     w("")
-    w("Smearing `S = mean(exp(e))`, e = eğitim setindeki log ölçekli artıklar (örneklem-içi, "
-      "train-only). XGBoost ve BiLSTM'de hedef `log(σ_h / past_vol_h)`, HAR-log ve "
-      "HAR-X-log'da `log(σ_h)`. Kaynak: `wf_summary_all` (XGBoost: `smearing`, "
+    w("Smearing `S = mean(exp(e))`, e = log-scale residuals on the training set (in-sample, "
+      "train-only). For XGBoost and the BiLSTM the target is `log(σ_h / past_vol_h)`, for HAR-log and "
+      "HAR-X-log `log(σ_h)`. Source: `wf_summary_all` (XGBoost: `smearing`, "
       "`resid_log_std`), `bilstm_folds_all`, `bench_folds_all` (`har_smearing`, "
-      "`har_x_smearing`). Log-artık std'si (ddof=1): XGBoost için 03'ün kaydı "
-      "(`resid_log_std`); HAR-log ve HAR-X-log için 05 yalnızca katsayıyı kaydettiğinden "
-      "OLS `20_log_residual_std.py` ile yeniden tahmin edildi. Yeniden tahminin **her "
-      "fold'da kayıtlı test tahminlerini ve smearing katsayısını bit düzeyinde ürettiği** "
-      "assert edildi (120/120). **BiLSTM için log-artık std'si kaydedilmedi:** 06 eğitilmiş "
-      "ağırlıkları saklamıyor, hesaplamak yeniden eğitim gerektirir. XGBoost/BiLSTM ile "
-      "HAR-log ailesinin std'leri farklı hedeflerde (log-oran vs log-düzey) olduğundan "
-      "doğrudan karşılaştırılamaz.")
+      "`har_x_smearing`). Log-residual std (ddof=1): for XGBoost 03's record "
+      "(`resid_log_std`); for HAR-log and HAR-X-log, since 05 recorded only the coefficient, "
+      "the OLS was re-estimated with `20_log_residual_std.py`. It was asserted that the "
+      "re-estimation **reproduces the saved test forecasts and the smearing coefficient bit "
+      "for bit in every fold** (120/120). **The log-residual std was not recorded for the "
+      "BiLSTM:** 06 does not store the trained weights; computing it would require "
+      "retraining. The stds of XGBoost/BiLSTM and of the HAR-log family are on different "
+      "targets (log-ratio vs log-level), so they cannot be compared "
+      "directly.")
     w("")
     rows = []
-    for m, lab in (("xgb", "XGBoost, S"), ("xgb_sd", "XGBoost, log-artık std"),
+    for m, lab in (("xgb", "XGBoost, S"), ("xgb_sd", "XGBoost, log-residual std"),
                    ("bilstm", "BiLSTM, S"), ("har_log", "HAR-log, S"),
-                   ("har_log_sd", "HAR-log, log-artık std"),
+                   ("har_log_sd", "HAR-log, log-residual std"),
                    ("har_x_log", "HAR-X-log, S"),
-                   ("har_x_log_sd", "HAR-X-log, log-artık std")):
-        r = {"ölçü": lab}
+                   ("har_x_log_sd", "HAR-X-log, log-residual std")):
+        r = {"measure": lab}
         for h in HORIZONS:
             g = S[(S["horizon"] == h) & S["include_in_main"]][m]
             r[f"h={h}"] = f"{g.median():.4f} ({g.min():.4f}–{g.max():.4f})"
         rows.append(r)
-    w("Özet, ana metriğe giren fold'lar: medyan (en küçük–en büyük). BiLSTM log-artık "
-      "std'si: kaydedilmedi.")
+    w("Summary, folds entering the main metric: median (min–max). BiLSTM log-residual "
+      "std: not recorded.")
     w("")
     w(md_table(pd.DataFrame(rows)))
     w("")
     for h in HORIZONS:
         g = S[S["horizon"] == h].sort_values("test_year")
         t = pd.DataFrame({
-            "yıl": [f"{y}" + ("" if im else " (ana metrik dışı)")
-                    for y, im in zip(g["test_year"], g["include_in_main"])],
-            "XGBoost S": g["xgb"].map(f4), "XGBoost log-artık std": g["xgb_sd"].map(f4),
-            "BiLSTM S": g["bilstm"].map(f4), "BiLSTM log-artık std": "kaydedilmedi",
-            "HAR-log S": g["har_log"].map(f4), "HAR-log log-artık std": g["har_log_sd"].map(f4),
+            "year": [f"{y}" + ("" if im else " (outside the main metric)")
+                     for y, im in zip(g["test_year"], g["include_in_main"])],
+            "XGBoost S": g["xgb"].map(f4), "XGBoost log-residual std": g["xgb_sd"].map(f4),
+            "BiLSTM S": g["bilstm"].map(f4), "BiLSTM log-residual std": "not recorded",
+            "HAR-log S": g["har_log"].map(f4), "HAR-log log-residual std": g["har_log_sd"].map(f4),
             "HAR-X-log S": g["har_x_log"].map(f4),
-            "HAR-X-log log-artık std": g["har_x_log_sd"].map(f4)})
+            "HAR-X-log log-residual std": g["har_x_log_sd"].map(f4)})
         w(f"**h={h}**")
         w("")
         w(md_table(t))
@@ -1258,7 +1312,7 @@ def main():
         assert len(j) == len(comp) == 17 * 4
         for m in ("rmse", "mae", "r2_oos"):
             assert np.allclose(j[m], j[f"{m}_{sfx}"], rtol=1e-12, atol=1e-15), (al, m)
-    print("[kontrol] fold ortalamalari gpr_alignment_comparison.csv ile ayni (iki surum)")
+    print("[check] fold means equal gpr_alignment_comparison.csv (both versions)")
 
     A = agg[PUB]
     F = fm[PUB]
@@ -1267,55 +1321,55 @@ def main():
 
     # ---------------- Header ----------------
     pv = provenance()
-    w("# Makale sayıları — yayım-hizalı GPR sürümü (BİRİNCİL)")
+    w("# Paper numbers — publication-aligned GPR version (PRIMARY)")
     w("")
-    w(f"- **Üretildiği commit:** `{pv['commit']}` ({pv['subject']})")
-    w(f"- **Üretim tarihi:** {pv['generated']}")
-    w("- **Çalışma ağacı:** " + (
-        "temiz — girdiler bu commit'teki dosyalarla birebir aynı."
+    w(f"- **Generated from commit:** `{pv['commit']}` ({pv['subject']})")
+    w(f"- **Generated at:** {pv['generated']}")
+    w("- **Working tree:** " + (
+        "clean — the inputs are identical to the files in this commit."
         if not pv["dirty"] else
-        "**KİRLİ — sayılar bu commit'e birebir karşılık gelmez.** Commit edilmemiş "
-        "değişiklikler: " + ", ".join(f"`{p}`" for p in pv["dirty"])))
-    w("- Doğrulama: `git checkout <commit> && python scripts/18_paper_numbers.py` aynı "
-      "sayıları üretmelidir (yalnızca bu başlık değişir).")
+        "**DIRTY — the numbers do not correspond exactly to this commit.** Uncommitted "
+        "changes: " + ", ".join(f"`{p}`" for p in pv["dirty"])))
+    w("- Verification: `git checkout <commit> && python scripts/18_paper_numbers.py` must "
+      "produce the same numbers (only this header changes).")
     w("")
-    w("> Bu dosya `scripts/18_paper_numbers.py` tarafından kayıtlı çıktılardan üretilir; "
-      "elle düzenlenmez. Makale yazımında sayılar **yalnızca bu dosyadan** alınır. "
-      "Zaman damgalı (eski) sürümün sayıları yalnızca Bölüm 8'de, Ek A için yer alır.")
+    w("> This file is generated by `scripts/18_paper_numbers.py` from saved outputs; "
+      "it is not edited by hand. When writing the paper, numbers are taken **only from this file**. "
+      "The numbers of the timestamp-aligned (old) version appear only in Section 8, for Appendix A.")
     w("")
-    w("**Genel kurallar.** Ana metrik fold ortalaması RMSE ve MAE; R²_oos ikincil "
-      "(referans: o fold'un train hedef ortalaması); standart R² dipnot metriği. "
-      "h=5 ve h=22'de 15 fold (2012–2026), h=66 ve h=126'da 14 fold (2026 kısmi yıl "
-      "ana metrikten çıkarılır, ayrıca dipnotta verilir). Birim: günlük log getirilerin "
-      "standart sapması. Yüzdeler `100 × (RMSE_a / RMSE_b − 1)`; negatif = a daha iyi.")
+    w("**General rules.** Main metric: fold-mean RMSE and MAE; R²_oos secondary "
+      "(reference: that fold's training target mean); standard R² footnote metric. "
+      "At h=5 and h=22, 15 folds (2012–2026); at h=66 and h=126, 14 folds (the 2026 partial year "
+      "is excluded from the main metric and given separately in a footnote). Unit: standard deviation "
+      "of daily log returns. Percentages `100 × (RMSE_a / RMSE_b − 1)`; negative = a better.")
     w("")
-    w("**p değerleri.** Çıkarım için kullanılan tek test ailesi **birincil sekizlik "
-      "ailedir** (Bölüm 6: HAR vs HAR-X ve HAR-X vs XGBoost, dört ufuk). Aile "
-      "**testlerden sonra resmileştirildi, ön-kayıt değildir**; ancak p değerlerine "
-      "bakılarak değil, Aşama 5–6'da ilan edilmiş iki iddiaya göre seçildi ve o tarihten "
-      "beri sabittir: sonradan test eklenmez. Bu dosyadaki diğer tüm p değerleri "
-      "(ablasyon, XGBoost-6, iki sürüm karşılaştırması, BiLSTM kontrolleri, 9. bölüm) "
-      "**keşifsel ve çoklu karşılaştırma için düzeltilmemiştir**; betimleyici olarak "
-      "verilir. İkincil DM ailesi (24 test) kendi içinde Holm/BH/BY ile düzeltilir ama "
-      "doğrulayıcı değildir.")
+    w("**p-values.** The only test family used for inference is **the primary family of "
+      "eight** (Section 6: HAR vs HAR-X and HAR-X vs XGBoost, four horizons). The family "
+      "**was formalized after the tests, it is not a pre-registration**; but it was chosen not "
+      "by looking at p-values but according to two claims declared in Stages 5–6, and it has "
+      "been fixed since then: no test is added afterwards. All other p-values in this file "
+      "(ablation, XGBoost-6, the two-version comparison, the BiLSTM checks, Section 9) "
+      "are **exploratory and not corrected for multiple comparisons**; they are given as "
+      "descriptive. The secondary DM family (24 tests) is corrected within itself with Holm/BH/BY but "
+      "is not confirmatory.")
     w("")
-    w("**Tutarlılık kontrolleri (assert):** her fold'un RMSE'si tahmin dosyalarından "
-      "yeniden hesaplanıp kayıtlı metrikle karşılaştırıldı; fold ortalamaları "
-      "`gpr_alignment_comparison.csv` ile aynı; train-mean R²_oos her fold'da tam 0; "
-      "ana metrikten yalnızca 2026 fold'u h=66/126'da dışlanıyor.")
+    w("**Consistency checks (assert):** each fold's RMSE was recomputed from the prediction "
+      "files and compared with the stored metric; the fold means equal "
+      "`gpr_alignment_comparison.csv`; train-mean R²_oos is exactly 0 in every fold; "
+      "only the 2026 fold is excluded from the main metric, at h=66/126.")
     w("")
 
     # ---------------- 1. Main table ----------------
     order = [m for m, _, _ in MODELS]
-    w("## 1. Ana sonuç tablosu (fold ortalaması)")
+    w("## 1. Main results table (fold mean)")
     w("")
-    w("Kaynak: `hybrid_metrics_all` (XGBoost, BiLSTM, hibritler, HAR, HAR-X, HAR-X-log, "
-      "naif), `bench_metrics_all` (GARCH, HAR-log), `ablation_exogenous_folds` "
-      "(HAR+OVX, HAR+GPR), `exploratory_xgb6_folds`, `opt_*metrics_all` — hepsi "
-      "`_publication_aligned`. Ortak örneklem: her fold'da tüm modellerin test satırı "
-      "sayısı aynı (assert); train pencereleri modele göre farklı olabilir (HAR ailesi "
-      "satır 21'den, XGBoost 127'den başlar; Aşama 5 veri eşitleme kontrolü, Bölüm 7a). "
-      "Kalın = sütundaki en düşük değer.")
+    w("Source: `hybrid_metrics_all` (XGBoost, BiLSTM, hybrids, HAR, HAR-X, HAR-X-log, "
+      "naive), `bench_metrics_all` (GARCH, HAR-log), `ablation_exogenous_folds` "
+      "(HAR+OVX, HAR+GPR), `exploratory_xgb6_folds`, `opt_*metrics_all` — all "
+      "`_publication_aligned`. Common sample: in every fold all models have the same number "
+      "of test rows (assert); the training windows may differ by model (the HAR family "
+      "starts at row 21, XGBoost at 127; Stage 5 data-equalization check, Section 7a). "
+      "Bold = lowest value in the column.")
     w("")
     w("### 1a. RMSE")
     w("")
@@ -1325,14 +1379,14 @@ def main():
     w("")
     w(md_table(wide(A, "mae", f6, order, bold_min=True)))
     w("")
-    w("### 1c. R²_oos (ikincil metrik)")
+    w("### 1c. R²_oos (secondary metric)")
     w("")
-    w("`R²_oos = 1 − SSE_model / Σ(y_test − train_mean)²`. **Referans tüm modellerde "
-      "aynıdır:** her fold'da train-mean baseline'ının tahmini (XGBoost train "
-      "penceresinin hedef ortalaması, `hybrid_metrics_all`). Bu yüzden train-mean satırı "
-      "tam 0'dır ve sütun içindeki değerler aynı sabit tahmine göre ölçülür. Tahmin "
-      "dosyalarından yeniden hesaplanmıştır; hibrit kaynaklı modellerde kayıtlı değerle "
-      "birebir aynıdır (assert).")
+    w("`R²_oos = 1 − SSE_model / Σ(y_test − train_mean)²`. **The reference is the same for "
+      "all models:** in every fold the forecast of the train-mean baseline (the target mean "
+      "of the XGBoost training window, `hybrid_metrics_all`). Hence the train-mean row "
+      "is exactly 0 and the values in a column are measured against the same constant forecast. "
+      "Recomputed from the prediction files; for the models sourced from the hybrid file it is "
+      "identical to the stored value (assert).")
     w("")
     w(md_table(wide(A, "r2_oos_common", f3, order)))
     w("")
@@ -1341,42 +1395,42 @@ def main():
     for h in HORIZONS:
         s = A[A["horizon"] == h].set_index("model").loc[own]
         t[f"h={h}"] = [f3(v) for v in s["r2_oos"]]
-    w("Not — kaynak dosyalardaki değerler farklı bir referans kullanır: `bench`, "
-      "`ablation`, `exploratory_xgb6` ve `opt_*` her modelin **kendi** train "
-      "penceresinin ortalamasını referans alır (HAR ailesi satır 21'den, XGBoost 127'den "
-      "başlar). Aşağıdaki değerler o dosyalardadır; makalede kullanılmaz, yalnızca "
-      "kaynak dosyalarla karşılaştırma yapılırsa farkın nedenini göstermek için "
-      "verilir:")
+    w("Note — the values in the source files use a different reference: `bench`, "
+      "`ablation`, `exploratory_xgb6` and `opt_*` take the mean of each model's **own** "
+      "training window as the reference (the HAR family starts at row 21, XGBoost at 127). "
+      "The values below are those in these files; they are not used in the paper and "
+      "are given only to show the reason for the difference if a comparison with the "
+      "source files is made:")
     w("")
     w(md_table(t))
     w("")
     neg = A[(A["r2_oos_common"] < 0)].sort_values(["horizon", "model"])
-    w("Negatif R²_oos (model sabit train-mean tahmininden kötü): " + "; ".join(
+    w("Negative R²_oos (model worse than the constant train-mean forecast): " + "; ".join(
         f"h={h}: " + ", ".join(LABEL[m] for m in g["model"])
         for h, g in neg.groupby("horizon")) + ".")
     w("")
-    w("### 1d. Standart R² (dipnot metriği, karar için kullanılmaz)")
+    w("### 1d. Standard R² (footnote metric, not used for decisions)")
     w("")
-    w("Fold ortalaması ve havuzlanmış değer. Referansı test diliminin kendi ortalamasıdır "
-      "(ex-post). Sakin yıllarda fold SST'si çok küçüldüğü için fold R²'leri aynı ölçekte "
-      "değildir; fold ortalaması bu uyarıyla verilir. Havuzlanmış R² yıllar arası varyansı "
-      "da içerdiği için sistematik olarak daha yüksektir.")
+    w("Fold mean and pooled value. The reference is the test slice's own mean "
+      "(ex-post). Because the fold SST becomes very small in calm years, the fold R² values are "
+      "not on the same scale; the fold mean is given with this caveat. The pooled R² is "
+      "systematically higher because it also contains between-year variance.")
     w("")
     t = pd.DataFrame({"model": [LABEL[m] for m in order]})
     for h in HORIZONS:
         s = A[A["horizon"] == h].set_index("model").loc[order]
-        t[f"h={h} fold ort."] = [f3(v) for v in s["r2_fold"]]
-        t[f"h={h} havuz"] = [f3(v) for v in s["r2_pooled"]]
+        t[f"h={h} fold mean"] = [f3(v) for v in s["r2_fold"]]
+        t[f"h={h} pooled"] = [f3(v) for v in s["r2_pooled"]]
     w(md_table(t))
     w("")
     npool = A.groupby("horizon")["n_pooled"].agg(["min", "max"])
     assert (npool["min"] == npool["max"]).all(), "pooled sample differs across models"
-    w("Havuzlanmış gözlem sayısı: " + ", ".join(
+    w("Number of pooled observations: " + ", ".join(
         f"h={h}: {int(r['min'])}" for h, r in npool.iterrows()) + ".")
     w("")
-    w("### 1e. Dipnot: 2026 kısmi yıl, h=66 ve h=126 (düşük istatistiksel güç)")
+    w("### 1e. Footnote: 2026 partial year, h=66 and h=126 (low statistical power)")
     w("")
-    w("Model karşılaştırması veya seçimi için kullanılmaz; yalnızca bilgi amaçlı.")
+    w("Not used for model comparison or selection; informational only.")
     w("")
     f26 = F[(F["test_year"] == 2026) & F["horizon"].isin([66, 126])]
     t = pd.DataFrame({"model": [LABEL[m] for m in order]})
@@ -1388,38 +1442,38 @@ def main():
     w(md_table(t))
     w("")
     w("n: " + ", ".join(f"h={h}: {int(f26[f26['horizon'] == h]['n'].iloc[0])}"
-                        for h in (66, 126)) + " test gözlemi.")
+                        for h in (66, 126)) + " test observations.")
     w("")
     opt = rd("opt_metrics_all.csv", PUB)
     fb = (opt[(opt["model"] == "xgboost") & (opt["selection_procedure"] != "optuna")]
           .groupby("horizon").size())
-    w("Not (Optuna satırları): validation dilimi kurulamayan erken fold'larda Optuna "
-      "koşusu kapasite kuralına düşer: " + ", ".join(
-          f"h={h}: {n} fold" for h, n in fb.items()) + " (tüm fold'lar, 2026 dahil).")
+    w("Note (Optuna rows): in early folds where no validation slice can be built, the Optuna "
+      "run falls back to the capacity rule: " + ", ".join(
+          f"h={h}: {n} folds" for h, n in fb.items()) + " (all folds, including 2026).")
     w("")
 
     # ---------------- 2. Decomposition ----------------
     dec = pd.read_csv(OUT_DIR / "gpr_alignment_decomposition.csv")
     dp = dec[dec["gpr_alignment"] == PUB].set_index("horizon").loc[HORIZONS]
-    w("## 2. Dört basamaklı ayrıştırma (HAR → HAR-X → XGBoost-6 → XGBoost)")
+    w("## 2. Four-step decomposition (HAR → HAR-X → XGBoost-6 → XGBoost)")
     w("")
-    w("Her basamak tek bir şeyi değiştirir: (1) dışsal değişkenler (OVX, GPR) eklenir; "
-      "(2) aynı altı regresör, düzey hedef, ön işleme yok — yalnızca fonksiyonel form "
-      "doğrusaldan ağaca; (3) 65 özellik + log-oran hedef + smearing + ön işleme paketi. "
-      "Kaynak: `gpr_alignment_decomposition.csv`. XGBoost-6 keşifsel ve post hoc'tur.")
+    w("Each step changes one thing: (1) the exogenous variables (OVX, GPR) are added; "
+      "(2) the same six regressors, level target, no preprocessing — only the functional form, "
+      "from linear to tree; (3) the 65 features + log-ratio target + smearing + preprocessing package. "
+      "Source: `gpr_alignment_decomposition.csv`. XGBoost-6 is exploratory and post hoc.")
     w("")
     t = pd.DataFrame({
-        "ufuk": [f"h={h}" for h in HORIZONS],
+        "horizon": [f"h={h}" for h in HORIZONS],
         "RMSE HAR": [f6(v) for v in dp["rmse_har"]],
         "RMSE HAR-X": [f6(v) for v in dp["rmse_har_x"]],
         "RMSE XGB-6": [f6(v) for v in dp["rmse_xgb6"]],
         "RMSE XGB": [f6(v) for v in dp["rmse_xgboost"]],
-        "(1) dışsal HAR→HAR-X": [pct(v) for v in dp["pct_exogenous_HAR_to_HARX"]],
-        "(2) fonksiyonel form HAR-X→XGB-6": [pct(v) for v in
-                                             dp["pct_functional_form_HARX_to_XGB6"]],
-        "(3) özellik paketi XGB-6→XGB": [pct(v) for v in
-                                         dp["pct_feature_package_XGB6_to_XGB"]],
-        "toplam HAR→XGB": [pct(v) for v in dp["pct_total_HAR_to_XGB"]],
+        "(1) exogenous HAR→HAR-X": [pct(v) for v in dp["pct_exogenous_HAR_to_HARX"]],
+        "(2) functional form HAR-X→XGB-6": [pct(v) for v in
+                                            dp["pct_functional_form_HARX_to_XGB6"]],
+        "(3) feature package XGB-6→XGB": [pct(v) for v in
+                                          dp["pct_feature_package_XGB6_to_XGB"]],
+        "total HAR→XGB": [pct(v) for v in dp["pct_total_HAR_to_XGB"]],
     })
     w(md_table(t))
     w("")
@@ -1427,21 +1481,21 @@ def main():
     for h in HORIZONS:
         a, b, n = wins(F, "xgb6", "har_x", h)
         c, d, _ = wins(F, "xgboost", "xgb6", h)
-        rows.append({"ufuk": f"h={h}", "XGB-6 < HAR-X (fold)": f"{a}/{n}",
-                     "işaret p": fp(sign_p(a, a + b)),
-                     "XGB < XGB-6 (fold)": f"{c}/{n}", "işaret p ": fp(sign_p(c, c + d))})
-    w("Fold bazında (RMSE, düzeltmesiz iki yönlü işaret testi):")
+        rows.append({"horizon": f"h={h}", "XGB-6 < HAR-X (fold)": f"{a}/{n}",
+                     "sign p": fp(sign_p(a, a + b)),
+                     "XGB < XGB-6 (fold)": f"{c}/{n}", "sign p ": fp(sign_p(c, c + d))})
+    w("By fold (RMSE, uncorrected two-sided sign test):")
     w("")
     w(md_table(pd.DataFrame(rows)))
     w("")
 
     # ---------------- 3. Ablation ladder ----------------
-    w("## 3. Ablasyon merdiveni (HAR, HAR+OVX, HAR+GPR, HAR-X)")
+    w("## 3. Ablation ladder (HAR, HAR+OVX, HAR+GPR, HAR-X)")
     w("")
-    w("Kaynak: `ablation_exogenous_folds_publication_aligned.csv`. Keşifsel/post hoc; "
-      "birincil hipotez ailesine dahil değil. HAR ve HAR+OVX GPR kullanmaz, iki sürümde "
-      "bit düzeyinde aynıdır. RMSE/MAE ablasyon dosyasıyla aynı (assert); R²_oos Bölüm "
-      "1c'deki ortak referansla.")
+    w("Source: `ablation_exogenous_folds_publication_aligned.csv`. Exploratory/post hoc; "
+      "not part of the primary hypothesis family. HAR and HAR+OVX do not use GPR and are "
+      "bit-identical in the two versions. RMSE/MAE identical to the ablation file (assert); R²_oos with the "
+      "common reference of Section 1c.")
     w("")
     abl_models = ["har", "har_ovx", "har_gpr", "har_x"]
     ab = rd("ablation_exogenous_folds.csv", PUB).rename(columns={"variant": "model"})
@@ -1455,7 +1509,7 @@ def main():
         base = aa.loc[("har", h), "rmse"]
         for m in abl_models:
             r = aa.loc[(m, h)]
-            rows.append({"ufuk": f"h={h}", "varyant": LABEL[m] if m != "har_x" else
+            rows.append({"horizon": f"h={h}", "variant": LABEL[m] if m != "har_x" else
                          "HAR-X (HAR + OVX + GPR)", "RMSE": f6(r["rmse"]),
                          "MAE": f6(r["mae"]), "R²_oos": f3(r["r2_oos"]),
                          "RMSE vs HAR": "—" if m == "har" else pct(100 * (r["rmse"] / base - 1))})
@@ -1465,17 +1519,17 @@ def main():
     rows = []
     for h in HORIZONS:
         x = abf.loc[h]
-        row = {"ufuk": f"h={h}", "fold": len(x)}
-        for lab, a, b in (("OVX katkısı: HAR+OVX < HAR", "har_ovx", "har"),
-                          ("GPR katkısı: HAR+GPR < HAR", "har_gpr", "har"),
-                          ("OVX üstüne GPR: HAR-X < HAR+OVX", "har_x", "har_ovx")):
+        row = {"horizon": f"h={h}", "fold": len(x)}
+        for lab, a, b in (("OVX contribution: HAR+OVX < HAR", "har_ovx", "har"),
+                          ("GPR contribution: HAR+GPR < HAR", "har_gpr", "har"),
+                          ("GPR on top of OVX: HAR-X < HAR+OVX", "har_x", "har_ovx")):
             k, l = int((x[a] < x[b]).sum()), int((x[a] > x[b]).sum())
             p = sign_p(k, k + l)
             row[lab] = f"{k}/{len(x)} (p{'<0.001' if p < 0.001 else '=' + fp(p)})"
             row[lab.split(":")[0] + " RMSE %"] = pct(100 * (x[a].mean() / x[b].mean() - 1))
         rows.append(row)
-    w("Fold bazında kazanma sayıları (düzeltmesiz iki yönlü işaret testi) ve fold "
-      "ortalaması RMSE farkı:")
+    w("Fold win counts (uncorrected two-sided sign test) and fold-mean "
+      "RMSE difference:")
     w("")
     w(md_table(pd.DataFrame(rows)))
     w("")
@@ -1483,10 +1537,10 @@ def main():
     # ---------------- 4. Standardized betas ----------------
     sb = rd("ablation_exogenous_std_beta_summary.csv", PUB)
     sb = sb[sb["fold_set"] == "main"].set_index(["variant", "horizon", "regressor"])
-    w("## 4. Standartlaştırılmış betalar")
+    w("## 4. Standardized betas")
     w("")
-    w("beta_std = beta × sd(X) / sd(y), sd'ler o fold'un train diliminden. Fold "
-      "ortalaması (pozitif / negatif fold sayısı), ana fold kümesi. Kaynak: "
+    w("beta_std = beta × sd(X) / sd(y), the sds from that fold's training slice. Fold "
+      "mean (number of positive / negative folds), main fold set. Source: "
       "`ablation_exogenous_std_beta_summary_publication_aligned.csv`.")
     w("")
 
@@ -1496,18 +1550,18 @@ def main():
 
     harx_regs = ["har_daily", "brent_vol5", "brent_vol20", "ovx_lag1", "gprd_lag1",
                  "gprd_threat_lag1"]
-    w("### 4a. HAR-X, altı regresör")
+    w("### 4a. HAR-X, six regressors")
     w("")
-    t = pd.DataFrame({"regresör": harx_regs})
+    t = pd.DataFrame({"regressor": harx_regs})
     for h in HORIZONS:
         t[f"h={h}"] = [beta_cell("har_x", h, r) for r in harx_regs]
     w(md_table(t))
     w("")
-    w("### 4b. Ablasyon varyantlarında dışsal katsayılar")
+    w("### 4b. Exogenous coefficients in the ablation variants")
     w("")
     cols = [("har_ovx", "ovx_lag1"), ("har_ovx", "brent_vol20"), ("har", "brent_vol20"),
             ("har_gpr", "gprd_lag1"), ("har_gpr", "gprd_threat_lag1")]
-    t = pd.DataFrame({"ufuk": [f"h={h}" for h in HORIZONS]})
+    t = pd.DataFrame({"horizon": [f"h={h}" for h in HORIZONS]})
     for v, r in cols:
         t[f"{LABEL[v]}: {r}"] = [beta_cell(v, h, r) for h in HORIZONS]
     w(md_table(t))
@@ -1518,30 +1572,30 @@ def main():
     g = pd.DataFrame(sh["group_shares_xgb"]).pivot(index="grup", columns="horizon",
                                                    values="pay_pct")
     grp_order = ["brent_vol", "gpr", "ovx", "brent_fiyat", "etkilesim", "takvim"]
-    w("## 5. SHAP grup payları (birincil XGBoost)")
+    w("## 5. SHAP group shares (primary XGBoost)")
     w("")
-    w(f"Yöntem: {sh['method']}. Birim: {sh['shap_units']}. Pay = grup mean|SHAP| / "
-      "toplam. **Uyarı:** grup payı özellik sayısıyla birlikte büyür; grup başına "
-      "özellik sayısı ikinci sütunda. Kaynak: `shap_summary_publication_aligned.json`.")
+    w(f"Method: {en(sh['method'])}. Unit: {en(sh['shap_units'])}. Share = group mean|SHAP| / "
+      "total. **Caveat:** a group's share grows with its number of features; the number of "
+      "features per group is in the second column. Source: `shap_summary_publication_aligned.json`.")
     w("")
-    t = pd.DataFrame({"grup": grp_order,
-                      "özellik sayısı": [sh["groups"][k] for k in grp_order]})
+    t = pd.DataFrame({"group": grp_order,
+                      "features": [sh["groups"][k] for k in grp_order]})
     for h in HORIZONS:
         t[f"h={h}"] = [f"{g.loc[k, h]:.1f}%" for k in grp_order]
     w(md_table(t))
     w("")
     gh = pd.DataFrame(sh["group_shares_harx"]).pivot(index="grup", columns="horizon",
                                                      values="pay_pct")
-    w("Karşılaştırma: HAR-X'te |standartlaştırılmış beta| grup payları. mean|SHAP| ile "
-      "standartlaştırılmış beta aynı büyüklük değildir; yalnızca sıralama ve pay "
-      "düzeyinde karşılaştırılabilir.")
+    w("Comparison: group shares of |standardized beta| in HAR-X. mean|SHAP| and the "
+      "standardized beta are not the same quantity; they can be compared only at the level "
+      "of ranking and shares.")
     w("")
-    t = pd.DataFrame({"grup": ["brent_vol", "ovx", "gpr"]})
+    t = pd.DataFrame({"group": ["brent_vol", "ovx", "gpr"]})
     for h in HORIZONS:
-        t[f"h={h}"] = [f"{gh.loc[k, h]:.1f}%" for k in t["grup"]]
+        t[f"h={h}"] = [f"{gh.loc[k, h]:.1f}%" for k in t["group"]]
     w(md_table(t))
     w("")
-    w("XGBoost SHAP'ında HAR-X'in altı regresörü dışındaki özelliklerin payı: " + ", ".join(
+    w("Share of the features other than HAR-X's six regressors in the XGBoost SHAP: " + ", ".join(
         f"h={h}: {sh['outside_harx_share_pct'][str(h)]:.1f}%" for h in HORIZONS) + ".")
     w("")
 
@@ -1573,8 +1627,8 @@ def main():
     rho22 = float(np.corrcoef(d1, d2)[0, 1])
     lose1 = [int(y) for y in fr.index[d1 < 0]]
     lose2 = [int(y) for y in fr.index[d2 < 0]]
-    d["claim"] = np.where(d["model1"] == "har", "HAR-X, HAR'ı geçer",
-                          "HAR-X, XGBoost'u geçer")
+    d["claim"] = np.where(d["model1"] == "har", "HAR-X beats HAR",
+                          "HAR-X beats XGBoost")
     # HAR-X fold wins (isaret_kazanan counts model1's wins)
     d["harx_wins"] = np.where(d["model1"] == "har_x", d["isaret_kazanan"],
                               d["isaret_fold"] - d["isaret_kazanan"])
@@ -1594,135 +1648,135 @@ def main():
         "p_sign_by": d["p_isaret_by"]})
     out.to_csv(OUT_DIR / "primary_family_tests_publication_aligned.csv", index=False)
 
-    w("## 6. Birincil hipotez ailesi (8 test) — merkez çıkarım sonucu")
+    w("## 6. Primary hypothesis family (8 tests) — the central inferential result")
     w("")
-    w("İki iddia × dört ufuk: **HAR vs HAR-X** (dışsal değişkenler katkı sağlar mı) ve "
-      "**HAR-X vs XGBoost** (doğrusal olmayan model katkı sağlar mı). Holm (FWER), "
-      "Benjamini-Hochberg (FDR, pozitif bağımlılık/PRDS altında geçerli) ve "
-      "Benjamini-Yekutieli (FDR, her bağımlılık yapısında geçerli; BH × c(m), "
-      f"c(8) = {C8:.3f}) aile içinde, 8 test üzerinden. "
-      f"Kayıp: {dms['loss']}. HAC: {dms['hac']}. HLN: `{dms['hln']}`. "
-      "DM işareti: negatif = ilk model daha iyi. **Holm, BH ve BY düzeltmeleri HLN p "
-      "değerine uygulanır** (ham DM p'sine değil). BY bu dosyada hesaplanır; BH, "
-      "`08_dm_test.py`'nin kayıtlı değeriyle aynı fonksiyonla yeniden üretilip "
-      "doğrulanır (assert). İşaret testi fold düzeyinde "
-      "binom (H0: p=0.5, iki yönlü); HAC/normallik varsayımı kullanmaz. DM havuzlanmış "
-      "seri üzerindedir (her yıl yeniden eğitilmiş modellerin tahminleri), fold "
-      "ortalaması değil; bu yüzden havuzlanmış RMSE farkı Bölüm 1'deki fold ortalaması "
-      "farkından farklıdır ve h=66/126'da HAR vs HAR-X'te işaret değiştirir.")
+    w("Two claims × four horizons: **HAR vs HAR-X** (do the exogenous variables contribute) and "
+      "**HAR-X vs XGBoost** (does the nonlinear model contribute). Holm (FWER), "
+      "Benjamini-Hochberg (FDR, valid under positive dependence/PRDS) and "
+      "Benjamini-Yekutieli (FDR, valid under any dependence structure; BH × c(m), "
+      f"c(8) = {C8:.3f}) within the family, over 8 tests. "
+      f"Loss: {en(dms['loss'])}. HAC: {en(dms['hac'])}. HLN: `{dms['hln']}`. "
+      "DM sign: negative = first model better. **The Holm, BH and BY corrections are applied "
+      "to the HLN p-value** (not to the raw DM p). BY is computed in this file; BH is "
+      "reproduced with the same function and verified against the stored value of `08_dm_test.py` "
+      "(assert). The sign test is a fold-level "
+      "binomial (H0: p=0.5, two-sided); it uses no HAC/normality assumption. DM is on the pooled "
+      "series (forecasts of models retrained every year), not the fold "
+      "mean; hence the pooled RMSE difference differs from the fold-mean difference in "
+      "Section 1 and changes sign at h=66/126 for HAR vs HAR-X.")
     w("")
-    w("Şeffaflık: aile tanımı testlerden sonra resmileştirilmiştir (ön-kayıt değildir); "
-      "karşılaştırmalar p değerine göre değil, Aşama 5–6'da ilan edilmiş iddialara göre "
-      "seçilmiştir.")
+    w("Transparency: the family definition was formalized after the tests (it is not a "
+      "pre-registration); the comparisons were chosen not according to p-values but "
+      "according to the claims declared in Stages 5–6.")
     w("")
     t = pd.DataFrame({
-        "ufuk": [f"h={h}" for h in d["horizon"]],
-        "karşılaştırma": [("HAR vs HAR-X" if a == "har" else "HAR-X vs XGBoost")
-                          for a in d["model1"]],
-        "havuz RMSE farkı": [pct(v) for v in d["fark_pct"]],
+        "horizon": [f"h={h}" for h in d["horizon"]],
+        "comparison": [("HAR vs HAR-X" if a == "har" else "HAR-X vs XGBoost")
+                       for a in d["model1"]],
+        "pooled RMSE difference": [pct(v) for v in d["fark_pct"]],
         "DM": [signed(v, 3) for v in d["DM_ham"]],
         "DM (HLN)": [signed(v, 3) for v in d["DM_HLN"]],
-        "ham p": [fp(v) for v in d["p_ham"]],
+        "raw p": [fp(v) for v in d["p_ham"]],
         "HLN p": [fp(v) for v in d["p_HLN"]],
         "Holm p": [fp(v) for v in d["p_HLN_holm"]],
         "BH p": [(f"**{fp(v)}**" if v < 0.05 else fp(v)) for v in d["p_HLN_bh"]],
         "BY p": [(f"**{fp(v)}**" if v < 0.05 else fp(v)) for v in d["p_HLN_by"]],
-        "işaret: HAR-X kazanır": [f"{k}/{n}" for k, n in zip(d["harx_wins"],
-                                                             d["isaret_fold"])],
-        "işaret ham p": [fp(v) for v in d["p_isaret"]],
-        "işaret Holm p": [(f"**{fp(v)}**" if v < 0.05 else fp(v))
-                          for v in d["p_isaret_holm"]],
-        "işaret BH p": [(f"**{fp(v)}**" if v < 0.05 else fp(v))
-                        for v in d["p_isaret_bh"]],
-        "işaret BY p": [(f"**{fp(v)}**" if v < 0.05 else fp(v))
-                        for v in d["p_isaret_by"]],
+        "sign: HAR-X wins": [f"{k}/{n}" for k, n in zip(d["harx_wins"],
+                                                        d["isaret_fold"])],
+        "sign raw p": [fp(v) for v in d["p_isaret"]],
+        "sign Holm p": [(f"**{fp(v)}**" if v < 0.05 else fp(v))
+                        for v in d["p_isaret_holm"]],
+        "sign BH p": [(f"**{fp(v)}**" if v < 0.05 else fp(v))
+                      for v in d["p_isaret_bh"]],
+        "sign BY p": [(f"**{fp(v)}**" if v < 0.05 else fp(v))
+                      for v in d["p_isaret_by"]],
     })
     w(md_table(t))
     w("")
-    w("Makine okunur kopya: `primary_family_tests_publication_aligned.csv`.")
+    w("Machine-readable copy: `primary_family_tests_publication_aligned.csv`.")
     w("")
 
     def survivors(x):
         return {"DM Holm": int((x["p_HLN_holm"] < .05).sum()),
                 "DM BH": int((x["p_HLN_bh"] < .05).sum()),
                 "DM BY": int((x["p_HLN_by"] < .05).sum()),
-                "işaret Holm": int((x["p_isaret_holm"] < .05).sum()),
-                "işaret BH": int((x["p_isaret_bh"] < .05).sum()),
-                "işaret BY": int((x["p_isaret_by"] < .05).sum())}
+                "sign Holm": int((x["p_isaret_holm"] < .05).sum()),
+                "sign BH": int((x["p_isaret_bh"] < .05).sum()),
+                "sign BY": int((x["p_isaret_by"] < .05).sum())}
 
     rows = []
-    for al, name in ((PUB, "yayım-hizalı (birincil)"), (TS, "zaman damgalı (Ek A)")):
+    for al, name in ((PUB, "publication-aligned (primary)"), (TS, "timestamp-aligned (Appendix A)")):
         for fam in ("birincil", "ikincil"):
             x = dm[al][dm[al]["aile"] == fam]
-            rows.append({"sürüm": name, "aile": f"{fam} ({len(x)} test)",
+            rows.append({"version": name, "family": f"{en(fam)} ({len(x)} tests)",
                          **{k: f"{v}/{len(x)}" for k, v in survivors(x).items()}})
-    w("Ayakta kalan test sayısı (%5 eşiği):")
+    w("Number of surviving tests (5% threshold):")
     w("")
     w(md_table(pd.DataFrame(rows)))
     w("")
     surv = d[d["p_isaret_bh"] < .05]
     assert list(surv["horizon"]) == [22, 22], "survivor text below assumes the two h=22 tests"
     assert (d["p_isaret_by"] >= .05).all() and (d["p_HLN_by"] >= .05).all()
-    w("**Birincil aile sonucu (yayım-hizalı):**")
+    w("**Primary family result (publication-aligned):**")
     w("")
-    w("- **Holm (FWER):** hiçbir test ayakta kalmıyor.")
-    w("- **BH (FDR, PRDS varsayımıyla):** h=22'de iki hipotez reddediliyor: " + "; ".join(
-        f"{r.claim} (işaret {r.harx_wins}/{r.isaret_fold}, BH p = {r.p_isaret_bh:.3f})"
-        for r in surv.itertuples()) + ". **Bunlar iki ayrı hipotez, ama birbirinden "
-      "bağımsız iki kanıt değil:** iki fold farkı vektörü (HAR − HAR-X ve XGBoost − "
-      f"HAR-X) {rho22:.2f} korelasyonlu. İkisi de HAR-X'i içeriyor ve 2020 ortak kayıp "
-      f"yılı (HAR-X'in kaybettiği yıllar: HAR'a karşı {', '.join(map(str, lose1))}; "
-      f"XGBoost'a karşı {', '.join(map(str, lose2))}). Aynı 13/15 ve aynı ham p, binom "
-      "testinin yalnızca kazanma sayısına bağlı olmasından geliyor; vektörler farklı "
+    w("- **Holm (FWER):** no test survives.")
+    w("- **BH (FDR, under the PRDS assumption):** at h=22 two hypotheses are rejected: " + "; ".join(
+        f"{r.claim} (sign {r.harx_wins}/{r.isaret_fold}, BH p = {r.p_isaret_bh:.3f})"
+        for r in surv.itertuples()) + ". **These are two separate hypotheses, but not two "
+      "independent pieces of evidence:** the two fold-difference vectors (HAR − HAR-X and XGBoost − "
+      f"HAR-X) are correlated at {rho22:.2f}. Both contain HAR-X, and 2020 is a common losing "
+      f"year (years HAR-X loses: against HAR {', '.join(map(str, lose1))}; "
+      f"against XGBoost {', '.join(map(str, lose2))}). The same 13/15 and the same raw p come from the "
+      "binomial test depending only on the win count; the vectors differ "
       "(assert).")
-    w("- **BY (FDR, bağımlılık yapısından bağımsız geçerli):** hiçbir test ayakta "
-      f"kalmıyor. En küçük BY p = {d['p_isaret_by'].min():.3f} (h=22 işaret testleri; "
+    w("- **BY (FDR, valid regardless of the dependence structure):** no test "
+      f"survives. Smallest BY p = {d['p_isaret_by'].min():.3f} (h=22 sign tests; "
       f"BH p {surv['p_isaret_bh'].iloc[0]:.4f} × c(8) = {C8:.3f}).")
-    w(f"- **DM:** hiçbir düzeltmede anlamlılık yok (HLN p aralığı "
+    w(f"- **DM:** no significance under any correction (HLN p range "
       f"{d['p_HLN'].min():.3f}–{d['p_HLN'].max():.3f}).")
     w("")
     ok = (d["dm_yon"] == d["isaret_yon"])
-    w(f"Yön uyumu: DM (havuz) ve işaret testi {int(ok.sum())}/8 testte aynı modeli "
-      "işaret ediyor; uyuşmayanlar: " + (", ".join(
-          f"h={r.horizon} {r.model1} vs {r.model2}" for r in d[~ok].itertuples()) or "yok")
+    w(f"Direction agreement: DM (pooled) and the sign test point to the same model in {int(ok.sum())}/8 tests; "
+      "disagreeing: " + (", ".join(
+          f"h={r.horizon} {r.model1} vs {r.model2}" for r in d[~ok].itertuples()) or "none")
       + ".")
     w("")
 
     # ---------------- 7. Robustness ----------------
-    w("## 7. Sağlamlık kontrolleri (yayım modunda yeniden koşuldu)")
+    w("## 7. Robustness checks (re-run in publication mode)")
     w("")
-    w("### 7a. Veri eşitleme: benchmark'lar XGBoost'un penceresine (satır 127) indirildi")
+    w("### 7a. Data equalization: benchmarks restricted to XGBoost's window (row 127)")
     w("")
-    w("XGBoost'a göre RMSE farkı (%, negatif = benchmark daha iyi). Kaynak: "
+    w("RMSE difference relative to XGBoost (%, negative = benchmark better). Source: "
       "`bench_model_comparison_all{,_aligned}_publication_aligned.csv`.")
     w("")
     rows = []
     eq = {}
     for al in (PUB, TS):
         for win, name in (("normal", "bench_model_comparison_all.csv"),
-                          ("eşitlenmiş", "bench_model_comparison_all_aligned.csv")):
+                          ("equalized", "bench_model_comparison_all_aligned.csv")):
             p = rd(name, al).pivot_table(index="model", columns="horizon",
                                          values="rmse_fold_mean")
             eq[(al, win)] = 100 * (p.loc[["har", "har_x", "har_x_log"]] / p.loc["xgboost"] - 1)
     for m in ("har", "har_x", "har_x_log"):
         rows.append({"model": LABEL[m],
-                     "normal pencere": " / ".join(pct(eq[(PUB, 'normal')].loc[m, h])
-                                                  for h in HORIZONS),
-                     "eşitlenmiş pencere": " / ".join(pct(eq[(PUB, 'eşitlenmiş')].loc[m, h])
-                                                      for h in HORIZONS)})
+                     "normal window": " / ".join(pct(eq[(PUB, 'normal')].loc[m, h])
+                                                 for h in HORIZONS),
+                     "equalized window": " / ".join(pct(eq[(PUB, 'equalized')].loc[m, h])
+                                                    for h in HORIZONS)})
     w(md_table(pd.DataFrame(rows)))
     w("")
     w("(h=5 / h=22 / h=66 / h=126.)")
     w("")
-    w("### 7b. BiLSTM yakınsama kontrolü (yalnızca yüksek kademe; son %10 epoch "
-      "diliminde kayıp düşüşü < %2, üst sınır 200 epoch)")
+    w("### 7b. BiLSTM convergence check (high tier only; over the final 10% epoch "
+      "slice a loss decrease < 2%, upper bound 200 epochs)")
     w("")
     conv_ok = alignment.out("bilstm_aggregate_all_conv.csv", PUB).exists()
     if conv_ok:
         rows = []
         for h in HORIZONS:
-            row = {"ufuk": f"h={h}"}
-            for al, tag in ((PUB, "yayım"), (TS, "zaman d.")):
+            row = {"horizon": f"h={h}"}
+            for al, tag in ((PUB, "publication"), (TS, "timestamp")):
                 pri = rd("bilstm_folds_all.csv", al)
                 cf = rd("bilstm_folds_all_conv.csv", al)
                 prim = rd("bilstm_metrics_all.csv", al)
@@ -1730,47 +1784,47 @@ def main():
                 sel = lambda x: x[(x["model"] == "bilstm") & (x["horizon"] == h) &
                                   x["include_in_main"]].set_index("test_year")["rmse"]
                 a1, a2 = sel(prim), sel(conv)
-                row[f"{tag}: birincil"] = f6(a1.mean())
-                row[f"{tag}: yakınsama"] = f6(a2.mean())
-                row[f"{tag}: değişim"] = pct(100 * (a2.mean() / a1.mean() - 1))
-                row[f"{tag}: yakınsama daha iyi"] = f"{int((a2 < a1).sum())}/{len(a1)}"
+                row[f"{tag}: primary"] = f6(a1.mean())
+                row[f"{tag}: convergence"] = f6(a2.mean())
+                row[f"{tag}: change"] = pct(100 * (a2.mean() / a1.mean() - 1))
+                row[f"{tag}: convergence better"] = f"{int((a2 < a1).sum())}/{len(a1)}"
                 if al == PUB:
                     c = cf[(cf["horizon"] == h) & (cf["arch_tier"] == "yuksek")]
-                    row["yayım: ort. epoch (yüksek kademe)"] = (
+                    row["publication: mean epochs (high tier)"] = (
                         f"{c['epochs_run'].mean():.0f}" if len(c) else "—")
                     pc = pri[(pri["horizon"] == h) & (pri["arch_tier"] == "yuksek")]
                     lr = (pc.set_index("test_year")["loss_final"] /
                           c.set_index("test_year")["loss_final"])
-                    row["yayım: kayıp oranı birincil/yakınsama, medyan"] = (
+                    row["publication: loss ratio primary/convergence, median"] = (
                         f"{lr.median():.2f}" if len(c) else "—")
-                    row["yayım: yetersiz eğitilmiş (birincil→yakınsama)"] = (
+                    row["publication: under-trained (primary→convergence)"] = (
                         f"{int((pri[pri['horizon'] == h]['convergence'] == 'yetersiz_egitilmis').sum())}"
                         f"→{int((cf[cf['horizon'] == h]['convergence'] == 'yetersiz_egitilmis').sum())}")
             rows.append(row)
         w(md_table(pd.DataFrame(rows)))
         w("")
-        w("Değişim = yakınsama / birincil − 1 (fold ortalaması RMSE, ana fold'lar). "
-          "h=66 ve h=126'da yüksek kademe fold yok, sonuçlar tanım gereği aynı.")
+        w("Change = convergence / primary − 1 (fold-mean RMSE, main folds). "
+          "At h=66 and h=126 there are no high-tier folds; the results are identical by definition.")
         w("")
-        w("**Yorum sınırı (bkz. deney günlüğü 16.4):** yayım sürümünde durdurma kriteri "
-          "erken tetiklendi, eğitim kaybı yalnızca ~1.4 kat düştü (zaman damgalı "
-          "sürümde geç fold'larda 4–6 kat). Bu kontrol tek başına \"yetersiz eğitim "
-          "değil aşırı uyum\" iddiasını desteklemez; iddianın dayanağı 7c'deki sabit "
-          "200 epoch kontrolüdür.")
+        w("**Limit of interpretation (see experiment log 16.4):** in the publication version the stopping criterion "
+          "triggered early, the training loss fell only ~1.4-fold (in the timestamp "
+          "version 4–6-fold in late folds). On its own this check does not support the claim \"not "
+          "under-training but overfitting\"; the claim rests on 7c's fixed "
+          "200-epoch check.")
     else:
-        w("_`bilstm_*_conv_publication_aligned` henüz üretilmedi._")
+        w("_`bilstm_*_conv_publication_aligned` not generated yet._")
     w("")
     fx_path = alignment.out("bilstm_fixed200_folds.csv", PUB)
-    w("### 7c. BiLSTM sabit 200 epoch (keşifsel, post hoc; erken durdurma yok)")
+    w("### 7c. BiLSTM fixed 200 epochs (exploratory, post hoc; no early stopping)")
     w("")
     if fx_path.exists():
         fx = rd("bilstm_fixed200_folds.csv", PUB)
         fx = fx[fx["include_in_main"]]
-        w("Yüksek kademe fold'lar, h=5 ve h=22. Kosinüs programı yakınsama koşusuyla aynı "
-          "(`T_max=200`); k'ıncı epoch yakınsama koşusunun kendisidir (kayıp ve test "
-          "tahminleri bit düzeyinde aynı, assert). k = yakınsama kuralının durduğu "
-          "epoch. Kaynak: `bilstm_fixed200_folds_publication_aligned.csv`; epoch bazında "
-          "kayıp `bilstm_fixed200_loss_history_publication_aligned.csv`. Günlük 16.5.")
+        w("High-tier folds, h=5 and h=22. The cosine schedule is the same as in the convergence run "
+          "(`T_max=200`); the k-th epoch is the convergence run itself (loss and test "
+          "forecasts bit-identical, assert). k = the epoch at which the convergence rule stopped. "
+          "Source: `bilstm_fixed200_folds_publication_aligned.csv`; per-epoch "
+          "loss `bilstm_fixed200_loss_history_publication_aligned.csv`. Log 16.5.")
         w("")
         rows = []
         cmv = rd("bilstm_metrics_all_conv.csv", PUB)
@@ -1782,55 +1836,55 @@ def main():
             full.loc[gx["test_year"]] = gx.set_index("test_year")["rmse_200"]
             rng = lambda c: f"{gx[c].median():.2f}× ({gx[c].min():.2f}–{gx[c].max():.2f})"
             rows.append({
-                "ufuk": f"h={h}", "fold": len(gx), "ort. k": f"{gx['k_conv'].mean():.0f}",
-                "eğitim kaybı k→200, medyan (aralık)": rng("loss_ratio_k_to_200"),
-                "eval-modu eğitim MSE k→200": rng("train_mse_eval_ratio_k_to_200"),
-                "kayıp birincil(60)→200, medyan":
+                "horizon": f"h={h}", "fold": len(gx), "mean k": f"{gx['k_conv'].mean():.0f}",
+                "training loss k→200, median (range)": rng("loss_ratio_k_to_200"),
+                "eval-mode training MSE k→200": rng("train_mse_eval_ratio_k_to_200"),
+                "loss primary(60)→200, median":
                     f"{gx['loss_ratio_primary_to_200'].median():.2f}×",
-                "test RMSE birincil / k / 200": f"{gx['rmse_primary'].mean():.6f} / "
-                                                f"{gx['rmse_k'].mean():.6f} / "
-                                                f"{gx['rmse_200'].mean():.6f}",
+                "test RMSE primary / k / 200": f"{gx['rmse_primary'].mean():.6f} / "
+                                               f"{gx['rmse_k'].mean():.6f} / "
+                                               f"{gx['rmse_200'].mean():.6f}",
                 "RMSE 200 vs k": pct(100 * (gx["rmse_200"].mean() / gx["rmse_k"].mean() - 1)),
-                "200 daha iyi (işaret p; keşifsel, düzeltmesiz)":
+                "200 better (sign p; exploratory, uncorrected)":
                     f"{k}/{len(gx)} (p={fp(sign_p(k, len(gx)))})",
                 "MAE 200 vs k": pct(100 * (gx["mae_200"].mean() / gx["mae_k"].mean() - 1)),
-                "sd oranı k→200": f"{gx['pred_std_ratio_k'].mean():.2f} → "
+                "sd ratio k→200": f"{gx['pred_std_ratio_k'].mean():.2f} → "
                                   f"{gx['pred_std_ratio_200'].mean():.2f}",
-                "ufuk ortalaması RMSE (tüm fold'lar)":
+                "horizon-mean RMSE (all folds)":
                     f"{base:.6f} → {full.mean():.6f} ({pct(100 * (full.mean() / base - 1))})"})
         w(md_table(pd.DataFrame(rows)))
         w("")
-        w("**p değerlerinin statüsü:** buradaki işaret testi p'leri (h=5: 0.007) keşifsel "
-          "bir teşhisten gelir, **birincil sekizlik aileye dahil değildir ve "
-          "düzeltilmemiştir**; statüsü HAR+OVX vs HAR-X'in düzeltmesiz p = 0.035'iyle "
-          "aynıdır. Birincil aile sabittir (testlerden sonra resmileştirildi, ön-kayıt "
-          "değil; bkz. Bölüm 6); sonradan test eklenmez.")
+        w("**Status of the p-values:** the sign-test p-values here (h=5: 0.007) come from an "
+          "exploratory diagnostic, **are not part of the primary family of eight and are "
+          "not corrected**; their status is the same as HAR+OVX vs HAR-X's uncorrected p = "
+          "0.035. The primary family is fixed (formalized after the tests, not a "
+          "pre-registration; see Section 6); no test is added afterwards.")
         w("")
-        w("**Yorum:** eğitim kaybı durdurma kuralı olmadan ciddi düşüyor ve test hatası "
-          "iyileşmiyor, kötüleşiyor. \"Yetersiz eğitim değil aşırı uyum\" bulgusu yayım "
-          "sürümünde bu kontrolle destekleniyor. Zaman damgalı sürümdeki \"~4×\" rakamı "
-          "Ek A'ya aittir; yayım sürümünün rakamı yukarıdaki medyanlardır.")
+        w("**Interpretation:** without the stopping rule the training loss falls sharply and the "
+          "test error does not improve but worsens. The \"not under-training but overfitting\" "
+          "finding is supported by this check in the publication version. The \"~4×\" figure "
+          "of the timestamp version belongs to Appendix A; the publication version's figure is the medians above.")
     else:
-        w("_`bilstm_fixed200_*_publication_aligned` henüz üretilmedi._")
+        w("_`bilstm_fixed200_*_publication_aligned` not generated yet._")
     w("")
 
     # ---------------- 8. Two-version comparison ----------------
-    w("## 8. İki sürüm karşılaştırması (Ek A)")
+    w("## 8. Two-version comparison (Appendix A)")
     w("")
-    w("Zaman damgalı sürüm: GPR her gün bir gün gecikmeyle kullanılıyordu (satır t, "
-      "t−1 tarihli gözlemi görüyordu); GPR ise haftalık yayımlandığı için bu gözlemler "
-      "tahmin anında çoğu zaman yayımlanmamıştı (zaman damgalı satırların "
-      f"%{100 * json.load(open(OUT_DIR / 'build_features_publication_aligned_report.json', encoding='utf-8'))['effective_lag']['share_rows_timestamp_uses_unpublished_obs']:.1f}'i "
-      "yayımlanmamış gözlem kullanıyor). İki sürüm tamamen aynı örneklemde "
-      "değerlendirilir (aynı train/test satırları); GPR kullanmayan modeller bit "
-      "düzeyinde aynıdır. Fark saf hizalama etkisidir. Kaynak: "
+    w("Timestamp version: GPR was used every day with a one-day lag (row t saw "
+      "the observation dated t−1); but since GPR is published weekly, these observations had "
+      "often not yet been published at forecast time ("
+      f"{100 * json.load(open(OUT_DIR / 'build_features_publication_aligned_report.json', encoding='utf-8'))['effective_lag']['share_rows_timestamp_uses_unpublished_obs']:.1f}% "
+      "of the timestamp rows use an unpublished observation). The two versions are evaluated on "
+      "exactly the same sample (same train/test rows); the models that use no GPR are "
+      "bit-identical. The difference is a pure alignment effect. Source: "
       "`gpr_alignment_comparison*.csv`.")
     w("")
-    w("### 8a. RMSE, GPR kullanan modeller (fold ortalaması)")
+    w("### 8a. RMSE, models that use GPR (fold mean)")
     w("")
-    w("% = 100 × (RMSE_yayım / RMSE_zaman damgalı − 1); pozitif = yayım gecikmesine "
-      "uymanın doğruluk maliyeti. Fold sayımı: yayım sürümünün daha iyi olduğu fold "
-      "sayısı / toplam; p düzeltmesiz iki yönlü işaret testi.")
+    w("% = 100 × (RMSE_publication / RMSE_timestamp − 1); positive = the accuracy cost of "
+      "respecting the publication lag. Fold count: number of folds in which the publication "
+      "version is better / total; p uncorrected two-sided sign test.")
     w("")
     cg = comp[comp["uses_gpr"]]
     gmodels = [m for m in order if m in set(cg["model"])]
@@ -1845,41 +1899,41 @@ def main():
                                                    s["rmse_sign_p_two_sided"])]
     w(md_table(t))
     w("")
-    w("GPR kullanmayan modeller (HAR, HAR-log, HAR+OVX, GARCH, train-mean, "
-      "past-volatility) iki sürümde bit düzeyinde aynı; tablo dışı.")
+    w("The models that use no GPR (HAR, HAR-log, HAR+OVX, GARCH, train-mean, "
+      "past-volatility) are bit-identical in the two versions; not in the table.")
     w("")
-    w("### 8b. Ayrıştırma, iki sürüm")
+    w("### 8b. Decomposition, two versions")
     w("")
     rows = []
     for h in HORIZONS:
-        for al, name in ((TS, "zaman damgalı"), (PUB, "yayım-hizalı")):
+        for al, name in ((TS, "timestamp-aligned"), (PUB, "publication-aligned")):
             r = dec[(dec["horizon"] == h) & (dec["gpr_alignment"] == al)].iloc[0]
-            rows.append({"ufuk": f"h={h}", "sürüm": name,
-                         "(1) dışsal": pct(r["pct_exogenous_HAR_to_HARX"]),
-                         "(2) fonksiyonel form": pct(r["pct_functional_form_HARX_to_XGB6"]),
-                         "(3) özellik paketi": pct(r["pct_feature_package_XGB6_to_XGB"]),
-                         "toplam": pct(r["pct_total_HAR_to_XGB"])})
+            rows.append({"horizon": f"h={h}", "version": name,
+                         "(1) exogenous": pct(r["pct_exogenous_HAR_to_HARX"]),
+                         "(2) functional form": pct(r["pct_functional_form_HARX_to_XGB6"]),
+                         "(3) feature package": pct(r["pct_feature_package_XGB6_to_XGB"]),
+                         "total": pct(r["pct_total_HAR_to_XGB"])})
     w(md_table(pd.DataFrame(rows)))
     w("")
-    w("### 8c. Birincil aile, iki sürüm")
+    w("### 8c. Primary family, two versions")
     w("")
     rows = []
     dt = dm[TS][dm[TS]["aile"] == "birincil"].set_index(["model1", "model2", "horizon"])
     for r in d.itertuples():
         q = dt.loc[(r.model1, r.model2, r.horizon)]
         tw = q["isaret_kazanan"] if r.model1 == "har_x" else q["isaret_fold"] - q["isaret_kazanan"]
-        rows.append({"ufuk": f"h={r.horizon}",
-                     "karşılaştırma": "HAR vs HAR-X" if r.model1 == "har" else "HAR-X vs XGBoost",
-                     "HLN p (z.d. → yayım)": f"{fp(q['p_HLN'])} → {fp(r.p_HLN)}",
+        rows.append({"horizon": f"h={r.horizon}",
+                     "comparison": "HAR vs HAR-X" if r.model1 == "har" else "HAR-X vs XGBoost",
+                     "HLN p (t.s. → pub.)": f"{fp(q['p_HLN'])} → {fp(r.p_HLN)}",
                      "DM BH p": f"{fp(q['p_HLN_bh'])} → {fp(r.p_HLN_bh)}",
-                     "HAR-X kazanır": f"{int(tw)}/{int(q['isaret_fold'])} → "
-                                      f"{r.harx_wins}/{r.isaret_fold}",
-                     "işaret ham p": f"{fp(q['p_isaret'])} → {fp(r.p_isaret)}",
-                     "işaret Holm p": f"{fp(q['p_isaret_holm'])} → {fp(r.p_isaret_holm)}",
-                     "işaret BH p": f"{fp(q['p_isaret_bh'])} → {fp(r.p_isaret_bh)}"})
+                     "HAR-X wins": f"{int(tw)}/{int(q['isaret_fold'])} → "
+                                   f"{r.harx_wins}/{r.isaret_fold}",
+                     "sign raw p": f"{fp(q['p_isaret'])} → {fp(r.p_isaret)}",
+                     "sign Holm p": f"{fp(q['p_isaret_holm'])} → {fp(r.p_isaret_holm)}",
+                     "sign BH p": f"{fp(q['p_isaret_bh'])} → {fp(r.p_isaret_bh)}"})
     w(md_table(pd.DataFrame(rows)))
     w("")
-    w("### 8d. GPR'ın ağırlığı, iki sürüm")
+    w("### 8d. The weight of GPR, two versions")
     w("")
     sht = json.load(open(alignment.out("shap_summary.json", TS), encoding="utf-8"))
     gt = pd.DataFrame(sht["group_shares_xgb"]).pivot(index="grup", columns="horizon",
@@ -1889,9 +1943,9 @@ def main():
     rows = []
     for h in HORIZONS:
         rows.append({
-            "ufuk": f"h={h}",
-            "SHAP GPR payı": f"{gt.loc['gpr', h]:.1f}% → {g.loc['gpr', h]:.1f}%",
-            "SHAP OVX payı": f"{gt.loc['ovx', h]:.1f}% → {g.loc['ovx', h]:.1f}%",
+            "horizon": f"h={h}",
+            "SHAP GPR share": f"{gt.loc['gpr', h]:.1f}% → {g.loc['gpr', h]:.1f}%",
+            "SHAP OVX share": f"{gt.loc['ovx', h]:.1f}% → {g.loc['ovx', h]:.1f}%",
             "HAR-X β gprd_lag1": f"{signed(sbt.loc[('har_x', h, 'gprd_lag1'), 'mean'])} → "
                                  f"{signed(sb.loc[('har_x', h, 'gprd_lag1'), 'mean'])}",
             "HAR-X β gprd_threat_lag1":
@@ -1901,37 +1955,37 @@ def main():
                                 f"{signed(sb.loc[('har_x', h, 'ovx_lag1'), 'mean'])}"})
     w(md_table(pd.DataFrame(rows)))
     w("")
-    w("### 8e. Sağlamlık kontrolleri, zaman damgalı sürüm (karşılaştırma için)")
+    w("### 8e. Robustness checks, timestamp version (for comparison)")
     w("")
     rows = []
     for m in ("har", "har_x", "har_x_log"):
         rows.append({"model": LABEL[m],
-                     "normal pencere": " / ".join(pct(eq[(TS, 'normal')].loc[m, h])
-                                                  for h in HORIZONS),
-                     "eşitlenmiş pencere": " / ".join(pct(eq[(TS, 'eşitlenmiş')].loc[m, h])
-                                                      for h in HORIZONS)})
+                     "normal window": " / ".join(pct(eq[(TS, 'normal')].loc[m, h])
+                                                 for h in HORIZONS),
+                     "equalized window": " / ".join(pct(eq[(TS, 'equalized')].loc[m, h])
+                                                    for h in HORIZONS)})
     w(md_table(pd.DataFrame(rows)))
     w("")
-    w("### 8f. 2026 kısmi yıl dipnotu, iki sürüm (h=66, h=126; bilgi amaçlı)")
+    w("### 8f. 2026 partial-year footnote, two versions (h=66, h=126; informational)")
     w("")
     f26c = pd.read_csv(OUT_DIR / "gpr_alignment_comparison_2026_footnote.csv")
     f26c = f26c[f26c["model"].isin(gmodels)]
     t = pd.DataFrame({"model": [LABEL[m] for m in gmodels]})
     for h in (66, 126):
         s = f26c[f26c["horizon"] == h].set_index("model").loc[gmodels]
-        t[f"h={h} RMSE z.d. → yayım"] = [f"{f6(a)} → {f6(b)} ({pct(c)})" for a, b, c in
-                                         zip(s["rmse_ts"], s["rmse_pub"], s["rmse_pct"])]
+        t[f"h={h} RMSE t.s. → pub."] = [f"{f6(a)} → {f6(b)} ({pct(c)})" for a, b, c in
+                                        zip(s["rmse_ts"], s["rmse_pub"], s["rmse_pct"])]
     w(md_table(t))
     w("")
 
     # ---------------- 9. Additional numbers used in the root README ----------------
-    w("## 9. README'de kullanılan ek sayılar (yayım-hizalı)")
+    w("## 9. Additional numbers used in the README (publication-aligned)")
     w("")
-    w("Kök `README.md`'deki her sayı ya Bölüm 1–8'den ya da bu bölümden gelir.")
+    w("Every number in the root `README.md` comes either from Sections 1–8 or from this section.")
     w("")
     R = A.set_index(["model", "horizon"])
     rr = lambda a, b, h: 100 * (R.loc[(a, h), "rmse"] / R.loc[(b, h), "rmse"] - 1)
-    w("### 9a. Başlıca RMSE karşılaştırmaları (fold ortalaması, %)")
+    w("### 9a. Main RMSE comparisons (fold mean, %)")
     w("")
     rows = []
     for lab, a, b in (("XGBoost vs past-volatility", "xgboost", "past_vol"),
@@ -1942,37 +1996,37 @@ def main():
                       ("BiLSTM vs HAR-X", "bilstm", "har_x"),
                       ("H1 (XGB+BiLSTM) vs HAR-X", "h1_xgb_bilstm", "har_x"),
                       ("H2 (HAR-X+XGB) vs HAR-X", "h2_harx_xgb", "har_x"),
-                      ("H3 (HAR-X+artık) vs HAR-X", "h3_harx_resid", "har_x"),
+                      ("H3 (HAR-X+residual) vs HAR-X", "h3_harx_resid", "har_x"),
                       ("HAR-X-log vs HAR-X", "har_x_log", "har_x"),
                       ("HAR+OVX vs HAR-X", "har_ovx", "har_x")):
-        rows.append({"karşılaştırma": lab, **{f"h={h}": pct(rr(a, b, h)) for h in HORIZONS}})
+        rows.append({"comparison": lab, **{f"h={h}": pct(rr(a, b, h)) for h in HORIZONS}})
     har_family = ["har", "har_log", "har_x", "har_x_log", "har_ovx", "har_gpr"]
     best = {h: A[(A["horizon"] == h) & A["model"].isin(har_family)]
             .sort_values("rmse").iloc[0]["model"] for h in HORIZONS}
-    for lab, ms in (("en iyi hibrit vs en iyi HAR-ailesi",
+    for lab, ms in (("best hybrid vs best HAR-family",
                      ["h1_xgb_bilstm", "h2_harx_xgb", "h3_harx_resid"]),
-                    ("en iyi birincil doğrusal olmayan (XGB, XGB-Optuna, BiLSTM) vs HAR",
+                    ("best primary nonlinear (XGB, XGB-Optuna, BiLSTM) vs HAR",
                      ["xgboost", "xgboost_optuna", "bilstm"]),
-                    ("XGBoost-6 (keşifsel; HAR-X'in girdileri, OVX dahil) vs HAR",
+                    ("XGBoost-6 (exploratory; HAR-X's inputs, OVX included) vs HAR",
                      ["xgb6"])):
-        row = {"karşılaştırma": lab}
+        row = {"comparison": lab}
         for h in HORIZONS:
             s = A[(A["horizon"] == h) & A["model"].isin(ms)].sort_values("rmse").iloc[0]
-            ref = best[h] if "HAR-ailesi" in lab else "har"
+            ref = best[h] if "HAR-family" in lab else "har"
             row[f"h={h}"] = f"{pct(rr(s['model'], ref, h))} ({s['model']} vs {ref})"
         rows.append(row)
     w(md_table(pd.DataFrame(rows)))
     w("")
-    w("En iyi HAR-ailesi modeli (RMSE): " + ", ".join(f"h={h}: {LABEL[m]}"
-                                                     for h, m in best.items()) + ".")
+    w("Best HAR-family model (RMSE): " + ", ".join(f"h={h}: {LABEL[m]}"
+                                                  for h, m in best.items()) + ".")
     w("")
     rows = []
     for h in HORIZONS:
         x = abf.loc[h]
         k = int((x["har_ovx"] < x["har_x"]).sum())
-        rows.append({"ufuk": f"h={h}", "HAR+OVX, HAR-X'i geçer": f"{k}/{len(x)}",
-                     "işaret p": fp(sign_p(k, len(x)))})
-    w("HAR+OVX vs HAR-X, fold bazında (düzeltmesiz iki yönlü işaret testi):")
+        rows.append({"horizon": f"h={h}", "HAR+OVX beats HAR-X": f"{k}/{len(x)}",
+                     "sign p": fp(sign_p(k, len(x)))})
+    w("HAR+OVX vs HAR-X, by fold (uncorrected two-sided sign test):")
     w("")
     w(md_table(pd.DataFrame(rows)))
     w("")
@@ -1980,44 +2034,44 @@ def main():
                     and i[2] in ("gprd_lag1", "gprd_threat_lag1")], "mean"]
     ovx_b = sb.loc[[i for i in sb.index if i[0] in ("har_x", "har_ovx")
                     and i[2] == "ovx_lag1"], "mean"]
-    w(f"Standartlaştırılmış beta aralığı (fold ortalamaları, HAR-X ve ablasyon, dört ufuk): "
-      f"GPR {signed(gpr_b.min())} ile {signed(gpr_b.max())} arası; OVX "
-      f"{signed(ovx_b.min())} ile {signed(ovx_b.max())} arası.")
+    w(f"Standardized beta range (fold means, HAR-X and ablation, four horizons): "
+      f"GPR between {signed(gpr_b.min())} and {signed(gpr_b.max())}; OVX "
+      f"between {signed(ovx_b.min())} and {signed(ovx_b.max())}.")
     w("")
-    w("### 9b. DM ikincil aile (24 test), yayım-hizalı: ayakta kalanlar")
+    w("### 9b. DM secondary family (24 tests), publication-aligned: survivors")
     w("")
     sec = dm[PUB][dm[PUB]["aile"] == "ikincil"]
     rows = []
     for r in sec.itertuples():
         if min(r.p_HLN_bh, r.p_isaret_bh) < .05:
-            rows.append({"ufuk": f"h={r.horizon}", "karşılaştırma": f"{r.model1} vs {r.model2}",
-                         "havuz RMSE farkı": pct(r.fark_pct),
+            rows.append({"horizon": f"h={r.horizon}", "comparison": f"{r.model1} vs {r.model2}",
+                         "pooled RMSE difference": pct(r.fark_pct),
                          "DM Holm / BH / BY": f"{fp(r.p_HLN_holm)} / {fp(r.p_HLN_bh)} / "
                                               f"{fp(r.p_HLN_by)}",
-                         "işaret": f"{r.isaret_kazanan}/{r.isaret_fold}",
-                         "işaret Holm / BH / BY": f"{fp(r.p_isaret_holm)} / "
-                                                  f"{fp(r.p_isaret_bh)} / {fp(r.p_isaret_by)}"})
+                         "sign": f"{r.isaret_kazanan}/{r.isaret_fold}",
+                         "sign Holm / BH / BY": f"{fp(r.p_isaret_holm)} / "
+                                                f"{fp(r.p_isaret_bh)} / {fp(r.p_isaret_by)}"})
     w(md_table(pd.DataFrame(rows)))
     w("")
-    w("İşaret: model1'in kazandığı fold / toplam. Uzun ufuklarda (h=66, h=126) naif "
-      "baseline'a karşı DM anlamlılığı: " + (", ".join(
+    w("Sign: folds won by model1 / total. DM significance against the naive baseline at "
+      "long horizons (h=66, h=126): " + (", ".join(
           f"h={r.horizon} {r.model1} vs {r.model2} (BH {fp(r.p_HLN_bh)})"
           for r in sec[(sec["horizon"] >= 66) & (sec["model2"] == "past_vol")
-                       & (sec["p_HLN_bh"] < .05)].itertuples()) or "yok") + ".")
+                       & (sec["p_HLN_bh"] < .05)].itertuples()) or "none") + ".")
     w("")
-    w("### 9c. SHAP ek ölçüler")
+    w("### 9c. Additional SHAP measures")
     w("")
     sa = rd("shap_sign_agreement.csv", PUB)
     unused = sa.groupby("horizon")["kullanilmadi"].mean() * 100
     used = sa[~sa["kullanilmadi"]]
     ovx_ag = used[used["regresor"] == "ovx_lag1"]
     stab = {r["horizon"]: r for r in sh["stability"]}
-    t = pd.DataFrame({"ölçü": [
-        "HAR-X: OVX'in |std beta| payı",
-        "XGBoost: HAR-X'in altı regresörü dışındaki SHAP payı",
-        "kullanılmayan karşılaştırma oranı (5 ortak regresör × fold; SHAP özdeş sıfır)",
-        "OVX işaret uyumu (XGBoost SHAP yönü vs HAR-X beta; kullanılan karşılaştırmalar)",
-        "atıf sıralaması kararlılığı: ilk-son fold Spearman ρ"]})
+    t = pd.DataFrame({"measure": [
+        "HAR-X: OVX's |std beta| share",
+        "XGBoost: SHAP share outside HAR-X's six regressors",
+        "share of unused comparisons (5 common regressors × fold; SHAP identically zero)",
+        "OVX sign agreement (XGBoost SHAP direction vs HAR-X beta; used comparisons)",
+        "attribution ranking stability: first-last fold Spearman ρ"]})
     for h in HORIZONS:
         oh = ovx_ag[ovx_ag["horizon"] == h]
         t[f"h={h}"] = [f"{gh.loc['ovx', h]:.1f}%",
@@ -2027,11 +2081,11 @@ def main():
                        f"{stab[h]['ilk_son_rho']:.2f}"]
     w(md_table(t))
     w("")
-    w(f"OVX işaret uyumu, dört ufuk birlikte: {100 * ovx_ag['uyum'].mean():.0f}% "
-      f"({int(ovx_ag['uyum'].sum())}/{len(ovx_ag)}). Tüm fold'lar (2026 dahil), "
+    w(f"OVX sign agreement, four horizons together: {100 * ovx_ag['uyum'].mean():.0f}% "
+      f"({int(ovx_ag['uyum'].sum())}/{len(ovx_ag)}). All folds (including 2026), "
       "`shap_sign_agreement_publication_aligned.csv`.")
     w("")
-    w("### 9d. Tarih boşluğu: doğrudan hedef düzeltme testi (tahminler sabit)")
+    w("### 9d. Date gaps: direct target-correction test (forecasts fixed)")
     w("")
     gt_ = rd("gap_target_test.csv", PUB).set_index(["horizon", "model"])
     gs = json.load(open(alignment.out("gap_target_test_summary.json", PUB),
@@ -2041,21 +2095,21 @@ def main():
         x = gt_.loc[h]
         s = gs[str(h)]
         rows.append({
-            "ufuk": f"h={h}", "model": len(x),
-            "en büyük |RMSE değişimi|": f"{x['rmse_change_pct'].abs().max():.2f}%",
-            "RMSE sıra değişimi": s["n_rmse_rank_changes"],
-            "MAE sıra değişimi": f"{s['n_mae_rank_changes']}"
-                                 + (f" ({' ↔ '.join(s['mae_rank_swaps'])})"
-                                    if s["mae_rank_swaps"] else ""),
-            "HAR+OVX < HAR-X (düzeltilmiş)":
-                "evet" if x.loc["har_ovx", "rmse_corrected"] < x.loc["har_x", "rmse_corrected"]
-                else "hayır",
-            "HAR < HAR+GPR (düzeltilmiş)":
-                "evet" if x.loc["har", "rmse_corrected"] < x.loc["har_gpr", "rmse_corrected"]
-                else "hayır"})
+            "horizon": f"h={h}", "model": len(x),
+            "largest |RMSE change|": f"{x['rmse_change_pct'].abs().max():.2f}%",
+            "RMSE rank changes": s["n_rmse_rank_changes"],
+            "MAE rank changes": f"{s['n_mae_rank_changes']}"
+                                + (f" ({' ↔ '.join(s['mae_rank_swaps'])})"
+                                   if s["mae_rank_swaps"] else ""),
+            "HAR+OVX < HAR-X (corrected)":
+                "yes" if x.loc["har_ovx", "rmse_corrected"] < x.loc["har_x", "rmse_corrected"]
+                else "no",
+            "HAR < HAR+GPR (corrected)":
+                "yes" if x.loc["har", "rmse_corrected"] < x.loc["har_gpr", "rmse_corrected"]
+                else "no"})
     w(md_table(pd.DataFrame(rows)))
     w("")
-    w("### 9e. Boşluksuz alt örneklem (2017–2026 fold'ları)")
+    w("### 9e. Gap-free subsample (2017–2026 folds)")
     w("")
     gf = rd("robustness_gapfree_2017plus.csv", PUB).set_index(["horizon", "model"])
     gfs = json.load(open(alignment.out("robustness_gapfree_2017plus_summary.json", PUB),
@@ -2067,39 +2121,39 @@ def main():
         fam = r17[[m for m in har_family if m in r17.index]].min()
         top5 = r17.sort_values().iloc[:5]
         rows.append({
-            "ufuk": f"h={h}", "fold (2017+)": int(x["n_folds_2017plus"].iloc[0]),
-            "Spearman RMSE sırası, tüm vs 2017+":
+            "horizon": f"h={h}", "fold (2017+)": int(x["n_folds_2017plus"].iloc[0]),
+            "Spearman RMSE rank, full vs 2017+":
                 f"{gfs[str(h)]['spearman_rmse_full_vs_2017plus']:.2f}",
-            "Spearman, tüm vs 2012–2016":
+            "Spearman, full vs 2012–2016":
                 f"{gfs[str(h)]['spearman_rmse_full_vs_2012_2016']:.2f}",
-            "en iyi HAR-ailesi < XGBoost ve BiLSTM":
-                "evet" if fam < min(r17["xgboost"], r17["bilstm"]) else "hayır",
-            "train-mean'den düşük RMSE'li model": f"{int((r17 < r17['train_mean']).sum())}"
-                                                  f"/{len(r17) - 1}",
-            "ilk beş RMSE aralığı": f"{100 * (top5.max() / top5.min() - 1):.1f}%"})
+            "best HAR-family < XGBoost and BiLSTM":
+                "yes" if fam < min(r17["xgboost"], r17["bilstm"]) else "no",
+            "models with RMSE below train-mean": f"{int((r17 < r17['train_mean']).sum())}"
+                                                 f"/{len(r17) - 1}",
+            "range of the top five RMSEs": f"{100 * (top5.max() / top5.min() - 1):.1f}%"})
     w(md_table(pd.DataFrame(rows)))
     w("")
-    w("\"train-mean'den düşük RMSE'li model\" RMSE üzerinden sayılır (R²_oos referans "
-      "farklarından etkilenmez).")
+    w("\"models with RMSE below train-mean\" is counted on RMSE (unaffected by the R²_oos "
+      "reference differences).")
     w("")
 
     # ---------------- 10. Power analysis ----------------
-    w("## 10. Güç analizi (birincil aile; `09_power_analysis.py`)")
+    w("## 10. Power analysis (primary family; `09_power_analysis.py`)")
     w("")
-    w("%80 güç, %5 iki yönlü. DM: örneklem birimi etkin blok B = n/h. İşaret testi: "
-      "örneklem birimi fold (yıl), tam binom. Kaynak: `power_analysis_publication_"
+    w("80% power, 5% two-sided. DM: the sampling unit is the effective block B = n/h. Sign test: "
+      "the sampling unit is the fold (year), exact binomial. Source: `power_analysis_publication_"
       "aligned.csv`, `apriori_power_{sign,dm}_publication_aligned.csv`.")
     w("")
-    w("**Uyarı:** gözlenen etkiden hesaplanan \"gerçekleşen güç\" p değerinin monoton bir "
-      "dönüşümüdür ve p değerinin ötesinde bilgi taşımaz; bir sonucun tesadüf olup "
-      "olmadığına kanıt olarak kullanılamaz. Bilgi taşıyan kısımlar gerekli örneklem "
-      "(10a) ve gözlenen sonuçlardan bağımsız önsel eğrilerdir (10b).")
+    w("**Caveat:** the \"realized power\" computed from the observed effect is a monotone "
+      "transformation of the p-value and carries no information beyond the p-value; it cannot be "
+      "used as evidence of whether a result is due to chance. The informative parts are the required sample "
+      "(10a) and the a priori curves, independent of the observed results (10b).")
     w("")
     pw = {al: rd("power_analysis.csv", al) for al in (PUB, TS)}
     pw_s = json.load(open(alignment.out("power_analysis_summary.json", PUB), encoding="utf-8"))
-    w(f"Yıl başına işlem günü (test döneminden ölçüldü): {pw_s['days_per_year']:.1f}.")
+    w(f"Trading days per year (measured from the test period): {pw_s['days_per_year']:.1f}.")
     w("")
-    w("### 10a. Gözlenen etki gerçek kabul edilirse %80 güç için gereken test dönemi")
+    w("### 10a. Test period required for 80% power if the observed effect is taken as true")
     w("")
     p_ = pw[PUB].copy()
     # HAR-X's fold wins, as in Section 6 (isaret_kazanan counts model1's wins)
@@ -2107,62 +2161,62 @@ def main():
                             p_["isaret_fold"] - p_["isaret_kazanan"], p_["isaret_kazanan"])
     p_ = p_.sort_values(["karsilastirma", "horizon"])
     t = pd.DataFrame({
-        "ufuk": [f"h={h}" for h in p_["horizon"]],
-        "karşılaştırma": ["HAR vs HAR-X" if c == "har vs har_x" else "HAR-X vs XGBoost"
-                          for c in p_["karsilastirma"]],
-        "DM: etkin blok": [f"{v:.0f}" for v in p_["dm_etkin_blok"]],
-        "DM: gerçekleşen güç": [f"{v:.3f}" for v in p_["dm_gerceklesen_guc"]],
-        "DM: gerekli yıl": [f"{v:,.0f}" for v in p_["dm_gerekli_yil"]],
-        "DM: kat": [f"{v:.1f}×" for v in p_["dm_kat_artis"]],
-        "işaret: HAR-X kazanır": [f"{k}/{n}" for k, n in zip(p_["harx_w"], p_["isaret_fold"])],
-        "işaret: gerçekleşen güç": [f"{v:.3f}" for v in p_["isaret_gerceklesen_guc"]],
-        "işaret: gerekli yıl": [f"{v:.0f}" for v in p_["isaret_gerekli_fold_yil"]],
-        "işaret: kat": [f"{v:.1f}×" for v in p_["isaret_kat_artis"]],
+        "horizon": [f"h={h}" for h in p_["horizon"]],
+        "comparison": ["HAR vs HAR-X" if c == "har vs har_x" else "HAR-X vs XGBoost"
+                       for c in p_["karsilastirma"]],
+        "DM: effective blocks": [f"{v:.0f}" for v in p_["dm_etkin_blok"]],
+        "DM: realized power": [f"{v:.3f}" for v in p_["dm_gerceklesen_guc"]],
+        "DM: required years": [f"{v:,.0f}" for v in p_["dm_gerekli_yil"]],
+        "DM: factor": [f"{v:.1f}×" for v in p_["dm_kat_artis"]],
+        "sign: HAR-X wins": [f"{k}/{n}" for k, n in zip(p_["harx_w"], p_["isaret_fold"])],
+        "sign: realized power": [f"{v:.3f}" for v in p_["isaret_gerceklesen_guc"]],
+        "sign: required years": [f"{v:.0f}" for v in p_["isaret_gerekli_fold_yil"]],
+        "sign: factor": [f"{v:.1f}×" for v in p_["isaret_kat_artis"]],
     })
     w(md_table(t))
     w("")
-    w(f"Aralıklar: DM için gereken uzatma mevcut test döneminin "
-      f"{p_['dm_kat_artis'].min():.1f}–{p_['dm_kat_artis'].max():.0f} katı; işaret testi "
-      f"için {p_['isaret_kat_artis'].min():.1f}–{p_['isaret_kat_artis'].max():.1f} katı.")
+    w(f"Ranges: the extension required for DM is "
+      f"{p_['dm_kat_artis'].min():.1f}–{p_['dm_kat_artis'].max():.0f} times the current test period; for "
+      f"the sign test {p_['isaret_kat_artis'].min():.1f}–{p_['isaret_kat_artis'].max():.1f} times.")
     w("")
-    w("### 10b. Önsel güç eğrileri (gözlenen sonuçları kullanmaz)")
+    w("### 10b. A priori power curves (do not use the observed results)")
     w("")
     ps = rd("apriori_power_sign.csv", PUB)
     thr = ps.groupby("n_fold")["anlamlilik_icin_gereken_kazanma"].first()
-    w("İşaret testi: %5 iki yönlü anlamlılık için gereken en az kazanma: " + ", ".join(
+    w("Sign test: minimum wins required for 5% two-sided significance: " + ", ".join(
         f"n={n}: {int(v)}" for n, v in thr.sort_index(ascending=False).items()) + ".")
     w("")
     t = ps.pivot(index="p_gercek", columns="n_fold", values="guc")
-    t = pd.DataFrame({"gerçek kazanma olasılığı": t.index,
+    t = pd.DataFrame({"true win probability": t.index,
                       **{f"n={n}": [f"{v:.3f}" for v in t[n]] for n in sorted(t.columns)}})
     w(md_table(t))
     w("")
     pdm = rd("apriori_power_dm.csv", PUB)
-    w("DM testi: `δ_blok = k·|r²−1|`, `ncp = √B·δ_blok`; k verinin gürültü yapısından "
-      "(birincil ailedeki iki çiftin ortalaması) kalibre edilir, gözlenen etkiden değil. "
-      "Parantezde k'nın iki çift arasındaki aralığıyla güç.")
+    w("DM test: `δ_block = k·|r²−1|`, `ncp = √B·δ_block`; k is calibrated from the noise structure of the data "
+      "(the mean of the two pairs in the primary family), not from the observed effect. "
+      "In parentheses, the power over the range of k between the two pairs.")
     w("")
     rows = []
     for (h, B), gq in pdm.groupby(["horizon", "etkin_blok"], sort=False):
-        row = {"ufuk": f"h={h}", "etkin blok": f"{B:.0f}", "k": f"{gq['k'].iloc[0]:.3f}"}
+        row = {"horizon": f"h={h}", "effective blocks": f"{B:.0f}", "k": f"{gq['k'].iloc[0]:.3f}"}
         for r in gq.itertuples():
-            row[f"%{r.rmse_farki_pct} RMSE farkı"] = (f"{r.guc:.3f} "
-                                                      f"({r.guc_k_min:.3f}–{r.guc_k_max:.3f})")
+            row[f"{r.rmse_farki_pct}% RMSE difference"] = (f"{r.guc:.3f} "
+                                                           f"({r.guc_k_min:.3f}–{r.guc_k_max:.3f})")
         rows.append(row)
     w(md_table(pd.DataFrame(rows).iloc[::-1]))
     w("")
-    w("### 10c. İki sürüm (Ek A)")
+    w("### 10c. Two versions (Appendix A)")
     w("")
     pt = pw[TS].set_index(["karsilastirma", "horizon"])
     rows = []
     for r in p_.itertuples():
         q = pt.loc[(r.karsilastirma, r.horizon)]
-        rows.append({"ufuk": f"h={r.horizon}",
-                     "karşılaştırma": "HAR vs HAR-X" if r.karsilastirma == "har vs har_x"
+        rows.append({"horizon": f"h={r.horizon}",
+                     "comparison": "HAR vs HAR-X" if r.karsilastirma == "har vs har_x"
                      else "HAR-X vs XGBoost",
-                     "DM gerekli yıl (z.d. → yayım)":
+                     "DM required years (t.s. → pub.)":
                          f"{q['dm_gerekli_yil']:,.0f} → {r.dm_gerekli_yil:,.0f}",
-                     "işaret gerekli yıl (z.d. → yayım)":
+                     "sign required years (t.s. → pub.)":
                          f"{q['isaret_gerekli_fold_yil']:.0f} → {r.isaret_gerekli_fold_yil:.0f}"})
     w(md_table(pd.DataFrame(rows)))
     w("")
@@ -2171,13 +2225,13 @@ def main():
     pdt = rd("apriori_power_dm.csv", TS).set_index(["horizon", "rmse_farki_pct"])
     kk = pdm.groupby("horizon")["k"].first()
     kt = pdt.groupby(level="horizon")["k"].first()
-    w("Önsel işaret testi eğrileri iki sürümde birebir aynıdır (yalnızca fold sayısına "
-      "bağlı; assert). Önsel DM eğrilerinde k: " + ", ".join(
+    w("The a priori sign-test curves are identical in the two versions (they depend only on "
+      "the number of folds; assert). k in the a priori DM curves: " + ", ".join(
           f"h={h}: {kt[h]:.3f} → {kk[h]:.3f}" for h in HORIZONS) + ".")
     w("")
 
     # ---------------- 11. Methodology / Limitations numbers ----------------
-    w("## 11. Yöntem ve sınırlılık sayıları (GPR yayım hizalaması, test ailesi)")
+    w("## 11. Methodology and limitation numbers (GPR publication alignment, test family)")
     w("")
     rev = json.load(open(OUT_DIR / "gpr_revision_summary.json", encoding="utf-8"))
     rep = json.load(open(OUT_DIR / "build_features_publication_aligned_report.json",
@@ -2187,7 +2241,7 @@ def main():
     import re
     m78 = re.search(r"discard (\d+)% of published observations", rep["method"])
     assert m78, "forward-fill discard share not found in the feature report"
-    w("### 11a. Yayım kuralı (`16_gpr_vintages.py`, erişim " + rev["access_date"] + ")")
+    w("### 11a. Publication rule (`16_gpr_vintages.py`, accessed " + rev["access_date"] + ")")
     w("")
     exc = vm[vm["vintage_minus_last_obs_days"] != 0].copy()
     exc["vd"] = pd.to_datetime(exc["vintage_date"])
@@ -2196,77 +2250,77 @@ def main():
     prev_month_end = (~stale & exc["lo"].dt.is_month_end
                       & (exc["lo"].dt.to_period("M") < exc["vd"].dt.to_period("M")))
     other = exc[~stale & ~prev_month_end]
-    w(f"- Arşivlenmiş sürüm: **{rev['n_vintages']}** ({rev['first_vintage']} – "
+    w(f"- Archived vintages: **{rev['n_vintages']}** ({rev['first_vintage']} – "
       f"{rev['last_vintage']}).")
-    w(f"- Kural \"D günü yayımlanan dosya D dahil D'ye kadarki gözlemleri içerir\": "
-      f"**{gap['0']}/{rev['n_vintages']}** sürüm destekliyor. İstisnalar: "
-      + ", ".join(f"{v} sürüm {k} gün geride" for k, v in gap.items() if k != "0")
-      + f". İstisnaların dökümü: **{int(prev_month_end.sum())}** ay başı dosyası bir "
-        f"önceki ayın son gününde duruyor; **{int(stale.sum())}** bayat yükleme ("
-        + ", ".join(f"{a.date()} dosyası, son gözlem {b.date()}"
+    w(f"- Rule \"the file published on day D contains the observations up to and including D\": "
+      f"supported by **{gap['0']}/{rev['n_vintages']}** vintages. Exceptions: "
+      + ", ".join(f"{v} vintages {k} days behind" for k, v in gap.items() if k != "0")
+      + f". Breakdown of the exceptions: **{int(prev_month_end.sum())}** start-of-month files stop at the last "
+        f"day of the previous month; **{int(stale.sum())}** stale uploads ("
+        + ", ".join(f"{a.date()} file, last observation {b.date()}"
                     for a, b in zip(exc.loc[stale, 'vd'], exc.loc[stale, 'lo']))
-        + f"); **{len(other)}** diğer ("
-        + ", ".join(f"{a.date()} dosyası, son gözlem {b.date()}"
+        + f"); **{len(other)}** other ("
+        + ", ".join(f"{a.date()} file, last observation {b.date()}"
                     for a, b in zip(other["vd"], other["lo"])) + ").")
-    w("- Sürüm günleri: " + ", ".join(f"{k} {v}" for k, v in
-                                      rev["vintage_weekday_counts"].items()) + ".")
+    w("- Vintage weekdays: " + ", ".join(f"{k} {v}" for k, v in
+                                          rev["vintage_weekday_counts"].items()) + ".")
     pl = rev["publication_lag_days"]
-    w(f"- Gözlem başına yayım gecikmesi (takvim günü): medyan {pl['median']:.0f}, "
-      f"ortalama {pl['mean']:.2f}, en fazla {pl['max']}. Gözlemin haftanın gününe göre "
-      "medyan: " + ", ".join(f"{k} {v['median']:.0f}" for k, v in
-                             rev["publication_lag_by_obs_weekday"].items()) + ".")
+    w(f"- Publication lag per observation (calendar days): median {pl['median']:.0f}, "
+      f"mean {pl['mean']:.2f}, max {pl['max']}. Median by the observation's "
+      "weekday: " + ", ".join(f"{k} {v['median']:.0f}" for k, v in
+                              rev["publication_lag_by_obs_weekday"].items()) + ".")
     for s in ("GPRD", "GPRD_THREAT"):
         r_ = rev["revision_rel_first_release_vs_current"][s]
-        w(f"- Revizyon, {s} (ilk yayım vs güncel, göreli): ortalama "
-          f"{100 * r_['mean']:+.1f}%, ortalama mutlak {100 * r_['mean_abs']:.1f}%, medyan "
-          f"mutlak {100 * r_['median_abs']:.1f}% (n = {r_['n']}). Revizyonlar modellenmedi; "
-          "değerler güncel sürümden.")
-    w(f"- 2022-02-24 öncesi: arşiv yok, kural karşı-olgusal uygulanır ("
+        w(f"- Revision, {s} (first release vs current, relative): mean "
+          f"{100 * r_['mean']:+.1f}%, mean absolute {100 * r_['mean_abs']:.1f}%, median "
+          f"absolute {100 * r_['median_abs']:.1f}% (n = {r_['n']}). Revisions were not modelled; "
+          "the values are from the current vintage.")
+    w(f"- Before 2022-02-24: no archive; the rule is applied counterfactually ("
       f"{rep['publication_rule']['before_2022-02-24']}).")
-    w(f"- Forward-fill reddi: düzey seriyi işlem takvimine ileri doldurmak yayımlanan "
-      f"gözlemlerin **%{m78.group(1)}**'ini atardı.")
+    w(f"- Forward-fill rejected: forward-filling the level series onto the trading calendar would discard "
+      f"**{m78.group(1)}%** of the published observations.")
     el = rep["effective_lag"]
-    w(f"- Zaman damgalı hizalamada satırların **%{100 * el['share_rows_timestamp_uses_unpublished_obs']:.1f}**'i "
-      "tahmin anında henüz yayımlanmamış bir gözlem kullanıyordu.")
-    w(f"- Değişen özellik: {rep['n_changed']}/{rep['n_features']}; ilk tam dolu satır iki "
-      f"sürümde de {rep['first_fully_valid_row']['publication']}.")
+    w(f"- Under timestamp alignment, **{100 * el['share_rows_timestamp_uses_unpublished_obs']:.1f}%** of the rows "
+      "used an observation not yet published at forecast time.")
+    w(f"- Changed features: {rep['n_changed']}/{rep['n_features']}; the first fully populated row is, in both "
+      f"versions, {rep['first_fully_valid_row']['publication']}.")
     w("")
-    w("### 11b. Etkin gecikme (işlem günü t ile kullanılan GPR gözleminin tarihi arası)")
+    w("### 11b. Effective lag (between trading day t and the date of the GPR observation used)")
     w("")
     cdp, cdt, trp = (el["calendar_days_publication"], el["calendar_days_timestamp"],
                      el["trading_rows_publication"])
     t = pd.DataFrame({
-        "ölçü": ["takvim günü, medyan", "takvim günü, ortalama", "takvim günü, en fazla",
-                 "işlem satırı, medyan / ortalama / en fazla"],
-        "zaman damgalı": [f"{cdt['median']:.0f}", f"{cdt['mean']:.2f}", f"{cdt['max']:.0f}",
-                          "—"],
-        "yayım-hizalı": [f"{cdp['median']:.0f}", f"{cdp['mean']:.2f}", f"{cdp['max']:.0f}",
-                         f"{trp['median']:.0f} / {trp['mean']:.2f} / {trp['max']}"]})
+        "measure": ["calendar days, median", "calendar days, mean", "calendar days, max",
+                    "trading rows, median / mean / max"],
+        "timestamp-aligned": [f"{cdt['median']:.0f}", f"{cdt['mean']:.2f}", f"{cdt['max']:.0f}",
+                              "—"],
+        "publication-aligned": [f"{cdp['median']:.0f}", f"{cdp['mean']:.2f}", f"{cdp['max']:.0f}",
+                                f"{trp['median']:.0f} / {trp['mean']:.2f} / {trp['max']}"]})
     w(md_table(t))
     w("")
     wd = el["calendar_days_by_trading_weekday"]
     order_wd = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
-    w("Yayım-hizalı, işlem gününe göre takvim günü (medyan / ortalama / en fazla): "
+    w("Publication-aligned, calendar days by trading weekday (median / mean / max): "
       + "; ".join(f"{d} {wd[d]['median']:.0f} / {wd[d]['mean']:.2f} / {wd[d]['max']:.0f}"
                   for d in order_wd) + ".")
     w("")
-    w("### 11c. Nedensellik doğrulamaları")
+    w("### 11c. Causality checks")
     w("")
     pi = rep["prefix_invariance"]
     assert all(x["passed"] and x["tolerance"] == 0 for x in pi)
-    w("- **Prefix-invariance:** özellikler veri " + " ve ".join(
-        str(x["cut_row"]) for x in pi) + ". satırda kesilerek yeniden hesaplandı; "
-      "kesim öncesi tüm satırlar tam veriyle hesaplananla **sıfır toleransta** aynı "
-      f"({len(pi)}/{len(pi)} geçti).")
+    w("- **Prefix-invariance:** the features were recomputed with the data cut at rows " + " and ".join(
+        str(x["cut_row"]) for x in pi) + "; all rows before the cut are identical at **zero "
+      "tolerance** to those computed with the full data "
+      f"({len(pi)}/{len(pi)} passed).")
     ps_ = pd.DataFrame(rep["publication_sensitivity_test"])
     n_s = len(ps_)
     pub_ok = int(ps_["publication_aligned_unchanged"].sum())
     ctrl = int(ps_["timestamp_aligned_row_changed"].sum())
-    w(f"- **Yayım duyarlılığı:** rastgele {n_s} satırda, o satırın tarihinde henüz "
-      f"yayımlanmamış tüm GPR gözlemleri bozuldu (satır başına "
+    w(f"- **Publication sensitivity:** in {n_s} random rows, all GPR observations not yet "
+      f"published at that row's date were perturbed ("
       f"{ps_['n_unpublished_perturbed'].min()}–{ps_['n_unpublished_perturbed'].max()} "
-      f"gözlem). Yayım-hizalı kol: **{pub_ok}/{n_s} değişmedi**. Kontrol kolu (zaman "
-      f"damgalı): **{ctrl}/{n_s} değişti**.")
+      f"observations per row). Publication-aligned arm: **{pub_ok}/{n_s} unchanged**. Control arm (timestamp-"
+      f"aligned): **{ctrl}/{n_s} changed**.")
     cal = pd.read_csv(OUT_DIR / "gpr_publication_calendar.csv",
                       parse_dates=["date", "publication_date"]).set_index("date")
     fdates = pd.to_datetime(pd.read_csv(OUT_DIR / "features.csv", usecols=["Date"])["Date"],
@@ -2283,36 +2337,36 @@ def main():
     ok_pred = int((pred_unch == ~ps_["timestamp_aligned_row_changed"].values).sum())
     assert ok_pred == n_s, "release calendar must predict the control arm in every row"
     wdc = pd.Series(wds).value_counts()
-    w(f"- **Kontrol kolunda değişmeyen {n_s - ctrl} satırın mekanizması:** zaman damgalı "
-      "kol satır t'de t−1 tarihli gözlemi kullanır ve bozulma yalnızca t−1'e kadar "
-      "yayımlanmamış gözlemlere uygulanır. Değişmeyen satırlar tam olarak t−1 gözleminin "
-      "t−1'e kadar zaten yayımlanmış olduğu satırlardır ("
-      + ", ".join(f"{v} {k}" for k, v in wdc.items()) + "; Salı satırlarının t−1'i aynı "
-      "gün yayımlanan Pazartesi gözlemi, Çarşamba satırı İşçi Bayramı haftası). Yayım "
-      f"takvimi kontrol kolunun sonucunu **{ok_pred}/{n_s}** satırda doğru öngörüyor.")
+    w(f"- **Mechanism of the {n_s - ctrl} unchanged rows in the control arm:** the timestamp "
+      "arm uses at row t the observation dated t−1, and the perturbation is applied only to observations "
+      "not published up to t−1. The unchanged rows are exactly the rows in which the t−1 observation "
+      "had already been published by t−1 ("
+      + ", ".join(f"{v} {k}" for k, v in wdc.items()) + "; the t−1 of the Tuesday rows is the "
+      "Monday observation published the same day, the Wednesday row is the Labor Day week). The publication "
+      f"calendar predicts the control arm's result correctly in **{ok_pred}/{n_s}** rows.")
     w("")
-    w("### 11d. h=22'deki iki işaret testinin bağımlılığı")
+    w("### 11d. Dependence of the two sign tests at h=22")
     w("")
     rel = float(np.corrcoef(d1 / fr["har_x"], d2 / fr["har_x"])[0, 1])
     from scipy import stats as _st
     sp = float(_st.spearmanr(d1, d2)[0])
     hx = float(np.corrcoef(fr["har"], fr["xgboost"])[0, 1])
     agree = int(((d1 > 0) == (d2 > 0)).sum())
-    w(f"- Fold farkı vektörleri (HAR − HAR-X, XGBoost − HAR-X): Pearson "
-      f"**{rho22:.2f}**; HAR-X RMSE'sine bölünmüş göreli farklarla {rel:.2f}; Spearman "
-      f"{sp:.2f}. İşaret aynı olan yıl: {agree}/{len(d1)}.")
-    w(f"- Mekanizma: HAR ve XGBoost'un fold RMSE profilleri neredeyse aynı (fold'lar "
-      f"arası korelasyon **{hx:.3f}**). İki fark da aynı HAR-X RMSE'sini içerdiğinden, iki "
-      "test büyük ölçüde HAR-X'i aynı ölçüte karşı sınıyor: HAR-X'in iyi geçirdiği yıl "
-      "iki karşılaştırmada birden kazanç, kötü geçirdiği yıl (2020) iki karşılaştırmada "
-      "birden kayıp olarak görünüyor. İki fark vektörü arasındaki korelasyon yıl bazlı "
-      "ölçek farkından ibaret değil; göreli farklarda ve sıralamada da sürüyor.")
+    w(f"- Fold-difference vectors (HAR − HAR-X, XGBoost − HAR-X): Pearson "
+      f"**{rho22:.2f}**; with relative differences divided by HAR-X's RMSE {rel:.2f}; Spearman "
+      f"{sp:.2f}. Years with the same sign: {agree}/{len(d1)}.")
+    w(f"- Mechanism: the fold RMSE profiles of HAR and XGBoost are almost identical (correlation "
+      f"across folds **{hx:.3f}**). Since both differences contain the same HAR-X RMSE, the two "
+      "tests largely test HAR-X against the same yardstick: a year that goes well for HAR-X "
+      "shows up as a gain in both comparisons at once, a year that goes badly (2020) as a loss "
+      "in both comparisons at once. The correlation between the two difference vectors "
+      "is not just a year-level scale difference; it persists in the relative differences and in the ranking.")
     w("")
-    w("**0.995 kendi başına bir bulgu değildir.** Fold RMSE, yılın volatilite düzeyiyle "
-      "birlikte ölçeklenir; bu yüzden hemen her model çiftinin fold RMSE'leri yüksek "
-      "korelasyonludur. Aşağıdaki tablo bunun karşılaştırma değerlerini veriyor. Ölçekten "
-      "arındırılmış ölçüler: fold RMSE'nin train-mean RMSE'sine oranı üzerinden "
-      "korelasyon ve günlük hata korelasyonu. Keşifsel, çıkarım için değil.")
+    w("**0.995 is not a finding on its own.** Fold RMSE scales with the year's volatility "
+      "level; hence the fold RMSEs of almost any pair of models are highly "
+      "correlated. The table below gives the comparison values for this. The scale-free "
+      "measures: correlation via the ratio of fold RMSE to train-mean RMSE "
+      "and the daily error correlation. Exploratory, not for inference.")
     w("")
     hp_all = rd("hybrid_predictions_all.csv", PUB)
     hp_all = hp_all[hp_all["include_in_main"]]
@@ -2327,36 +2381,36 @@ def main():
         rc = fr_.div(fr_["train_mean"], axis=0).corr()
         ec = pd.DataFrame({m: gq["y_true"] - gq[f"pred_{m}"] for m in ms_}).corr()
         rows.append({
-            "ufuk": f"h={h}",
+            "horizon": f"h={h}",
             "fold RMSE: HAR~XGB": f"{c.loc['har', 'xgboost']:.3f}",
             "fold RMSE: HAR~past-vol": f"{c.loc['har', 'past_vol']:.3f}",
             "fold RMSE: HAR~train-mean": f"{c.loc['har', 'train_mean']:.3f}",
-            "göreli: HAR~XGB": f"{rc.loc['har', 'xgboost']:.3f}",
-            "göreli: HAR~HAR-X": f"{rc.loc['har', 'har_x']:.3f}",
-            "göreli: HAR~BiLSTM": f"{rc.loc['har', 'bilstm']:.3f}",
-            "günlük hata: HAR~XGB": f"{ec.loc['har', 'xgboost']:.3f}",
-            "günlük hata: HAR-X~XGB": f"{ec.loc['har_x', 'xgboost']:.3f}",
-            "günlük hata: HAR~HAR-X": f"{ec.loc['har', 'har_x']:.3f}"})
+            "relative: HAR~XGB": f"{rc.loc['har', 'xgboost']:.3f}",
+            "relative: HAR~HAR-X": f"{rc.loc['har', 'har_x']:.3f}",
+            "relative: HAR~BiLSTM": f"{rc.loc['har', 'bilstm']:.3f}",
+            "daily error: HAR~XGB": f"{ec.loc['har', 'xgboost']:.3f}",
+            "daily error: HAR-X~XGB": f"{ec.loc['har_x', 'xgboost']:.3f}",
+            "daily error: HAR~HAR-X": f"{ec.loc['har', 'har_x']:.3f}"})
     w(md_table(pd.DataFrame(rows)))
     w("")
-    w("Okuma: h=22'de HAR ile naif past-volatility baseline'ının fold RMSE korelasyonu da "
-      "HAR~XGB kadar yüksek. Yani 0.995, XGBoost'un HAR'ı özel olarak izlediğini değil, "
-      "yılların zorluk düzeyinin bütün modellere ortak olduğunu gösteriyor; üstelik "
-      "yalnızca h=22 değeri. Ölçekten arındırılmış ölçüler daha bilgilendirici ama "
-      "keşifseldir ve ufka göre değişir.")
+    w("Reading: at h=22 the fold RMSE correlation of HAR with the naive past-volatility baseline is "
+      "as high as HAR~XGB. So 0.995 shows not that XGBoost tracks HAR in particular, but "
+      "that the years' difficulty level is common to all models; moreover it is "
+      "only the h=22 value. The scale-free measures are more informative but "
+      "are exploratory and vary by horizon.")
     w("")
-    w("### 11e. İşaret testi eşikleri (tam binom, %5 iki yönlü)")
+    w("### 11e. Sign-test thresholds (exact binomial, 5% two-sided)")
     w("")
     rows = []
     for n in (9, 14, 15):
         kmin = min(k for k in range(n + 1) if k > n / 2 and sign_p(k, n) <= 0.05)
-        rows.append({"fold": n, "anlamlılık için en az kazanma": f"{kmin}/{n}",
-                     "o eşikte p": f"{sign_p(kmin, n):.4f}",
-                     "bir eksiğinde p": f"{sign_p(kmin - 1, n):.4f}"})
+        rows.append({"fold": n, "minimum wins for significance": f"{kmin}/{n}",
+                     "p at that threshold": f"{sign_p(kmin, n):.4f}",
+                     "p at one fewer": f"{sign_p(kmin - 1, n):.4f}"})
     w(md_table(pd.DataFrame(rows)))
     w("")
-    w("n=9 (Bölüm 7c, h=22 yüksek kademe) için anlamlılık mümkündür ama 9 fold'un en az "
-      "8'inde aynı yön gerekir; gözlenen 6/9 bu eşiğin iki fold altındadır.")
+    w("For n=9 (Section 7c, h=22 high tier) significance is possible, but of the 9 folds at least "
+      "8 need the same direction; the observed 6/9 is two folds below this threshold.")
     w("")
 
     # ---------------- 12. Floor, QLIKE, smearing ----------------
@@ -2380,7 +2434,7 @@ def main():
 
     path = OUT_DIR / "paper_numbers_publication_aligned.md"
     path.write_text("\n".join(L) + "\n", encoding="utf-8")
-    print(f"Yazildi: {path.name}, primary_family_tests_publication_aligned.csv")
+    print(f"Written: {path.name}, primary_family_tests_publication_aligned.csv")
 
 
 if __name__ == "__main__":
