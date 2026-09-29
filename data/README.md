@@ -132,11 +132,20 @@ These are not errors, and a rebuilt file is expected to show them too.
 7. **Set the column order and save.** Order the columns as `Date`, `Brent_Petrol`, `OVX`,
    `GPRD`, `GPRD_THREAT` and save as `data/veriseti.xlsx`.
 
-8. **Validate.** Run `python scripts/validate_data.py`. In the resulting report, the
-   fields `columns_match`, `row_count_match`, `date_monotonic_increasing`,
-   `any_new_nan: false` and `ovx_record_check.matches` must all come out as expected. The
-   modelling scripts must not be run before this validation passes: `01_build_targets.py`
-   and `02_build_features.py` already raise an error and stop if the row count is not 4641.
+8. **Validate.** Run `python scripts/validate_data.py`. It exits with a non-zero status
+   if an expected column is missing, a required column has a missing value, a date cannot
+   be parsed, the dates are out of order or a date is duplicated. The 40 documented date
+   gaps are not errors. A different row count, a changed OVX record value or a SHA-256
+   digest that differs from `data/veriseti.xlsx.sha256` produce warnings; the report
+   lists them under `warnings`. The modelling scripts must not be run before this
+   validation passes: `01_build_targets.py` and `02_build_features.py` already raise an
+   error and stop if the row count is not 4641.
+
+9. **Compare the digest.** The file used for the published results has SHA-256
+   `f13956e7d0eef3dfa49dee1ac83e098f0d1cea872774eb2c72f3fe33661ebd26`
+   (`cd data && sha256sum -c veriseti.xlsx.sha256`). The digest is of the file's bytes, so
+   a file with identical values saved by a different program will not match; in that
+   case the content checks above and the numerical results are the comparison.
 
 ---
 
@@ -145,5 +154,5 @@ These are not errors, and a rebuilt file is expected to show them too.
 The GPR index and Yahoo's historical price series are occasionally revised retroactively.
 Data downloaded today may therefore not be byte-for-byte identical to the file used in this
 study, and in that case the numerical results will shift slightly as well. The row count
-and the OVX record value in the `validate_data.py` report exist precisely so that such a
-deviation is not passed over silently.
+and the OVX record value in the `validate_data.py` report, together with the SHA-256
+digest check, exist precisely so that such a deviation is not passed over silently.

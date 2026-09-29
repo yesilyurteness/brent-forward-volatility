@@ -1,4 +1,13 @@
 {
+  "errors": [],
+  "warnings": [],
+  "sha256": {
+    "file": "data/veriseti.xlsx",
+    "actual": "f13956e7d0eef3dfa49dee1ac83e098f0d1cea872774eb2c72f3fe33661ebd26",
+    "recorded": "f13956e7d0eef3dfa49dee1ac83e098f0d1cea872774eb2c72f3fe33661ebd26",
+    "record_file": "data/veriseti.xlsx.sha256",
+    "matches": true
+  },
   "columns_match": true,
   "columns_found": [
     "Date",
@@ -9,10 +18,6 @@
   ],
   "row_count": 4641,
   "row_count_match": true,
-  "date_monotonic_increasing": true,
-  "date_duplicates": 0,
-  "date_min": "2008-01-02",
-  "date_max": "2026-09-01",
   "nan_counts": {
     "Date": 0,
     "Brent_Petrol": 0,
@@ -21,6 +26,10 @@
     "GPRD_THREAT": 0
   },
   "any_new_nan": false,
+  "date_monotonic_increasing": true,
+  "date_duplicates": 0,
+  "date_min": "2008-01-02",
+  "date_max": "2026-09-01",
   "ovx_record_check": {
     "date": "2020-04-21",
     "expected_value": 325.15,
