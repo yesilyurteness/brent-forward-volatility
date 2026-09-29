@@ -1,7 +1,7 @@
 # Makale sayıları — yayım-hizalı GPR sürümü (BİRİNCİL)
 
-- **Üretildiği commit:** `ad271363d669045db9f9522be818c45f6d66130d` (Run Clark-West on the roll-over variants; add Section 15c to the package)
-- **Üretim tarihi:** 2026-09-29T21:49:26+03:00
+- **Üretildiği commit:** `c06218286a25325a73661b4ea6666b9bf582ce32` (Add pooled R2_oos (common reference) and the H3 residual-stage R2 to the package)
+- **Üretim tarihi:** 2026-09-29T22:07:11+03:00
 - **Çalışma ağacı:** temiz — girdiler bu commit'teki dosyalarla birebir aynı.
 - Doğrulama: `git checkout <commit> && python scripts/18_paper_numbers.py` aynı sayıları üretmelidir (yalnızca bu başlık değişir).
 
@@ -1170,4 +1170,43 @@ Her fold'da modellerin eğitim satırı sayıları. Test satırları tüm modell
 | h=126 | 721 – 4221 | −19 | +106 | +252 (126 ısınma + 126 embargo) | %14.7 – %2.5 |
 
 Bu asimetrinin sonuca etkisi §7a'da (veri eşitleme) ölçülmüştür.
+
+## 17. Havuzlanmış R²_oos (ortak referans) ve H3 artık aşamasının R²'si
+
+### 17a. Havuzlanmış R²_oos, ortak referans — §1d'deki standart R² DEĞİLDİR
+
+`R²_oos,havuz = 1 − Σ SSE_model / Σ (y − train_mean_fold)²`; toplamlar ana metriğe giren tüm test gözlemleri üzerinden. Referans her fold'da train-mean baseline'ının tahmini (§1c ile aynı ortak referans; XGBoost train penceresinin hedef ortalaması), yani tahmin anında bilinen bir sabit. §1d'deki standart R² ise test diliminin kendi ortalamasına göredir (ex post); bu tablo onunla karıştırılmamalı. Train-mean satırı tanım gereği 0 (assert). Fold ortalaması sütunu §1c'nin ortak referanslı değeridir. Havuzlanmış değer yüksek volatiliteli yılları daha çok ağırlıklandırır.
+
+| model | h=5 fold ort. | h=5 havuz | h=22 fold ort. | h=22 havuz | h=66 fold ort. | h=66 havuz | h=126 fold ort. | h=126 havuz |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| XGBoost (birincil, 65 özellik) | +0.279 | +0.334 | +0.232 | +0.392 | −0.281 | −0.013 | −0.310 | +0.056 |
+| Attention BiLSTM | −0.302 | +0.070 | −0.144 | +0.212 | −3.359 | −2.040 | −3.155 | −0.921 |
+| Hibrit H1: 0.5 XGB + 0.5 BiLSTM | +0.161 | +0.309 | +0.183 | +0.369 | −1.145 | −0.615 | −1.181 | −0.244 |
+| Hibrit H2: 0.5 HAR-X + 0.5 XGB | +0.359 | +0.397 | +0.383 | +0.479 | +0.074 | +0.168 | −0.033 | +0.131 |
+| Hibrit H3: HAR-X + XGB artığı | +0.262 | +0.284 | +0.250 | +0.376 | −0.377 | −0.041 | −0.204 | +0.010 |
+| HAR-X | +0.369 | +0.374 | +0.430 | +0.467 | +0.198 | +0.172 | +0.087 | +0.077 |
+| HAR-X-log | +0.382 | +0.352 | +0.440 | +0.475 | +0.202 | +0.213 | +0.054 | +0.137 |
+| HAR | +0.295 | +0.353 | +0.277 | +0.418 | +0.061 | +0.199 | +0.052 | +0.130 |
+| HAR-log | +0.291 | +0.355 | +0.260 | +0.410 | −0.028 | +0.206 | −0.050 | +0.140 |
+| GARCH(1,1) | +0.241 | +0.302 | +0.192 | +0.350 | −0.231 | −0.035 | −0.519 | −0.183 |
+| Train-mean | +0.000 | +0.000 | +0.000 | +0.000 | +0.000 | +0.000 | +0.000 | +0.000 |
+| Past-volatility | −0.075 | +0.024 | +0.072 | +0.273 | −0.105 | −0.190 | −0.190 | −0.163 |
+| HAR + OVX | +0.383 | +0.375 | +0.448 | +0.474 | +0.244 | +0.182 | +0.098 | +0.088 |
+| HAR + GPR | +0.283 | +0.352 | +0.260 | +0.407 | +0.014 | +0.185 | +0.031 | +0.113 |
+| XGBoost-6 | +0.279 | +0.364 | +0.286 | +0.438 | +0.032 | +0.238 | −0.018 | +0.148 |
+| XGBoost, Optuna + büzülmüş smearing | +0.249 | +0.322 | +0.153 | +0.346 | −1.469 | −0.845 | −0.651 | −0.199 |
+| XGBoost, Optuna + ham smearing | +0.227 | +0.310 | +0.084 | +0.291 | −1.599 | −0.768 | −1.612 | −0.504 |
+
+**İşareti iki ölçütte farklı olan hücreler** (fold ortalaması → havuz): Attention BiLSTM, h=5: −0.302 → +0.070; Past-volatility, h=5: −0.075 → +0.024; Attention BiLSTM, h=22: −0.144 → +0.212; HAR-log, h=66: −0.028 → +0.206; Hibrit H2: 0.5 HAR-X + 0.5 XGB, h=126: −0.033 → +0.131; Hibrit H3: HAR-X + XGB artığı, h=126: −0.204 → +0.010; HAR-log, h=126: −0.050 → +0.140; XGBoost-6, h=126: −0.018 → +0.148; XGBoost (birincil, 65 özellik), h=126: −0.310 → +0.056.
+
+### 17b. H3 mekanizması: XGBoost'un HAR-X artıklarını modelleme R²'si (betimleyici)
+
+**Betimleyici; test yok.** `R²_artık = 1 − SSE(e − ê) / SSE(e)`, e = HAR-X artığı, ê = XGBoost'un artık tahmini; taban "artığı tahmin etmemek" (0). Pozitif = artık aşaması HAR-X'e bilgi ekliyor. Örneklem içi: XGBoost'un kendi eğitim satırlarında; örneklem dışı: test yılında. Değerler `07_hybrid.py`'nin yayım modunda fold başına kaydettiği `resid_r2_in_sample` ve `resid_r2_oos`; yeniden uyum gerekmedi. Kontrol: tabana takılan satırı olmayan 54 fold'da örneklem dışı R², kayıtlı H3 ve HAR-X tahminlerinden yeniden hesaplanıp kayıtlı değerle aynı çıkıyor (assert); tabanlı fold'larda ê tahminlerden geri elde edilemez. Kaynak: `hybrid_folds_all_publication_aligned.csv`.
+
+| ufuk | fold | örneklem içi, fold ort. | örneklem dışı, fold ort. | örneklem dışı, medyan | örneklem dışı > 0 olan fold | örneklem dışı, en küçük – en büyük |
+| --- | --- | --- | --- | --- | --- | --- |
+| h=5 | 15 | +0.885 | −0.203 | −0.155 | 1/15 | −1.181 – +0.164 |
+| h=22 | 15 | +0.900 | −0.457 | −0.222 | 2/15 | −2.584 – +0.083 |
+| h=66 | 14 | +0.708 | −1.104 | −0.406 | 3/14 | −7.803 – +0.014 |
+| h=126 | 14 | +0.587 | −0.295 | +0.019 | 8/14 | −1.946 – +0.522 |
 

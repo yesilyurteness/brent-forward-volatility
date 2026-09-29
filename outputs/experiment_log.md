@@ -2482,3 +2482,47 @@ Varyantlarda bir hücrede HLN seçimi %5 kararını belirliyor:
 
 BY altında ikisinde de red yok. Birincil çıkarım HLN olduğu için sonuç "red yok" olarak
 raporlanır. Paketin §15c'sinde bu hücre açıkça listeleniyor.
+
+---
+
+# Aşama 27 (2026-09-29): Havuzlanmış R²_oos (ortak referans) ve H3 artık R²'si, yayım modu
+
+Commit `c062182`; paketin §17'si. Yeni model yok; kayıtlı çıktılardan.
+
+## 27.1 Havuzlanmış R²_oos, ortak referans (§17a)
+
+`1 − Σ SSE / Σ (y − train_mean_fold)²`, ana fold'ların tüm test gözlemleri üzerinden.
+Referans her fold'da train-mean baseline'ının tahmini; §1c'deki ortak referansla aynı.
+§1d'deki standart R² ile karışmasın diye başlıkta ayrıca belirtildi. Train-mean satırı 0
+(assert).
+
+İşaretin fold ortalaması ile havuzda farklı olduğu 9 hücre var; hepsinde fold ortalaması
+negatif, havuz pozitif:
+
+| model | ufuk | fold ort. → havuz |
+| --- | --- | --- |
+| BiLSTM | h=5 | −0.302 → +0.070 |
+| Past-volatility | h=5 | −0.075 → +0.024 |
+| BiLSTM | h=22 | −0.144 → +0.212 |
+| HAR-log | h=66 | −0.028 → +0.206 |
+| H2 | h=126 | −0.033 → +0.131 |
+| H3 | h=126 | −0.204 → +0.010 |
+| HAR-log | h=126 | −0.050 → +0.140 |
+| XGB-6 | h=126 | −0.018 → +0.148 |
+| XGBoost | h=126 | −0.310 → +0.056 |
+
+## 27.2 H3 mekanizması, artık aşamasının R²'si (§17b; betimleyici, test yok)
+
+Değerler 07'nin yayım modunda fold başına kaydettiği `resid_r2_in_sample` ve
+`resid_r2_oos`. Örneklem içi R² kayıtlı olduğu için XGBoost yeniden uydurulmadı.
+
+Kontrol: tabana takılan satırı olmayan 54 fold'da örneklem dışı R², kayıtlı H3 ve HAR-X
+tahminlerinden yeniden hesaplandı ve kayıtlı değerle aynı çıktı (assert). Tabanlı
+fold'larda artık tahmini, kayıtlı tahminlerden geri elde edilemiyor.
+
+| ufuk | örneklem içi, fold ort. | örneklem dışı, fold ort. | örneklem dışı, medyan | örneklem dışı > 0 olan fold |
+| --- | --- | --- | --- | --- |
+| h=5 | +0.885 | −0.203 | −0.155 | 1/15 |
+| h=22 | +0.900 | −0.457 | −0.222 | 2/15 |
+| h=66 | +0.708 | −1.104 | −0.406 | 3/14 |
+| h=126 | +0.587 | −0.295 | +0.019 | 8/14 |
