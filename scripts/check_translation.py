@@ -29,7 +29,9 @@ package  Regenerated number package vs the committed one at --base (default 5915
 log      outputs/experiment_log_en.md vs outputs/experiment_log.md. The translation
          starts with a header block that ends with a line consisting of `<!-- end of
          translation header -->`; line n of the original is line n + offset of the
-         translation. Checks: (1) line-for-line structure: blank lines, heading levels,
+         translation. Translator's notes ("[Translator's note: ...]", appended at the
+         end of a line so that the line mapping holds) are not part of the translation
+         and are removed before the checks. Checks: (1) line-for-line structure: blank lines, heading levels,
          table rows with the same number of cells, code fences; (2) per stage (each
          level-1 heading starts a stage), the MULTISET of tokens is equal. Missing and
          extra tokens are reported.
@@ -72,6 +74,7 @@ PACKAGE_CSV = "primary_family_tests.csv"
 LOG_TR = OUT_DIR / "experiment_log.md"
 LOG_EN = OUT_DIR / "experiment_log_en.md"
 HEADER_END = "<!-- end of translation header -->"
+TRANSLATOR_NOTE = re.compile(r" ?\[Translator's note: [^\]]*\]")
 
 EXT = r"(?:py|csv|json|md|txt|xlsx|pdf|svg|png|sha256|\{[\w,]+\})"
 PATH_RE = re.compile(r"[\w\-*{},/.]*?[\w\-*{}]\." + EXT + r"(?![\w])")
@@ -172,7 +175,10 @@ def check_log():
     if HEADER_END not in en_all:
         fail(f"{LOG_EN.name}: header end marker not found")
     off = en_all.index(HEADER_END) + 1
-    en = en_all[off:]
+    # Translator's notes are additions, not translation: removed before any comparison.
+    n_notes = sum(len(TRANSLATOR_NOTE.findall(ln)) for ln in en_all[off:])
+    en = [TRANSLATOR_NOTE.sub("", ln) for ln in en_all[off:]]
+    print(f"[info] {n_notes} translator's notes removed before comparison")
     if len(en) != len(tr):
         fail(f"line count after the header {len(en)} != original {len(tr)}")
     bad = [(i + 1, shape(a), shape(b)) for i, (a, b) in enumerate(zip(tr, en))

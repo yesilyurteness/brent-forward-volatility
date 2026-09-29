@@ -9,7 +9,7 @@
 > The one change of notation is the Turkish prefix percent sign, written here as a suffix
 > ("%80" → "80%", "−%13.1" → "−13.1%").
 > `scripts/check_translation.py log` checks that every stage of this file contains the same
-> numbers, commit hashes and file paths as the original.
+> numbers, commit hashes and file paths as the original. Bracketed "[Translator's note: …]" remarks at the ends of some lines are additions of the translation, not of the log: they point forward to where the log itself later corrects or qualifies that wording, and change nothing in the translated text.
 
 <!-- end of translation header -->
 # Experiment Log
@@ -455,7 +455,7 @@ horizons.
 
 **This is an exploratory analysis. It does not change the primary finding and is not used for model
 selection.** Its aim is to shed light on a single question: why do the pooled RMSE and the fold mean
-give results in opposite directions for H2 (the HAR-X + XGBoost average)?
+give results in opposite directions for H2 (the HAR-X + XGBoost average)? [Translator's note: the status of this analysis is clarified as post hoc later in the log; see line 1892 of this file.]
 
 **The split criterion is mechanical and was not chosen by looking at the results.** For each horizon, the
 mean realized volatility of each test year is computed; the years are split in two at the median of this value
@@ -866,7 +866,7 @@ XGBoost) a 52-year test period would have been needed; we have 14 years.
 
 **At h=22 both comparisons already have sufficient power (0.871 > 0.80).** This is important:
 the significant results at h=22 are not a low-powered fluke; they mean that the study was sufficiently
-powerful at that horizon and detected the effect.
+powerful at that horizon and detected the effect. [Translator's note: the reading "not a low-powered fluke" is corrected later in the log; see line 1854 of this file.]
 
 At the other horizons the power is insufficient: at h=5 for HAR-X vs XGBoost 0.21 (72 years needed),
 at h=126 for HAR vs HAR-X 0.076 (94 years needed).
@@ -940,7 +940,7 @@ The observed values stayed below these limits: RMSE differences of 1–9%, win r
 
 The two significant results at h=22 (13/15 = 86.7% win rate) fall right above the detection
 limit — this explains why they are the only significant results and
-supports that they are not flukes.
+supports that they are not flukes. [Translator's note: the reading "not flukes" is corrected later in the log; see line 1854 of this file.]
 
 **For the paper:** this table shows a priori, without recourse to the observed results, why the statement "no significant difference was found"
 does not mean "no difference". These two tables should be given in the Limitations
@@ -1367,7 +1367,7 @@ at h=66 9 medium and 5 low; at h=126 2 medium and 12 low. No forecast hit the fl
   (5.5%, 18.4%, 17.8%, 7.0%) comes from the functional form, the rest from this
   package.
 - XGBoost-6 beats plain HAR at all four horizons, because it sees OVX. It does not beat the best HAR-family
-  model (HAR + OVX or HAR-X-log) at any horizon.
+  model (HAR + OVX or HAR-X-log) at any horizon. [Translator's note: "XGBoost-6 beats plain HAR at all four horizons" is qualified later in the log; see line 2144 of this file.]
 
 ## Effect on the interpretation
 
@@ -1387,7 +1387,7 @@ Outputs: `exploratory_xgb6.csv`, `exploratory_xgb6_folds.csv`,
 **Trigger — transparency record.** This work was **triggered by an independent external
 code review** that examined the project's code. The review pointed out that the GPR features use information
 not accessible at forecast time. It will appear in this form in the paper's transparency
-statement.
+statement. [Translator's note: "independent external code review" is clarified later in the log; see line 1886 of this file.]
 
 **Problem.** The daily GPR index (Caldara and Iacoviello) is not observed in real time like OVX and Brent.
 It is published in batches (weekly, plus a monthly update), and later vintages
@@ -1414,7 +1414,7 @@ the next business day."
 vintages support this rule (file date = last observation date). Of the 10 exceptions
 7 are 1 day, 1 is 2 days, 1 is 3 days behind. All of these are start-of-month updates; the file contains data
 up to the last day of the previous month. One exception is 124 days behind
-(the 2023-01-02 file, last observation 2022-08-31). This looks like a stale upload.
+(the 2023-01-02 file, last observation 2022-08-31). This looks like a stale upload. [Translator's note: "All of these are start-of-month updates" is corrected later in the log; see line 1870 of this file.]
 
 Vintage weekdays: Monday 207, Tuesday 42, Wednesday 14, Thursday 12, Friday 14.
 
@@ -1693,7 +1693,7 @@ in the high tier; horizon mean +7.21%.
   Their status is the same as HAR+OVX vs HAR-X's uncorrected p = 0.035. The primary family
   (HAR vs HAR-X, HAR-X vs XGBoost × 4 horizons) was fixed in advance; no test is ever
   added afterwards. In the paper these p-values are given not as inferential evidence but to
-  describe the direction of the diagnostic.
+  describe the direction of the diagnostic. [Translator's note: "was fixed in advance" is corrected later in the log; see line 1878 of this file.]
 - Forecast dispersion increased at h=5 (1.00 → 1.10). This is consistent with the reading that the model
   learns training noise.
 
@@ -2194,7 +2194,7 @@ excess kurtosis 8.1.
 The source of the own-calendar series is the local vintage file
 `data_gpr_daily_recent_accessed_2026-09-24.dta`. The file is outside git; its SHA-256 is recorded
 in the JSON. This vintage is newer than the 2026-09-01 vintage the dataset matches: 44 trading-day values
-differ (2025-06-02 – 2026-09-01), largest absolute difference 33.8. Written in the package note.
+differ (2025-06-02 – 2026-09-01), largest absolute difference 33.8. Written in the package note. [Translator's note: the vintage used for the own-calendar rows is corrected later in the log; see line 2242 of this file.]
 
 `statsmodels` is now imported directly; the `requirements.txt` note was updated.
 
