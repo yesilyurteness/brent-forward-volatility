@@ -36,6 +36,13 @@ the code; warn me first.
    past with `.shift(1)`; a feature at time t cannot contain information from time t or
    later.
 
+## Analysis Freeze
+
+Analysis frozen as of 59158c5, 2026-09-29. After this point no new tests, models or
+analyses are run. Requests arising during writing are answered from existing outputs or
+by changes in presentation only. Any exception requires an explicit decision by the
+author and is labeled post-freeze in the log and the paper.
+
 ## Data
 
 - File: `data/veriseti.xlsx`

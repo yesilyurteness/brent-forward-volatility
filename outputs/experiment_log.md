@@ -2541,3 +2541,16 @@ hatasının daha düşük olduğu anlamına geliyor. Toplam her iki ufukta pozit
 | --- | --- | --- | --- | --- |
 | h=66 | +193.6% | 2 (2020 ve 2019, +7.6%) | 12 | 2013, −33.5% |
 | h=126 | +154.9% | 6 | 8 | 2013, −34.8% |
+
+---
+
+## Dondurma notu (2026-09-29)
+
+Analysis frozen as of 59158c5, 2026-09-29. After this point no new tests, models or
+analyses are run. Requests arising during writing are answered from existing outputs or
+by changes in presentation only. Any exception requires an explicit decision by the
+author and is labeled post-freeze in the log and the paper.
+
+`59158c5` (2026-09-29 22:11:19 +0300), sayı paketinin §18'i ve Aşama 28 ile son analiz
+commit'i. Sayı paketi o commit'te `29b20dd` başlığıyla temiz ağaçtan üretildi. Aynı not
+CLAUDE.md'de "Analysis Freeze" bölümünde.
