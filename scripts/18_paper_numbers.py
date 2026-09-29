@@ -354,6 +354,106 @@ def section_12e(w, qm, b):
     w("")
 
 
+def section_13(w, pr, F):
+    """Clark-West supplementary family (21_clark_west.py), XGB-6 vs HAR fold counts, and a
+    pointer to the 2026 partial-year footnote."""
+    cw = rd("clark_west.csv", PUB)
+    meta = json.load(open(alignment.out("clark_west.json", PUB), encoding="utf-8"))
+    p = cw["p_HLN_one_sided"].to_numpy()
+    assert np.allclose(step_up(p), cw["p_HLN_bh"], rtol=1e-12, atol=0)
+    assert np.allclose(step_up(p, sum(1 / i for i in range(1, len(p) + 1))),
+                       cw["p_HLN_by"], rtol=1e-12, atol=0)
+    # The statistic is built from the same saved forecasts the package uses.
+    q = pr[pr["include_in_main"] & pr["model"].isin(["har", "har_x"])].pivot_table(
+        index=["horizon", "Date"], columns="model", values=["pred", "y_true"],
+        aggfunc="first")
+    for h in HORIZONS:
+        g = q.loc[h]
+        y = g[("y_true", "har")]
+        f = ((y - g[("pred", "har")]) ** 2
+             - ((y - g[("pred", "har_x")]) ** 2 - (g[("pred", "har")] - g[("pred", "har_x")]) ** 2))
+        r = cw[cw["horizon"] == h].iloc[0]
+        assert len(f) == r["n"] and np.isclose(f.mean(), r["f_mean"], rtol=1e-10, atol=0)
+
+    w("## 13. Ek aile: Clark–West; XGBoost-6 vs HAR; 2026 dipnotu")
+    w("")
+    w("### 13a. Clark–West testi, HAR ⊂ HAR-X (ek aile, 4 test)")
+    w("")
+    w(f"**Etiket:** {meta['label']}. Aile {meta['declared']['date']} tarihinde "
+      f"CLAUDE.md'de ilan edildi (commit `{meta['declared']['commit']}`); CW istatistiği "
+      "depoda bundan önce hesaplanmamıştı. **Birincil aile 8 testle sabittir; CW oraya "
+      "eklenmez ve DM testlerinin yerine geçmez.** Holm/BH/BY bu 4 test içinde.")
+    w("")
+    w("`f_t = e_HAR,t² − [e_HARX,t² − (ŷ_HAR,t − ŷ_HARX,t)²]`; H1: E[f] > 0 (HAR-X daha iyi), "
+      "**tek yanlı**. Kayıtlı (yayımlanan, tabanlanmış) tahminler, ana fold'lar, "
+      "havuzlanmış seri (DM gibi). HAC: Newey-West, Bartlett, L = h−1. Çıkarım DM "
+      "birincil ailesiyle aynı: HLN çarpanı ve t(n−1); düzeltmeler HLN p değerine "
+      "uygulanır. HLN'siz normal p yan sütunda. Kaynak: `21_clark_west.py`, "
+      "`clark_west_publication_aligned.csv`.")
+    w("")
+    sci = lambda v: f"{v:.2e}".replace("-", "−")
+    t = pd.DataFrame({
+        "ufuk": [f"h={h}" for h in cw["horizon"]], "n": cw["n"],
+        "ort. (e²_HAR − e²_HARX)": cw["mean_mse_diff"].map(sci),
+        "ort. düzeltme (ŷ_HAR − ŷ_HARX)²": cw["mean_adjustment"].map(sci),
+        "ort. f": cw["f_mean"].map(sci),
+        "CW": cw["CW"].map(lambda v: f"{v:.3f}"),
+        "CW (HLN)": cw["CW_HLN"].map(lambda v: f"{v:.3f}"),
+        "p normal (ham)": cw["p_normal_one_sided"].map(fp),
+        "p HLN (ham)": cw["p_HLN_one_sided"].map(fp),
+        "Holm": cw["p_HLN_holm"].map(fp), "BH": cw["p_HLN_bh"].map(fp),
+        "BY": cw["p_HLN_by"].map(fp),
+        "HAC şişme": cw["variance_inflation"].map(lambda v: f"{v:.2f}")})
+    w(md_table(t))
+    w("")
+    w("**Fold düzeyinde (betimleyici, test değil):** f'nin fold ortalamalarının ortalaması "
+      "ve f ortalaması pozitif olan fold sayısı: "
+      + "; ".join(f"h={r.horizon}: {sci(r.f_fold_mean)}, {r.folds_f_positive}/{r.n_folds}"
+                  for r in cw.itertuples()) + ".")
+    w("")
+    w("Okuma notu: ilk sütun DM'nin kullandığı ham MSE farkıdır; h=66 ve h=126'da negatiftir "
+      "(havuzlanmış seride HAR'ın MSE'si daha düşük). CW istatistiği buna tahmin farkının "
+      "karesini ekler.")
+    w("")
+
+    w("### 13b. XGBoost-6 vs HAR, fold bazında (keşifsel; test yok)")
+    w("")
+    w("XGBoost-6 keşifseldir; p değeri verilmez. Kazanma: fold RMSE'si HAR'ınkinden düşük. "
+      "Uyuşma: kazanma çoğunluğunun yönü ile fold ortalaması RMSE farkının yönü aynı mı. "
+      "`100 × (RMSE_XGB-6 / RMSE_HAR − 1)`, pozitif = XGBoost-6 daha kötü.")
+    w("")
+    rows = []
+    for h in HORIZONS:
+        x = F[F["include_in_main"] & (F["horizon"] == h)].pivot(
+            index="test_year", columns="model", values="rmse")
+        d = x["xgb6"] - x["har"]
+        k, n = int((d < 0).sum()), len(d)
+        ties = int((d == 0).sum())
+        mean_pct = 100 * (x["xgb6"].mean() / x["har"].mean() - 1)
+        cnt_dir = "XGB-6" if k > n - k - ties else ("HAR" if k < n - k - ties else "eşit")
+        mean_dir = "XGB-6" if mean_pct < 0 else "HAR"
+        r = {"ufuk": f"h={h}", "XGB-6 kazandığı yıl / fold": f"{k}/{n}",
+             "fold ort. farkı": pct(mean_pct),
+             "sayım yönü": cnt_dir, "ortalama yönü": mean_dir,
+             "uyuşuyor mu": "evet" if cnt_dir == mean_dir else "hayır"}
+        if cnt_dir != mean_dir:
+            top = d.reindex(d.abs().sort_values(ascending=False).index)
+            top = top[np.sign(top) == np.sign(d.mean())].head(3)
+            r["ortalamayı taşıyan yıllar"] = ", ".join(
+                f"{y} ({signed(v * 1e4, 2)}e−4)" for y, v in top.items())
+        else:
+            r["ortalamayı taşıyan yıllar"] = "—"
+        rows.append(r)
+    w(md_table(pd.DataFrame(rows)))
+    w("")
+    w("### 13c. 2026 kısmi yıl, h=66 ve h=126")
+    w("")
+    w("Bölüm 1e'de: tüm modellerin o fold'daki RMSE/MAE/R²_oos'u, n = 101 (h=66) ve 41 "
+      "(h=126). Birincil toplulaştırmadan dışlanmıştır; model karşılaştırması veya seçimi "
+      "için kullanılmaz.")
+    w("")
+
+
 def section_12(w, pr, A):
     fkeys = ["horizon", "fold"]
     ben = rd("bench_predictions_all.csv", PUB)
@@ -1793,6 +1893,9 @@ def main():
 
     # ---------------- 12. Floor, QLIKE, smearing ----------------
     section_12(w, pr[PUB], A)
+
+    # ---------------- 13. Clark-West, XGB-6 vs HAR, 2026 pointer ----------------
+    section_13(w, pr[PUB], F)
 
     path = OUT_DIR / "paper_numbers_publication_aligned.md"
     path.write_text("\n".join(L) + "\n", encoding="utf-8")
