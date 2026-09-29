@@ -2257,3 +2257,35 @@ Script eşleşmeyi assert ediyor; uyuşmazlık uyarısı kaldırıldı. Değişe
   2023-10-22, 2024-09-22, 2025-02-09. Hepsi pazar.
 
 Pakette yalnızca tarihler yazılı.
+
+---
+
+# Aşama 24 (2026-09-29): Şekil 2 ve Ek A kaynak haritası
+
+Commit `f6f2173`. Yeni hesap yok; kayıtlı çıktılardan.
+
+**Şekil 2 (`scripts/23_figure2.py`).**
+- **(a) Ana metin:** fold bazında RMSE oranı, dört ufuk, ana fold'lar.
+  - Oran **XGBoost / HAR-X** olarak çizildi. İstemdeki eksen okuması ("1'in üstü XGBoost
+    daha kötü") ancak bu sırayla doğru; HAR-X / XGBoost'ta 1'in üstü HAR-X'in daha kötü
+    olduğu anlamına gelirdi. Sıra, %-fark konvansiyonuyla da uyumlu (a = XGBoost).
+  - 1'de referans çizgisi var; eksen etiketi "(above 1: XGBoost worse)".
+  - Oranın 1'in üstünde olduğu fold sayısı, birincil ailedeki HAR-X kazanma sayısıyla
+    assert edildi: 10/15, 13/15, 10/14, 9/14.
+  - h=66 ve h=126'da 2026 fold'u çizimde yok; CSV'de `include_in_main = False` ile
+    duruyor.
+- **(b) Ek:** SHAP grup payları; her grubun özellik sayısı etiketin yanında. Toplam 65
+  özellik (assert).
+- **Biçim:** gri tonlama, Arial, vektör PDF ve SVG (metin metin olarak kalıyor). Dosyalar
+  koşudan koşuya bayt düzeyinde aynı; oluşturma tarihi gömülmüyor, SVG kimlik tuzu sabit.
+
+**Ek A kaynak haritası** (`outputs/appendix_a_source_map.md`). Methodology v3'ün atıf
+yaptığı A1, A3, A6 ve A8 maddeleri kaynak dosyaya, script'e ve paket bölümüne eşlendi.
+
+| durum | maddeler |
+| --- | --- |
+| eksik | A6 roll-over (koşulmadı) |
+| kaynak var ama pakette tablo yok | A1 özellik listesi; A6 Optuna seçim sinyali; A6 ham smearing korelasyonu; A6 07b volatilite rejimi; A8 eğitim uzunluğu asimetrisi |
+
+Paketin §7b'si (BiLSTM yakınsama kontrolü) ile 07b script'i (volatilite rejimi) farklı
+şeyler; haritada not düşüldü.
