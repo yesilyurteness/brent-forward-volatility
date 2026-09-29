@@ -518,14 +518,22 @@ def section_14(w):
     note = ("Gözlem tarihli satırlar `data/veriseti.xlsx`'in kaydırılmamış GPR sütunlarıdır "
             "(işlem günleri).")
     if oc:
+        mad = max(oc["max_abs_diff_vs_dataset"].values())
+        zg, zt = oc["zero_days"]["GPRD"], oc["zero_days"]["GPRD_THREAT"]
         note += (f" Kendi takvimi satırları endeksin her takvim gününü (hafta sonları dahil, "
-                 f"{oc['calendar_days']} gün) kapsar; kaynak yerel sürüm dosyası "
-                 f"`{Path(oc['file']).name}` (SHA-256 `{oc['sha256'][:16]}…`, git dışı). Bu "
-                 f"sürüm veri setinin eşleştiği 2026-09-01 sürümünden yenidir: "
-                 f"{oc['trading_days_differing_from_dataset']} işlem günü değeri farklı "
-                 f"({oc['differing_range'][0]} – {oc['differing_range'][1]}, en büyük mutlak "
-                 f"fark GPRD {oc['max_abs_diff_GPRD']:.1f}, GPRD_THREAT "
-                 f"{oc['max_abs_diff_GPRD_THREAT']:.1f}).")
+                 f"{oc['calendar_days']} gün) kapsar; kaynak, veri setinin üretildiği "
+                 f"{oc['vintage']} arşiv sürümü `{Path(oc['file']).name}` (SHA-256 "
+                 f"`{oc['sha256'][:16]}…`, git dışı). Bu sürüm veri setinin GPR değerlerini "
+                 f"{oc['trading_days_checked']} işlem gününün hepsinde yeniden üretir (en "
+                 f"büyük mutlak fark {mad:.1e}, kayan nokta yuvarlaması; kontrol edildi).")
+        if zg:
+            note += (" " + ", ".join(z["date"] for z in zg)
+                     + (" tarihinde" if len(zg) == 1 else " tarihlerinde") + " GPRD 0 (aynı "
+                     + ("gün" if len(zg) == 1 else "günlerde") + " GPRD_THREAT "
+                     + ", ".join(f"{z['GPRD_THREAT']:g}" for z in zg) + ").")
+        if zt:
+            note += (f" GPRD_THREAT {len(zt)} günde 0: "
+                     + ", ".join(z["date"] for z in zt) + ".")
     w(note)
     w("")
 

@@ -9,15 +9,74 @@
   "ljung_box_lag": 20,
   "kurtosis": "excess (pandas, bias-corrected)",
   "own_calendar": {
-    "file": "data/gpr_vintages/data_gpr_daily_recent_accessed_2026-09-24.dta",
-    "sha256": "8017f806626cd6b583dd5d6d3f8eda088832714aee3ff62afee63542b58d4338",
+    "file": "data/gpr_vintages/vintages/data_gpr_daily_recent_20260901.dta",
+    "vintage": "2026-09-01",
+    "sha256": "4c8dff4c580046f06c996fc19c55c15099399b89e357fc9858b0651428b23219",
     "calendar_days": 6818,
-    "trading_days_differing_from_dataset": 44,
-    "differing_range": [
-      "2025-06-02",
-      "2026-09-01"
-    ],
-    "max_abs_diff_GPRD": 33.8214416503906,
-    "max_abs_diff_GPRD_THREAT": 33.76498413085932
+    "trading_days_checked": 4641,
+    "max_abs_diff_vs_dataset": {
+      "GPRD": 5.684341886080802e-14,
+      "GPRD_THREAT": 5.684341886080802e-14
+    },
+    "zero_days": {
+      "GPRD": [
+        {
+          "date": "2025-02-09",
+          "weekday": "Sunday",
+          "GPRD": 0.0,
+          "GPRD_THREAT": 0.0
+        }
+      ],
+      "GPRD_THREAT": [
+        {
+          "date": "2009-04-19",
+          "weekday": "Sunday",
+          "GPRD": 10.70296573638916,
+          "GPRD_THREAT": 0.0
+        },
+        {
+          "date": "2016-08-21",
+          "weekday": "Sunday",
+          "GPRD": 23.110937118530273,
+          "GPRD_THREAT": 0.0
+        },
+        {
+          "date": "2019-05-12",
+          "weekday": "Sunday",
+          "GPRD": 31.177106857299805,
+          "GPRD_THREAT": 0.0
+        },
+        {
+          "date": "2020-08-30",
+          "weekday": "Sunday",
+          "GPRD": 8.386247634887695,
+          "GPRD_THREAT": 0.0
+        },
+        {
+          "date": "2023-07-30",
+          "weekday": "Sunday",
+          "GPRD": 10.068594932556152,
+          "GPRD_THREAT": 0.0
+        },
+        {
+          "date": "2023-10-22",
+          "weekday": "Sunday",
+          "GPRD": 105.160888671875,
+          "GPRD_THREAT": 0.0
+        },
+        {
+          "date": "2024-09-22",
+          "weekday": "Sunday",
+          "GPRD": 8.952885627746582,
+          "GPRD_THREAT": 0.0
+        },
+        {
+          "date": "2025-02-09",
+          "weekday": "Sunday",
+          "GPRD": 0.0,
+          "GPRD_THREAT": 0.0
+        }
+      ]
+    }
   }
 }

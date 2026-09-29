@@ -28,10 +28,13 @@ FOOTNOTE ROWS (GPR on other calendars, for comparison only)
   * observation-dated, trading days: the unshifted GPRD / GPRD_THREAT columns of
     data/veriseti.xlsx;
   * the index's own daily calendar (every calendar day, weekends included), read from the
-    local vintage snapshot data/gpr_vintages/data_gpr_daily_recent_accessed_2026-09-24.dta
-    (git-ignored third-party file, see 16_gpr_vintages.py). This vintage is 23 days newer
-    than the one data/veriseti.xlsx matches (2026-09-01); the trading-day values that
-    differ are counted and reported. If the file is absent these rows are skipped.
+    archived 2026-09-01 vintage data_gpr_daily_recent_20260901.dta in the git-ignored
+    vintage cache of 16_gpr_vintages.py (data/gpr_vintages/vintages/). This is the vintage
+    data/veriseti.xlsx was built from: the script asserts that it reproduces the dataset's
+    GPR values on every trading day (to floating-point rounding) before using it. If the
+    file is absent these rows are skipped; run 16_gpr_vintages.py without --cleanup, or
+    download that one file from the archive, to restore them. Calendar days on which a
+    GPR series is exactly 0 are listed in the JSON.
 
 Outputs: outputs/descriptive_stats{_publication_aligned}.csv, .json
 Runtime: a few seconds.
@@ -51,7 +54,9 @@ import alignment
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "outputs"
 DATA_PATH = ROOT / "data" / "veriseti.xlsx"
-OWN_CAL_PATH = ROOT / "data" / "gpr_vintages" / "data_gpr_daily_recent_accessed_2026-09-24.dta"
+OWN_CAL_PATH = (ROOT / "data" / "gpr_vintages" / "vintages"
+                / "data_gpr_daily_recent_20260901.dta")
+MATCH_TOL = 1e-9  # the .dta -> .xlsx round trip leaves differences of order 1e-14
 HORIZONS = [5, 22, 66, 126]
 LB_LAG = 20
 
@@ -104,18 +109,19 @@ def main():
         m = pd.DataFrame({"d": dates, "GPRD": raw["GPRD"], "GPRD_THREAT": raw["GPRD_THREAT"]}
                          ).merge(v[["d", "GPRD", "GPRD_THREAT"]], on="d",
                                  suffixes=("", "_v"), validate="1:1")
-        diff = ((m["GPRD"] - m["GPRD_v"]).abs() > 1e-6) | \
-               ((m["GPRD_THREAT"] - m["GPRD_THREAT_v"]).abs() > 1e-6)
+        mad = {c: float((m[c] - m[f"{c}_v"]).abs().max()) for c in ("GPRD", "GPRD_THREAT")}
+        assert max(mad.values()) < MATCH_TOL, f"vintage does not match the dataset: {mad}"
+        zeros = {c: [{"date": str(r.d.date()), "weekday": r.d.day_name(),
+                      "GPRD": float(r.GPRD), "GPRD_THREAT": float(r.GPRD_THREAT)}
+                     for r in v[v[c] == 0].itertuples()] for c in ("GPRD", "GPRD_THREAT")}
         meta["own_calendar"] = {
             "file": OWN_CAL_PATH.relative_to(ROOT).as_posix(),
+            "vintage": "2026-09-01",
             "sha256": hashlib.sha256(OWN_CAL_PATH.read_bytes()).hexdigest(),
             "calendar_days": int(len(v)),
-            "trading_days_differing_from_dataset": int(diff.sum()),
-            "differing_range": ([str(m.loc[diff, "d"].min().date()),
-                                 str(m.loc[diff, "d"].max().date())] if diff.any() else None),
-            "max_abs_diff_GPRD": float((m["GPRD"] - m["GPRD_v"]).abs().max()),
-            "max_abs_diff_GPRD_THREAT": float(
-                (m["GPRD_THREAT"] - m["GPRD_THREAT_v"]).abs().max())}
+            "trading_days_checked": int(len(m)),
+            "max_abs_diff_vs_dataset": mad,
+            "zero_days": zeros}
         series += [(f"{c}_own_calendar", f"{c} (kendi takvimi, tüm takvim günleri)",
                     "footnote", v[c].to_numpy()) for c in ("GPRD", "GPRD_THREAT")]
     else:

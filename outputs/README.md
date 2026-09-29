@@ -1012,15 +1012,20 @@ Limitations section. The text is in Turkish.
 
 ## Model names
 
+"Lowest" below means the lowest fold-average RMSE in the publication-aligned (primary)
+results, `paper_numbers_publication_aligned.md` §12c. Under QLIKE the lowest loss falls on
+different models (HAR-X-log at h=5 and h=22, HAR + OVX at h=66, GARCH(1,1) at h=126; same
+section).
+
 | Name | Meaning |
 | --- | --- |
 | `har` | HAR, classic Corsi specification, OLS in levels. Primary HAR |
 | `har_log` | HAR in canonical log-log form, secondary |
 | `har_x` | HAR plus OVX and GPR exogenous regressors (`ovx_lag1`, `gprd_lag1`, `gprd_threat_lag1`), OLS in levels. Primary HAR-X |
-| `har_ovx` | HAR plus `ovx_lag1` only, OLS in levels. From the exogenous ablation; the lowest fold-average RMSE at h=5, h=66 and h=126 |
+| `har_ovx` | HAR plus `ovx_lag1` only, OLS in levels. From the exogenous ablation; the lowest fold-average RMSE at h=5, h=22 and h=66 |
 | `har_gpr` | HAR plus `gprd_lag1` and `gprd_threat_lag1` only, OLS in levels. From the exogenous ablation |
 | `xgb6` | XGBoost on HAR-X's six raw regressors with HAR-X's level target, no transformation or smearing. Exploratory (Stage 15) |
-| `har_x_log` | HAR-X in log-log form, secondary. The lowest fold-average RMSE at h=22 |
+| `har_x_log` | HAR-X in log-log form, secondary. The lowest fold-average RMSE at h=126 |
 | `garch` | GARCH(1,1) with constant mean and Student-t errors, fit on training data only |
 | `xgboost` | XGBoost under the primary specification, the tiered capacity rule |
 | `bilstm` | Attention BiLSTM |
