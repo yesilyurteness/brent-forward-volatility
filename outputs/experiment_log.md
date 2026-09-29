@@ -2075,3 +2075,66 @@ negatifse pay işaretiyle okunur.
 
 h=5'te kural satırları çıkarıldığında ortalama QLIKE'ta HAR-X daha düşük (havuzda ve fold
 ortalamasında). Kural h=66 ve h=126'da hiçbir satırda tetiklenmiyor.
+
+---
+
+# Aşama 22 (2026-09-29): Clark–West ek ailesi; XGB-6 vs HAR fold sayımları; 2026 dipnotu
+
+Kod: `scripts/21_clark_west.py` (yeni) ve `scripts/18_paper_numbers.py`, Bölüm 13. Commit
+`3bb6ead`. Hepsi `--gpr-alignment publication`.
+
+## 22.1 Clark–West, HAR ⊂ HAR-X (ek aile, 4 test)
+
+**Aile kuralı.** Birincil aile 8 testle sabit kalıyor. CW oraya eklenmedi ve DM
+testlerinin yerine geçmiyor. CW ayrı, 4 testlik bir ek aile; Holm, BH ve BY kendi içinde.
+
+**Etiket:** "iç içe yapıya uygun istatistik; birincil DM testleri görüldükten sonra, CW
+sonuçları görülmeden eklendi".
+
+**Tarih kaydı.** Aile, CLAUDE.md'de commit `72106e7` ile ilan edildi (2026-09-29
+16:15:34 +0300). Depoda bundan önce hiçbir CW hesabı yok: script'lerde, çıktılarda ve
+commit mesajlarında "clark" araması yalnızca bu ilanı buluyor.
+
+**Kurulum.**
+- `f_t = e_HAR,t² − [e_HARX,t² − (ŷ_HAR,t − ŷ_HARX,t)²]`, tek yanlı, H1: HAR-X daha iyi.
+- Kayıtlı yayımlanan (tabanlanmış) tahminler kullanıldı: `hybrid_predictions_all`, ana
+  fold'lar, havuzlanmış seri, tarihe göre sıralı.
+- HAC: Newey-West, Bartlett, L = h−1. Fonksiyonlar 08'den import edildi.
+- Çıkarım birincil DM ailesiyle aynı: HLN çarpanı ve t(n−1). Holm, BH ve BY, HLN p
+  değerine uygulandı.
+
+| ufuk | n | ort. (e²_HAR − e²_HARX) | ort. düzeltme | CW (HLN) | p HLN (ham) | Holm | BH | BY |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| h=5 | 3662 | 4.49e−06 | 3.02e−05 | 5.336 | <0.001 | <0.001 | <0.001 | <0.001 |
+| h=22 | 3645 | 7.89e−06 | 2.60e−05 | 3.587 | <0.001 | <0.001 | <0.001 | <0.001 |
+| h=66 | 3500 | −3.24e−06 | 1.80e−05 | 2.975 | 0.001 | 0.003 | 0.002 | 0.004 |
+| h=126 | 3500 | −5.56e−06 | 1.10e−05 | 1.194 | 0.116 | 0.116 | 0.116 | 0.242 |
+
+Kesin değerler `clark_west_publication_aligned.csv`'de.
+- CW, h=5, h=22 ve h=66'da üç düzeltmenin üçünde de H0'ı reddediyor; h=126'da
+  reddetmiyor.
+- h=66'da havuzlanmış ham MSE farkı negatif (HAR'ın MSE'si daha düşük); CW buna karşın
+  reddediyor.
+- Fold düzeyinde f ortalaması pozitif olan fold sayısı (betimleyici): 15/15, 15/15,
+  12/14, 10/14.
+
+## 22.2 XGBoost-6 vs HAR, fold bazında (keşifsel; p değeri yok)
+
+| ufuk | XGB-6 kazandığı yıl / fold | fold ort. farkı (XGB-6 / HAR − 1) | sayım ile ortalama yönü |
+| --- | --- | --- | --- |
+| h=5 | 5/15 | +0.03% | uyuşuyor (ikisi de HAR) |
+| h=22 | 8/15 | −2.23% | uyuşuyor (XGB-6) |
+| h=66 | 8/14 | −0.89% | uyuşuyor (XGB-6) |
+| h=126 | 8/14 | −0.79% | uyuşuyor (XGB-6) |
+
+**Aşama 15 ile ilişkisi.** Aşama 15'teki "XGBoost-6, düz HAR'ı dört ufukta da geçiyor"
+ifadesi zaman damgalı sürüme ait (h=5: 0.010645 vs 0.010834). Yayım-hizalı sürümde h=5'te
+XGB-6 fold ortalamasında HAR'dan %0.03 kötü (0.010838 vs 0.010834). Kazandığı yıl 5/15.
+İfade yayım-hizalı sürüm için h=5'te geçerli değil. Aşama 15'in metni köken kaydı olarak
+olduğu gibi bırakıldı.
+
+## 22.3 2026 kısmi yıl, h=66 ve h=126
+
+Pakette zaten var: Bölüm 1e. Tüm modellerin o fold'daki RMSE, MAE ve R²_oos değerleri;
+n = 101 (h=66) ve 41 (h=126); birincil toplulaştırmadan dışlanmış. Yeni hesap yapılmadı;
+Bölüm 13c yalnızca oraya işaret ediyor.

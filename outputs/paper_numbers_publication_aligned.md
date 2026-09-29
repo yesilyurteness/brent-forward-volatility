@@ -1,7 +1,7 @@
 # Makale sayıları — yayım-hizalı GPR sürümü (BİRİNCİL)
 
-- **Üretildiği commit:** `f5445585e2b4140aa8350761388ee38acb2676b7` (Add the exploratory h=5 QLIKE reversal checks to the number package)
-- **Üretim tarihi:** 2026-09-29T17:03:33+03:00
+- **Üretildiği commit:** `3bb6ead8b80ab9c1a58b3e3f3db7c9a0bfa907f7` (Add the Clark-West supplementary family and XGB-6 vs HAR fold counts)
+- **Üretim tarihi:** 2026-09-29T17:11:13+03:00
 - **Çalışma ağacı:** temiz — girdiler bu commit'teki dosyalarla birebir aynı.
 - Doğrulama: `git checkout <commit> && python scripts/18_paper_numbers.py` aynı sayıları üretmelidir (yalnızca bu başlık değişir).
 
@@ -955,4 +955,38 @@ En büyük %1 satır HAR-X'in h=5 QLIKE toplamının %30.0'ini, σ̂ ≤ 1.25 ×
 | h=22 | 9 / 3645 | 2014 (9) | −238.44 | +4.63 | %−1.9 | 0.2825 / 0.3494 | 0.2837 / 0.3576 |
 | h=66 | 0 / 3500 | — | −86.00 | +0.00 | — | 0.3602 / 0.3847 | 0.3581 / 0.3828 |
 | h=126 | 0 / 3500 | — | −9.10 | +0.00 | — | 0.4005 / 0.4031 | 0.3992 / 0.4020 |
+
+## 13. Ek aile: Clark–West; XGBoost-6 vs HAR; 2026 dipnotu
+
+### 13a. Clark–West testi, HAR ⊂ HAR-X (ek aile, 4 test)
+
+**Etiket:** iç içe yapıya uygun istatistik; birincil DM testleri görüldükten sonra, CW sonuçları görülmeden eklendi. Aile 2026-09-29 16:15:34 +0300 tarihinde CLAUDE.md'de ilan edildi (commit `72106e7`); CW istatistiği depoda bundan önce hesaplanmamıştı. **Birincil aile 8 testle sabittir; CW oraya eklenmez ve DM testlerinin yerine geçmez.** Holm/BH/BY bu 4 test içinde.
+
+`f_t = e_HAR,t² − [e_HARX,t² − (ŷ_HAR,t − ŷ_HARX,t)²]`; H1: E[f] > 0 (HAR-X daha iyi), **tek yanlı**. Kayıtlı (yayımlanan, tabanlanmış) tahminler, ana fold'lar, havuzlanmış seri (DM gibi). HAC: Newey-West, Bartlett, L = h−1. Çıkarım DM birincil ailesiyle aynı: HLN çarpanı ve t(n−1); düzeltmeler HLN p değerine uygulanır. HLN'siz normal p yan sütunda. Kaynak: `21_clark_west.py`, `clark_west_publication_aligned.csv`.
+
+| ufuk | n | ort. (e²_HAR − e²_HARX) | ort. düzeltme (ŷ_HAR − ŷ_HARX)² | ort. f | CW | CW (HLN) | p normal (ham) | p HLN (ham) | Holm | BH | BY | HAC şişme |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| h=5 | 3662 | 4.49e−06 | 3.02e−05 | 3.47e−05 | 5.343 | 5.336 | <0.001 | <0.001 | <0.001 | <0.001 | <0.001 | 2.62 |
+| h=22 | 3645 | 7.89e−06 | 2.60e−05 | 3.39e−05 | 3.608 | 3.587 | <0.001 | <0.001 | <0.001 | <0.001 | <0.001 | 6.73 |
+| h=66 | 3500 | −3.24e−06 | 1.80e−05 | 1.47e−05 | 3.032 | 2.975 | 0.001 | 0.001 | 0.003 | 0.002 | 0.004 | 3.08 |
+| h=126 | 3500 | −5.56e−06 | 1.10e−05 | 5.48e−06 | 1.238 | 1.194 | 0.108 | 0.116 | 0.116 | 0.116 | 0.242 | 5.55 |
+
+**Fold düzeyinde (betimleyici, test değil):** f'nin fold ortalamalarının ortalaması ve f ortalaması pozitif olan fold sayısı: h=5: 3.74e−05, 15/15; h=22: 3.71e−05, 15/15; h=66: 1.48e−05, 12/14; h=126: 5.55e−06, 10/14.
+
+Okuma notu: ilk sütun DM'nin kullandığı ham MSE farkıdır; h=66 ve h=126'da negatiftir (havuzlanmış seride HAR'ın MSE'si daha düşük). CW istatistiği buna tahmin farkının karesini ekler.
+
+### 13b. XGBoost-6 vs HAR, fold bazında (keşifsel; test yok)
+
+XGBoost-6 keşifseldir; p değeri verilmez. Kazanma: fold RMSE'si HAR'ınkinden düşük. Uyuşma: kazanma çoğunluğunun yönü ile fold ortalaması RMSE farkının yönü aynı mı. `100 × (RMSE_XGB-6 / RMSE_HAR − 1)`, pozitif = XGBoost-6 daha kötü.
+
+| ufuk | XGB-6 kazandığı yıl / fold | fold ort. farkı | sayım yönü | ortalama yönü | uyuşuyor mu | ortalamayı taşıyan yıllar |
+| --- | --- | --- | --- | --- | --- | --- |
+| h=5 | 5/15 | +0.03% | HAR | HAR | evet | — |
+| h=22 | 8/15 | −2.23% | XGB-6 | XGB-6 | evet | — |
+| h=66 | 8/14 | −0.89% | XGB-6 | XGB-6 | evet | — |
+| h=126 | 8/14 | −0.79% | XGB-6 | XGB-6 | evet | — |
+
+### 13c. 2026 kısmi yıl, h=66 ve h=126
+
+Bölüm 1e'de: tüm modellerin o fold'daki RMSE/MAE/R²_oos'u, n = 101 (h=66) ve 41 (h=126). Birincil toplulaştırmadan dışlanmıştır; model karşılaştırması veya seçimi için kullanılmaz.
 
