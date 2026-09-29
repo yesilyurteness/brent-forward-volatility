@@ -480,10 +480,12 @@ step trains one neural network per fold on CPU. The rest take on the order of mi
 +-- outputs/               metrics, predictions, JSON reports, experiment log
 ```
 
-A note on language: the documentation and all code comments are in English, while the
-console output of the scripts and the column names of the generated CSV files are in
-Turkish. The log files under `outputs/` were produced by those runs and so are in Turkish
-as well. This is deliberate: translating the column names would require regenerating every
+A note on language: the documentation, all code comments and the console messages of most
+scripts are in English, while the column names of the generated CSV files are in Turkish.
+The console logs under `outputs/` and the free-text fields inside some JSON reports were
+written by the original runs and so are in Turkish as well; the English narrative of the
+analysis is in [outputs/experiment_log_en.md](outputs/experiment_log_en.md). This is
+deliberate: translating the column names would require regenerating every
 output file, which would break the correspondence between the committed results and the
 runs that produced them. Every output file and every column name is translated and
 explained in the data dictionary at [outputs/README.md](outputs/README.md).

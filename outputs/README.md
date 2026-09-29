@@ -24,19 +24,25 @@ deliberately **not** translated:
 
 - **The column names of the generated CSV files** (for example `fark_pct`,
   `isaret_kazanan`, `kareli_hata_payi_pct`).
-- **The console output of the scripts**, which is why the `*_log.txt` files in this
-  directory are in Turkish, as are the text fields inside some JSON reports.
+- **Text written into the committed outputs**: the console transcripts (the `*_log.txt`
+  files in this directory) and the text fields inside some JSON reports.
 
 These are kept as they are because the committed result files were produced by runs that
 used exactly these names and messages. Renaming the columns would require regenerating
 every output file, which would break the correspondence between the committed results and
 the runs that produced them. This dictionary translates every non-English name instead.
+These free-text fields are in Turkish; the English narrative of the analysis is in
+[`experiment_log_en.md`](experiment_log_en.md).
 
 Categorical values are also in Turkish and are listed with their meanings in the
-[Categorical values](#categorical-values) section.
+[Categorical values](#categorical-values) section; the remaining Turkish names are in
+[Other Turkish names](#other-turkish-names).
 
-The files added in v1.1.0 (Stages 11-14 below) were generated with English column names
-from the start; their console output is still in Turkish.
+The scripts' console and error messages were translated into English after the analysis
+freeze, except the print statements of the five scripts whose console transcripts are
+committed (04, 06, 07, 08, 10), so that those transcripts still match the code. The files
+added in v1.1.0 (Stages 11-14 below) were generated with English column names from the
+start.
 
 ---
 
@@ -927,7 +933,10 @@ primary hypothesis family, the robustness checks rerun in publication mode, and 
 two-version comparison for Appendix A. R²_oos in this file uses one common reference per
 fold (the train-mean baseline of `hybrid_metrics_all`) for every model, so the values of
 models taken from `bench`, `ablation`, `exploratory_xgb6` and `opt_*` differ slightly
-from those files, which use each model's own training window. The text is in Turkish.
+from those files, which use each model's own training window. The text is in English
+since the post-freeze translation (commit `229a7e6`); `scripts/check_translation.py
+package` checks that its numbers, commit hashes and file paths are the same, in the same
+order, as in the package at the freeze commit.
 
 ### `primary_family_tests_publication_aligned.csv` — `18_paper_numbers.py`
 The eight tests of the primary family (HAR vs HAR-X and HAR-X vs XGBoost, four horizons),
@@ -999,7 +1008,14 @@ Written by hand; it contains no numbers of its own.
 ### `experiment_log.md` — maintained across stages
 Every configuration tried, in chronological order, with its result. Version 5, the tiered
 capacity rule, is the primary specification. This table is reproduced in the paper's
-Limitations section. The text is in Turkish.
+Limitations section. The text is in Turkish and is the authoritative record.
+
+### `experiment_log_en.md` — translation of `experiment_log.md`
+A line-by-line English translation, written by hand after the analysis freeze. The
+Turkish original is the authoritative record; in case of any discrepancy the original
+prevails. The header names the commit of the original it translates and the line offset
+between the two files. `scripts/check_translation.py log` checks that every stage carries
+the same numbers, commit hashes and file paths as the original.
 
 ---
 
@@ -1039,6 +1055,30 @@ Limitations section. The text is in Turkish.
 | `nyse_holiday` | `category` | The skipped weekdays are all NYSE holidays; a normal multi-day return |
 | `uk_only_holiday` | `category` | A skipped weekday is a UK bank holiday on which NYSE traded. Defined, but does not occur |
 | `unexplained` | `category` | At least one skipped weekday is neither: a real gap |
+| `Brent günlük log getirisi` | `label` | Table 1: Brent daily log return |
+| `Hedef, h=5`, `Hedef, h=22`, `Hedef, h=66`, `Hedef, h=126` | `label` | Table 1: the target at that horizon |
+| `GPRD (model girdisi, publication)`, `GPRD_THREAT (model girdisi, publication)` | `label` | Table 1: the GPR series as the model input, publication-aligned |
+| `GPRD (gözlem tarihli, işlem günleri)`, `GPRD_THREAT (gözlem tarihli, işlem günleri)` | `label` | Table 1 footnote: observation-dated, trading days |
+| `GPRD (kendi takvimi, tüm takvim günleri)`, `GPRD_THREAT (kendi takvimi, tüm takvim günleri)` | `label` | Table 1 footnote: the index's own calendar, all calendar days |
+| `birincil sağlamlık varyantı` | `status` | Roll-over variant A: primary robustness variant |
+| `duyarlılık (iki satır)` | `status` | Roll-over variant A′: sensitivity check, two rows removed |
+| `duyarlılık (yalnızca h=5)` | `status` | Roll-over variant B: sensitivity check, h=5 only |
+
+## Other Turkish names
+
+| Name | Appears in | Meaning |
+| --- | --- | --- |
+| `veriseti.xlsx` | `data/` (file name) | "dataset": the raw data file, not in the repository (see `data/README.md`) |
+| `karşılaştırma` | `primary_family_tests_publication_aligned.csv` | Comparison, as `model1 vs model2` |
+| `har_x_fold_ort`, `h2_harx_xgb_fold_ort`, `xgboost_fold_ort` | `explore_vol_regime_groups*.csv`, `explore_vol_regime_summary*.json` | That model's fold-mean RMSE within the regime group |
+| `har_x_havuz`, `h2_harx_xgb_havuz`, `xgboost_havuz` | `explore_vol_regime_groups*.csv`, `explore_vol_regime_summary*.json` | That model's pooled RMSE within the regime group |
+| `grup_rho`, `grup_p` | `shap_summary*.json` (`spearman`) | Spearman ρ and its p-value between XGBoost's SHAP group shares and HAR-X's \|std beta\| group shares, over the 3 shared groups |
+| `ortak_regresor_rho`, `ortak_regresor_p` | `shap_summary*.json` (`spearman`) | Spearman ρ and its p-value between XGBoost's mean \|SHAP\| and HAR-X's mean \|std beta\|, over the 5 regressors common to both models |
+| `train_satir_min`, `train_satir_maks` | `wf_summary_all*.json` (`effective_sample_size.by_horizon`) | Smallest and largest number of training rows across the folds |
+| `train_etkin_min`, `train_etkin_maks` | `wf_summary_all*.json` (`effective_sample_size.by_horizon`) | Smallest and largest effective training observations (rows / h) across the folds |
+| `test_etkin_min`, `test_etkin_maks` | `wf_summary_all*.json` (`effective_sample_size.by_horizon`) | Smallest and largest effective test observations across the folds |
+| `ozellik_sayisi` | `wf_summary_all*.json` (`effective_sample_size.by_horizon`) | Number of features |
+| `ozellik_/_etkin_gozlem` | `wf_summary_all*.json` (`effective_sample_size.by_horizon`) | Number of features divided by `train_etkin_maks` |
 
 ## Model names
 
