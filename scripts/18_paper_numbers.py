@@ -466,6 +466,210 @@ def section_13(w, pr, F):
     w("")
 
 
+def section_15(w):
+    """Roll-over robustness (24_rollover_robustness.py), Appendix A."""
+    s = json.load(open(alignment.out("rollover_summary.json", PUB), encoding="utf-8"))
+    T = rd("rollover_family_tests.csv", PUB)
+    FM = rd("rollover_metrics.csv", PUB)
+    base = T[T["variant"] == "baseline"].set_index(["comparison", "horizon"])
+    pf = rd("primary_family_tests.csv", PUB).rename(columns={"karşılaştırma": "comparison"})
+    pf = pf.set_index(["comparison", "horizon"])
+    assert np.allclose(base["p_HLN"], pf.loc[base.index, "p_HLN"], rtol=1e-8)
+    for v in T["variant"].unique():   # corrections are within each variant's own tests
+        g = T[T["variant"] == v]
+        c = sum(1 / i for i in range(1, len(g) + 1))
+        for col in ("p_HLN", "p_sign"):
+            assert np.allclose(step_up(g[col].to_numpy()), g[f"{col}_bh"], rtol=1e-12)
+            assert np.allclose(step_up(g[col].to_numpy(), c), g[f"{col}_by"], rtol=1e-12)
+    cal = s["calendar"]
+    VN = {"A": "A (birincil sağlamlık varyantı)", "A2": "A′ (duyarlılık: iki satır)",
+          "B": "B (duyarlılık: yalnızca h=5)"}
+    w("## 15. Ek A: Roll-over sağlamlık analizi (HAR, HAR-X, XGBoost)")
+    w("")
+    w(f"**Statüler koşudan önce yazıldı** ({s['design_registered']}) ve sonuçlara göre "
+      "değiştirilmedi; üç varyant da sonuç ne çıkarsa çıksın raporlanır. Kaynak: "
+      "`24_rollover_robustness.py`, `rollover_*_publication_aligned`.")
+    w("")
+    w(f"- **Vade takvimi:** ICE Brent kuralı (Şubat 2016'ya kadar 15 gün kuralı, Mart "
+      f"2016'dan itibaren ay-öncesi kuralı; ICE sözleşme spesifikasyonu ve Circular "
+      f"15/235). ICE'ın resmi tablosundaki {cal['official_expiries_matched']} vadenin "
+      f"(Aralık 2015 – Mart 2023) tümü birebir üretiliyor (assert); 2008–2015 için resmi "
+      f"tablo bulunamadı. Örneklemde {cal['expiries_in_sample']} vade; "
+      f"{cal['expiry_days_missing_in_data']} vade günü veride yok. Varsayım (CME "
+      "belgesinden doğrulanmadı): `BZ=F`'in dayandığı NYMEX BZ kontratı bu takvimi izler.")
+    w("- **Geçiş satırı:** vade gününden sonraki ilk veri satırı. **A:** o satırın getirisi "
+      f"çıkarılır ({cal['rows_removed_A']} satır); hedef aynı pencerede kalan getirilerin "
+      "std'si; getiri özellikleri ve past-vol baseline temiz getirilerle. **A′:** vade "
+      f"sonrası iki satır ({cal['rows_removed_A2']} satır). **B (yalnızca h=5):** getiri "
+      f"çıkarılmaz; hedef penceresinde geçiş olan {s['B_rows_dropped_h5']} satır örneklemden "
+      "atılır. Penceresinde çıkarılmış getiri olmayan satırlarda hedef ve özellikler "
+      "birincil değerlerle birebir aynı.")
+    w("- **Doğrulama:** boş maskeyle hedefler, getiri özellikleri ve HAR/HAR-X/XGBoost "
+      "tahminleri bit düzeyinde, 8 testin değerleri kayıtlı birincil değerlerle aynı "
+      "üretiliyor (assert).")
+    w("- **Sınırlılık:** kontrol hedefteki ve getiri özelliklerindeki geçiş etkisini "
+      "temizler; XGBoost'un fiyat düzeyi özelliklerindeki (`brent_lag1-5`, "
+      "`brent_ema5/10/20`) etkiyi temizlemez, çünkü bu geri ayarlanmış bir seri gerektirir.")
+    gr = s["gap_rows_removed"]
+    w(f"- **Tarih boşluklarıyla örtüşme:** belgelenmiş {s['documented_gaps']} boşluk "
+      f"satırının **{gr['A']['n']}**'i A'da, **{gr['A2']['n']}**'si A′'de getirisi "
+      "çıkarılan satırlardır. *Hipotez, kanıtlanmış değil:* boşlukların bir kısmı geçiş "
+      "kaynaklı olabilir (Yahoo vade günü veya ertesi günü satırını atlıyor olabilir); "
+      "örtüşme sayısı nedeni göstermez.")
+    w("")
+    w("### 15a. Varyant içi model farkları (fold ortalaması)")
+    w("")
+    w("`100 × (RMSE_a / RMSE_b − 1)`, pozitif = a daha kötü. **Mutlak RMSE birincil "
+      "sonuçla karşılaştırılmaz** (hedef değişiyor); yalnızca varyant içi farklar "
+      "verilir. Referans satırı, aynı kod yolunun maskesiz koşusudur (= birincil sonuç).")
+    w("")
+    fm = FM[FM["include_in_main"]].groupby(["variant", "horizon", "model"])[
+        ["rmse", "mae"]].mean().unstack("model")
+    rows = []
+    for v in ("baseline", "A", "A2", "B"):
+        for h in HORIZONS:
+            if (v, h) not in fm.index:
+                continue
+            r, m = fm.loc[(v, h), "rmse"], fm.loc[(v, h), "mae"]
+            rows.append({"varyant": VN.get(v, "birincil (referans)"), "ufuk": f"h={h}",
+                         "HAR vs HAR-X, RMSE": pct(100 * (r["har"] / r["har_x"] - 1)),
+                         "XGBoost vs HAR-X, RMSE": pct(100 * (r["xgboost"] / r["har_x"] - 1)),
+                         "HAR vs HAR-X, MAE": pct(100 * (m["har"] / m["har_x"] - 1)),
+                         "XGBoost vs HAR-X, MAE": pct(100 * (m["xgboost"] / m["har_x"] - 1))})
+    w(md_table(pd.DataFrame(rows)))
+    w("")
+    w("### 15b. Birincil ailenin testleri, her varyantta kendi düzeltmeleriyle")
+    w("")
+    w("Kurulum 08 ile aynı: DM (Newey-West Bartlett, L = h−1, HLN, t(n−1)) ve fold "
+      "düzeyinde işaret testi. Holm/BH/BY her varyantın kendi testleri içinde (A ve A′: 8, "
+      "B: 2, çünkü B tasarım gereği yalnızca h=5). CLAUDE.md: varyant veri üzerindeki "
+      "tekrarlar yeni aile değildir ve birincil aileyle havuzlanmaz.")
+    w("")
+    for v in ("A", "A2", "B"):
+        g = T[T["variant"] == v]
+        w(f"**{VN[v]}**")
+        w("")
+        w(md_table(pd.DataFrame({
+            "karşılaştırma": g["comparison"].str.replace("har_x", "HAR-X").str.replace(
+                "har", "HAR").str.replace("xgboost", "XGBoost"),
+            "ufuk": g["horizon"].map(lambda h: f"h={h}"),
+            "DM (HLN)": g["DM_HLN"].map(lambda x: signed(x, 3)),
+            "p": g["p_HLN"].map(fp), "Holm": g["p_HLN_holm"].map(fp),
+            "BH": g["p_HLN_bh"].map(fp), "BY": g["p_HLN_by"].map(fp),
+            "HAR-X kazanır": [f"{a}/{b}" for a, b in zip(g["harx_fold_wins"], g["n_folds"])],
+            "işaret p": g["p_sign"].map(fp), "işaret Holm": g["p_sign_holm"].map(fp),
+            "işaret BH": g["p_sign_bh"].map(fp), "işaret BY": g["p_sign_by"].map(fp)})))
+        w("")
+        k = {c: int((g[c] < 0.05).sum()) for c in ("p_HLN_holm", "p_HLN_bh", "p_HLN_by",
+                                                  "p_sign_holm", "p_sign_bh", "p_sign_by")}
+        w(f"%5'te ayakta kalan: DM Holm {k['p_HLN_holm']}, BH {k['p_HLN_bh']}, BY "
+          f"{k['p_HLN_by']}; işaret Holm {k['p_sign_holm']}, BH {k['p_sign_bh']}, BY "
+          f"{k['p_sign_by']} (toplam {len(g)} test).")
+        w("")
+
+
+def section_16(w):
+    """Appendix A additions: A1 feature list, volatility regime analysis (07b), A8."""
+    w("## 16. Ek A eklemeleri: özellik listesi, volatilite rejimi analizi, eğitim uzunluğu")
+    w("")
+    # ---- A1 ----
+    feat = pd.read_csv(alignment.features_path(PUB), nrows=1)
+    cols = [c for c in feat.columns if c not in ("Date", "Date_parsed")]
+    fi = rd("shap_feature_importance.csv", PUB)
+    grp = fi[fi["horizon"] == 5].set_index("ozellik")["grup"]
+    assert len(cols) == 65 and set(cols) == set(grp.index)
+    GL = {"brent_fiyat": "Brent fiyat düzeyi ve getiri", "brent_vol": "Brent gerçekleşen "
+          "volatilite", "ovx": "OVX", "gpr": "GPR (yayım-hizalı)", "etkilesim": "Etkileşim",
+          "takvim": "Takvim"}
+    w("### 16a. A1: 65 özelliğin tam listesi")
+    w("")
+    w("Kaynak: `features_publication_aligned.csv` (`02_build_features.py`); grup eşlemesi "
+      "`shap_feature_importance_publication_aligned.csv`. Takvim dışındaki tüm özellikler "
+      "`.shift(1)` ile nedenseldir; GPR özellikleri ayrıca yayım tarihine göre hizalıdır.")
+    w("")
+    rows = []
+    for gkey in ("brent_vol", "brent_fiyat", "ovx", "gpr", "etkilesim", "takvim"):
+        fs = [c for c in cols if grp[c] == gkey]
+        rows.append({"grup": GL[gkey], "sayı": len(fs), "özellikler": ", ".join(
+            f"`{c}`" for c in fs)})
+    w(md_table(pd.DataFrame(rows)))
+    w("")
+    # ---- volatility regime analysis (script 07b) ----
+    vs = json.load(open(alignment.out("explore_vol_regime_summary.json", PUB), encoding="utf-8"))
+    gr = rd("explore_vol_regime_groups.csv", PUB)
+    w("### 16b. Volatilite rejimi analizi (`07b_exploratory_vol_regime.py`)")
+    w("")
+    w("**Keşifsel ve post hoc.** Aşama 7'de ölçülen çelişki (H2 havuzda HAR-X'ten iyi, fold "
+      "ortalamasında kötü) görüldükten sonra, onu açıklamak için tasarlandı (günlük, "
+      "açıklama notu 2026-09-27). Birincil bulguyu değiştirmez, model seçiminde "
+      "kullanılmaz. **Rejim sınırı mekaniktir:** her ufukta test yılının ortalama "
+      "gerçekleşen volatilitesi, yıllar arası medyana göre ikiye ayrılır; sınır "
+      "performansa bakılarak seçilmedi. (Paketin §7b'si ayrı bir şeydir: BiLSTM yakınsama "
+      "kontrolü.)")
+    w("")
+    assert "Mekanik" in vs["split_rule"]
+    RJ = {"dusuk": "düşük", "yuksek": "yüksek"}
+    w(md_table(pd.DataFrame({
+        "ufuk": gr["horizon"].map(lambda h: f"h={h}"), "rejim": gr["rejim"].map(RJ),
+        "fold": gr["n_fold"], "ort. volatilite": gr["vol_ort"].map(f6),
+        "RMSE HAR-X (fold ort.)": gr["har_x_fold_ort"].map(f6),
+        "RMSE H2 (fold ort.)": gr["h2_harx_xgb_fold_ort"].map(f6),
+        "H2 vs HAR-X, fold ort.": gr["h2_vs_harx_fold_ort_pct"].map(pct),
+        "H2 vs HAR-X, havuz": gr["h2_vs_harx_havuz_pct"].map(pct),
+        "H2 kazanan fold": [f"{a}/{b}" for a, b in zip(gr["h2_kazanan_fold"], gr["n_fold"])],
+        "kareli hata payı": gr["kareli_hata_payi_pct"].map(lambda v: f"%{v:.1f}")})))
+    w("")
+    w("`100 × (RMSE_H2 / RMSE_HAR-X − 1)`, pozitif = H2 daha kötü. Kareli hata payı: o "
+      "rejimin HAR-X kareli hatalarının havuzdaki payı. Kaynak: "
+      "`explore_vol_regime_groups_publication_aligned.csv`.")
+    w("")
+    # ---- A8 ----
+    b = rd("bench_folds_all.csv", PUB)
+    xw = pd.DataFrame(json.load(open(alignment.out("wf_summary_all.json", PUB),
+                                     encoding="utf-8"))["folds"])
+    bl = rd("bilstm_folds_all.csv", PUB)
+    j = (b.merge(xw[["horizon", "test_year", "n_train_final"]], on=["horizon", "test_year"],
+                 validate="1:1")
+         .merge(bl[["horizon", "test_year", "n_train"]].rename(columns={"n_train": "n_bilstm"}),
+                on=["horizon", "test_year"], validate="1:1"))
+    assert (j["n_train_xgb_equiv"] == j["n_train_final"]).all()
+    assert (j["n_train_harx"] == j["n_train_har"]).all()
+    assert (j["garch_extra_vs_xgb"] == j["extra_from_embargo"] + j["extra_from_warmup"]).all()
+    w("### 16c. A8: Eğitim uzunluğu asimetrisi")
+    w("")
+    w("Her fold'da modellerin eğitim satırı sayıları. Test satırları tüm modellerde aynı; "
+      "fark yalnızca eğitim penceresinin başında ve embargoda. HAR ailesi satır 21'den, "
+      "XGBoost satır 127'den (126 günlük volatilite penceresi) başlar; BiLSTM'in 20 "
+      "günlük girdi dizisi (lookback) serinin başında bir kez 19 satır daha götürür; "
+      "GARCH getiri serisinin başından başlar ve etiket kullanmadığı için embargo "
+      "uygulanmaz. "
+      "Kaynak: `bench_folds_all` (`05_benchmarks.py`), `wf_summary_all` (`03_walkforward.py`), "
+      "`bilstm_folds_all` (`06_attention_bilstm.py`).")
+    w("")
+    rows = []
+    for h in HORIZONS:
+        g = j[j["horizon"] == h].sort_values("test_year")
+        d_har = (g["n_train_har"] - g["n_train_final"]).unique()
+        d_bl = (g["n_bilstm"] - g["n_train_final"]).unique()
+        assert len(d_har) == 1
+        f0, f1 = g.iloc[0], g.iloc[-1]
+        rows.append({
+            "ufuk": f"h={h}",
+            "XGBoost, ilk – son fold": f"{f0['n_train_final']} – {f1['n_train_final']}",
+            "BiLSTM − XGBoost": ", ".join(signed(int(x), 0) for x in d_bl),
+            "HAR/HAR-X − XGBoost": f"+{int(d_har[0])}",
+            "GARCH − XGBoost": f"+{int(g['garch_extra_vs_xgb'].iloc[0])} "
+                               f"({int(g['extra_from_warmup'].iloc[0])} ısınma + "
+                               f"{int(g['extra_from_embargo'].iloc[0])} embargo)",
+            "HAR fazlası / XGBoost, ilk – son fold":
+                f"%{100 * d_har[0] / f0['n_train_final']:.1f} – "
+                f"%{100 * d_har[0] / f1['n_train_final']:.1f}"})
+    w(md_table(pd.DataFrame(rows)))
+    w("")
+    w("Bu asimetrinin sonuca etkisi §7a'da (veri eşitleme) ölçülmüştür.")
+    w("")
+
+
 def section_14(w):
     """Table 1: descriptive statistics (22_descriptive_stats.py)."""
     d = rd("descriptive_stats.csv", PUB)
@@ -1983,6 +2187,10 @@ def main():
 
     # ---------------- 14. Table 1: descriptive statistics ----------------
     section_14(w)
+
+    # ---------------- 15-16. Appendix A: roll-over, A1, regime analysis, A8 ----------
+    section_15(w)
+    section_16(w)
 
     path = OUT_DIR / "paper_numbers_publication_aligned.md"
     path.write_text("\n".join(L) + "\n", encoding="utf-8")

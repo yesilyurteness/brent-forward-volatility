@@ -251,13 +251,16 @@ def compute_metrics(y_true, y_pred, train_mean):
 # Walk-forward for a single horizon
 # ===========================================================================
 def run_horizon(h, df, feature_cols, log_cols, daily_ret, test_years,
-                target_mode=TARGET_MODE_DEFAULT, verbose=True):
+                target_mode=TARGET_MODE_DEFAULT, verbose=True, past_vol=None):
     df = df.copy()
     df["y"] = df[f"target_vol_{h}"]
     # Past-volatility baseline: the realized volatility of the past h days, recomputed
     # from the raw price; this keeps it independent of the feature set and gives the
-    # correct window for every h.
-    df["pred_past_vol"] = daily_ret.rolling(h).std().shift(1).values
+    # correct window for every h. past_vol (optional, one value per row, already causal)
+    # replaces it; used only by the roll-over robustness variants (24_rollover_robustness.py),
+    # whose baseline skips the roll-day returns. None keeps the original computation.
+    df["pred_past_vol"] = (daily_ret.rolling(h).std().shift(1).values if past_vol is None
+                           else np.asarray(past_vol, dtype="float64"))
 
     pred_frames, fold_records = [], []
 

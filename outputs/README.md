@@ -972,6 +972,16 @@ grayscale, Arial.
 Figure 2(b), appendix: SHAP group share of the primary XGBoost per horizon
 (`share_pct_h*`), with each group's feature count (`n_features`).
 
+### `rollover_calendar.csv`, `rollover_{predictions,metrics,family_tests}_publication_aligned.csv`, `rollover_summary_publication_aligned.json` — `24_rollover_robustness.py`
+Roll-over robustness of the primary family. `rollover_calendar.csv`: ICE Brent expiry per
+contract month in the sample, the rule applied, whether the expiry day is in the data and
+the roll row (first data row after expiry). Predictions and fold metrics of HAR, HAR-X and
+XGBoost per `variant` (`baseline` = the unmasked run, identical to the primary results;
+`A` = roll-row return removed; `A2` = two rows removed; `B` = h=5 only, windows with a
+roll dropped). `rollover_family_tests`: the 8 primary-family tests per variant with Holm,
+BH and BY within the variant. The JSON records the design registration, the calendar
+checks and the overlap with the documented date gaps.
+
 ### `appendix_a_source_map.md`
 Maps each Appendix A item cited by the methodology text to its source output file, the
 script that produces it and the number-package section, and marks what is missing.

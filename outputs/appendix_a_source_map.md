@@ -13,7 +13,7 @@ v3'ünkü; burada değiştirilmedi. Tüm dosyalar `outputs/` altında ve yayım-
 
 | madde | içerik | kaynak çıktı | script | paket bölümü | durum |
 | --- | --- | --- | --- | --- | --- |
-| A1 | 65 özellik listesi | `features_publication_aligned.csv` (başlık: 65 özellik + `Date`, `Date_parsed`); özellik → grup eşlemesi `shap_feature_importance_publication_aligned.csv` (`ozellik`, `grup`) | `02_build_features.py`; grup eşlemesi `10_shap_analysis.py` | §5'te yalnızca grup başına sayı (7/23/13/13/4/5) | kısmi |
+| A1 | 65 özellik listesi | `features_publication_aligned.csv` (başlık: 65 özellik + `Date`, `Date_parsed`); özellik → grup eşlemesi `shap_feature_importance_publication_aligned.csv` (`ozellik`, `grup`) | `02_build_features.py`; grup eşlemesi `10_shap_analysis.py` | §16a (tam liste, gruplu) | tam |
 | A3 | dışlanan 2026 fold'u (h=66, h=126) | model metrik dosyalarında `include_in_main = False` satırları (`hybrid_metrics_all`, `bench_metrics_all`, `ablation_exogenous_folds`, `exploratory_xgb6_folds`, `opt_*metrics_all`); geçerli gözlem sayıları `horizon_valid_by_year.csv` | 03, 04, 05, 07, 11, 15; sayımlar `validate_data.py` | §1e (tüm modeller, n = 101 / 41); §8f (iki sürüm); §13c | tam |
 | A6 | veri eşitleme | `bench_*_aligned_publication_aligned.*` | `05_benchmarks.py --align-start-row 127 --suffix _aligned` | §7a | tam |
 | A6 | Optuna | `opt_{folds,metrics,aggregate,predictions,summary}_all_publication_aligned.*` | `04_optuna_walkforward.py` | §1 (RMSE/MAE/R²_oos satırları); seçim sinyali (en iyi deneme vs medyan) ve kapasite kuralına düşen fold'lar `opt_folds_all` içinde (`selection_signal_pct`, `selection_procedure`) | kısmi |
@@ -22,13 +22,13 @@ v3'ünkü; burada değiştirilmedi. Tüm dosyalar `outputs/` altında ve yayım-
 | A6 | alternatif smearing (büzülmesiz, ham) | `opt_rawsmearing_*_publication_aligned.*` | `04_optuna_walkforward.py --raw-smearing` | §1 ("Optuna + ham smearing" satırları); smearing sapması–bozulma korelasyonu pakette yok | kısmi |
 | A6 | doğrudan boşluk düzeltme testi | `gap_target_test{,_folds}_publication_aligned.csv`, `gap_target_test_summary_publication_aligned.json` | `13_gap_target_test.py` (boşluk sınıflaması `14_date_gap_diagnostics.py`'den import edilir) | §9d | tam |
 | A6 | tam zaman damgalı tekrar koşu | ekleri olmayan tüm model çıktıları (03–13, 15, `_aligned` ve `_conv` varyantları); karşılaştırma `gpr_alignment_comparison*.csv`, `gpr_alignment_decomposition.csv` | 03–13 ve 15, `--gpr-alignment timestamp`; karşılaştırma `17_gpr_alignment_comparison.py` | §8 (8a–8f) | tam |
-| A6 | 7b volatilite rejimi | `explore_vol_regime_{folds,groups,years}_publication_aligned.csv`, `explore_vol_regime_summary_publication_aligned.json` | `07b_exploratory_vol_regime.py` | yok | kısmi |
-| A6 | roll-over | — | — | — | **EKSİK** (plan aşamasında, koşulmadı) |
-| A8 | eğitim uzunluğu asimetrisi | fold başına eğitim satırları: `bench_folds_all_publication_aligned.csv` (`n_train_har`, `n_train_harx`, `n_train_garch`, `n_train_xgb_equiv`, `garch_extra_vs_xgb`, `garch_extra_vs_har`, `extra_from_embargo`, `extra_from_warmup`); XGBoost için `wf_summary_all_publication_aligned.json` (`folds[].n_train_final`) | `05_benchmarks.py`, `03_walkforward.py` | §1 notunda tek cümle ("HAR ailesi satır 21'den, XGBoost 127'den"); §7a eşitlenmiş sonuç | kısmi |
+| A6 | 7b volatilite rejimi | `explore_vol_regime_{folds,groups,years}_publication_aligned.csv`, `explore_vol_regime_summary_publication_aligned.json` | `07b_exploratory_vol_regime.py` | §16b, "volatilite rejimi analizi" | tam |
+| A6 | roll-over | `rollover_{calendar,predictions,metrics,family_tests}*.csv`, `rollover_summary_publication_aligned.json` | `24_rollover_robustness.py` (tasarım koşudan önce, günlük Aşama 25.1) | §15 | tam |
+| A8 | eğitim uzunluğu asimetrisi | fold başına eğitim satırları: `bench_folds_all_publication_aligned.csv` (`n_train_har`, `n_train_harx`, `n_train_garch`, `n_train_xgb_equiv`, `garch_extra_vs_xgb`, `garch_extra_vs_har`, `extra_from_embargo`, `extra_from_warmup`); XGBoost için `wf_summary_all_publication_aligned.json` (`folds[].n_train_final`) | `05_benchmarks.py`, `03_walkforward.py`, `06_attention_bilstm.py` | §16c (tablo); etkisi §7a | tam |
 
 **Not, adlandırma çakışması.** Paketin "§7b" bölümü BiLSTM yakınsama kontrolüdür.
-"7b volatilite rejimi" ise `07b_exploratory_vol_regime.py` script'idir ve pakette yer
-almaz. Ek A'da ikisi karıştırılmamalı.
+`07b_exploratory_vol_regime.py` pakette §16b'de "volatilite rejimi analizi" adıyla yer
+alır. Ek A'da ikisi karıştırılmamalı.
 
 **Not, A6 içindeki keşifsel statüler** (günlükten): 7b volatilite rejimi post hoc
 (açıklama notu, 2026-09-27); sabit 200 epoch post hoc (Aşama 16.5); alternatif smearing

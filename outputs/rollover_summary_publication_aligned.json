@@ -1,0 +1,77 @@
+{
+  "gpr_alignment": "publication",
+  "design_registered": "experiment log Stage 25.1, commit 44b9eaf",
+  "statuses": {
+    "A": "primary robustness variant",
+    "A2": "sensitivity (two rows)",
+    "B": "sensitivity, h=5 only"
+  },
+  "calendar": {
+    "official_expiries_matched": 88,
+    "expiries_in_sample": 225,
+    "expiry_days_missing_in_data": 14,
+    "rows_removed_A": 225,
+    "rows_removed_A2": 450
+  },
+  "B_rows_dropped_h5": 1122,
+  "documented_gaps": 40,
+  "gap_rows_removed": {
+    "A": {
+      "n": 18,
+      "dates": [
+        "2008-10-17",
+        "2008-11-14",
+        "2008-12-17",
+        "2009-01-16",
+        "2009-02-13",
+        "2009-05-01",
+        "2009-05-15",
+        "2009-07-17",
+        "2009-09-16",
+        "2009-10-16",
+        "2010-07-16",
+        "2011-01-18",
+        "2011-08-17",
+        "2012-09-18",
+        "2012-10-19",
+        "2012-11-19",
+        "2012-12-19",
+        "2013-09-18"
+      ]
+    },
+    "A2": {
+      "n": 27,
+      "dates": [
+        "2008-10-17",
+        "2008-11-14",
+        "2008-12-17",
+        "2009-01-16",
+        "2009-02-13",
+        "2009-05-01",
+        "2009-05-15",
+        "2009-07-17",
+        "2009-09-16",
+        "2009-10-16",
+        "2010-07-16",
+        "2011-01-18",
+        "2011-08-17",
+        "2012-09-18",
+        "2012-10-19",
+        "2012-11-19",
+        "2012-12-19",
+        "2013-03-19",
+        "2013-06-18",
+        "2013-07-19",
+        "2013-08-20",
+        "2013-09-18",
+        "2013-10-21",
+        "2013-11-19",
+        "2013-12-19",
+        "2014-01-22",
+        "2014-02-19"
+      ]
+    }
+  },
+  "limitation": "price-level features (brent_lag1-5, brent_ema5/10/20) unchanged; the roll effect in them is not removed (needs a back-adjusted series)",
+  "runtime_seconds": 92.9
+}
