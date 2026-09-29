@@ -1890,3 +1890,100 @@ olduğu görüldü. Özgün metinler köken kaydı olarak yerinde bırakıldı; 
    İki h=22 işaret testinin neden bağımlı olduğunu açıklayan mekanizma olarak geçerli,
    ama "XGBoost HAR'ın bulmadığı bir şey bulmuyor" iddiasına kanıt değil. Ölçekten
    arındırılmış karşılaştırmalar sayı paketinde (Bölüm 11d); hepsi keşifsel.
+
+---
+
+# Aşama 19 (2026-09-29): Taban sıklığı, QLIKE ve fold başına smearing
+
+**Amaç.** Makalenin Yöntem bölümündeki iki [PENDING] işaretini kapatmak. Yeniden eğitim
+yok; her şey kayıtlı tahmin ve fold dosyalarından, yayım-hizalı sürüm. Kod:
+`scripts/18_paper_numbers.py`, Bölüm 12 (commit `e7f308d`). Sayılar paketin Bölüm 12'sinde.
+Burada yalnızca özet var.
+
+## 19.1 HAR tahmin tabanının devreye girme sıklığı (paket 12a)
+
+**Tespit yöntemi.** Tahmin dosyalarında taban işareti yok. Tabanlanmış satır, tahminin
+fold'un kayıtlı tabanına (`pred_floor`, eğitim hedefinin minimumu) tam eşit olduğu satır
+olarak tespit edildi. Üç kontrol yapıldı (assert):
+- Fold başına eşitlik sayısı, uyum anında kaydedilen sayaçla birebir aynı
+  (`n_clipped_har`, `n_clipped_har_x`, ablasyon `n_clipped`, H3 `n_floored`).
+- Tabansız modellerde (HAR-log, HAR-X-log, GARCH, past-vol) tabana tam eşit tahmin sayısı
+  0. HAR-log 18, HAR-X-log 100 satırda tabanın altında tahmin veriyor.
+- Tabanlanmamış en yakın tahmin tabanın 3.8e−06 (göreli %0.04) üstünde.
+
+Eşitlik tesadüfen oluşmuyor.
+
+Ana fold'larda tabanlanan test gözlemi (h=5 / 22 / 66 / 126):
+
+| model | sayı | oran | en yoğun fold |
+| --- | --- | --- | --- |
+| HAR | 0 / 0 / 0 / 0 | %0 | — |
+| HAR + OVX | 0 / 22 / 46 / 2 | %0 / 0.60 / 1.31 / 0.06 | 2013, h=66'da %10.3 |
+| HAR + GPR | 0 / 10 / 17 / 4 | %0 / 0.27 / 0.49 / 0.11 | 2014, h=22'de %2.8 |
+| HAR-X | 0 / 70 / 106 / 21 | %0 / 1.92 / 3.03 / 0.60 | 2014, h=66'da %20.8 |
+| HAR-log, HAR-X-log | taban yok | — | — |
+| Hibrit H3 (ek) | 8 / 9 / 58 / 205 | %0.22 / 0.25 / 1.66 / 5.86 | 2014, h=126'da %44.8 |
+
+## 19.2 QLIKE (paket 12b–12c)
+
+`QLIKE = σ²/σ̂² − log(σ²/σ̂²) − 1`, varyans ölçeğinde (Patton 2011). Tüm modeller, dört
+ufuk, fold ortalaması (birincil) ve havuzlanmış (ikincil).
+
+**Kayıtlı seçim:** tabanlanan gözlemlerde QLIKE yayımlanan (tabanlanmış) tahmin üzerinden
+hesaplandı. Değerlendirilen şey verilen tahmin. Pozitif olmayan tahmin veya hedef yok,
+durdurma koşulu tetiklenmedi. **Statü: yalnızca betimleyici.** QLIKE kaybıyla DM veya
+işaret testi koşulmadı; birincil aile 8 testle sabit.
+
+**Sıralama RMSE'den farklı.** Kendall τ (17 model, fold ortalaması) h=5'te 0.632, h=22'de
+0.765, h=66'da 0.662, h=126'da 0.603. Sırası değişen model sayısı 13, 12, 11 ve 14.
+
+En iyi model:
+- h=5: RMSE'de HAR+OVX, QLIKE'ta HAR-X-log.
+- h=22: RMSE'de HAR+OVX, QLIKE'ta HAR-X-log.
+- h=66: ikisinde de HAR+OVX.
+- h=126: RMSE'de HAR-X-log, QLIKE'ta GARCH.
+
+En büyük kaymalar:
+- **GARCH** QLIKE'ta her ufukta yükseliyor: 12→2, 11→7, 11→4, 13→1.
+- **HAR-X** h=5'te 3→9 düşüyor.
+- **Past-volatility** h=66'da 9→16 düşüyor.
+
+**Birincil ailenin iki karşılaştırmasında yön** (`100 × (a/b − 1)`, pozitif = a daha kötü;
+fold ortalaması):
+
+| a vs b | RMSE | QLIKE |
+| --- | --- | --- |
+| HAR vs HAR-X | +4.75 / +11.59 / +6.10 / +1.43% | **−12.59** / +25.62 / +6.90 / +0.69% |
+| XGBoost vs HAR-X | +5.93 / +15.10 / +18.21 / +7.26% | +10.81 / +25.28 / +28.52 / +8.30% |
+
+h=5'te HAR ile HAR-X arasındaki yön kayba göre değişiyor: RMSE'de HAR-X, QLIKE'ta HAR daha
+iyi. Diğer yedi hücrede yön aynı.
+
+**Yoğunlaşma.** h=5'te HAR-X'in havuzlanmış QLIKE'ının %30.0'ı satırların en büyük
+%1'inden geliyor. En büyük tek satır 27.11.2013, σ/σ̂ = 11.2. HAR'da aynı pay %21.6,
+HAR-X-log'da %19.0. QLIKE eksik tahmini sert cezalandırdığı için h=5 HAR-X sonucu birkaç
+eksik tahmin gözlemine dayanıyor. Tabanlanmış satırların QLIKE payı:
+- HAR-X'te küçük: en fazla %4.4, satırların %1.9'u.
+- H3'te h=5'te büyük: satırların %0.22'si, QLIKE'ın %27.4'ü.
+
+## 19.3 Fold başına smearing ve log-artık std'si (paket 12d)
+
+Pakette daha önce yoktu. Kaynaklar:
+- XGBoost: `wf_summary_all` (`smearing`, `resid_log_std`)
+- BiLSTM: `bilstm_folds_all`
+- HAR-log ve HAR-X-log: `bench_folds_all` (`har_smearing`, `har_x_smearing`)
+
+Ana fold'larda medyan smearing (h=5 / 22 / 66 / 126):
+
+| model | medyan smearing |
+| --- | --- |
+| XGBoost | 1.018 / 1.004 / 1.017 / 1.024 |
+| BiLSTM | 1.035 / 1.005 / 1.011 / 1.027 |
+| HAR-log | 1.130 / 1.055 / 1.049 / 1.058 |
+| HAR-X-log | 1.111 / 1.039 / 1.039 / 1.052 |
+
+XGBoost log-artık std'si medyan 0.190 / 0.097 / 0.181 / 0.204.
+
+**Kapsam boşluğu.** Log-artık std'si yalnızca XGBoost için kayıtlı. 05 ve 06 yalnızca
+katsayıyı kaydediyor. HAR-log ve HAR-X-log için OLS'nin yeniden tahmini, BiLSTM için
+yeniden eğitim gerekir. Bu aşamada yapılmadı; pakette "—" olarak gösteriliyor.

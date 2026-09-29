@@ -1,7 +1,7 @@
 # Makale sayıları — yayım-hizalı GPR sürümü (BİRİNCİL)
 
-- **Üretildiği commit:** `0840a5434e80426b4852f0acf7050d8c2d8ebd80` (Qualify the fold-RMSE correlation; describe the code audit as AI-assisted)
-- **Üretim tarihi:** 2026-09-27T17:52:59+03:00
+- **Üretildiği commit:** `e7f308df602d2932d17c1b8d418671751fd371d4` (Add HAR floor frequency, QLIKE and smearing to the number package)
+- **Üretim tarihi:** 2026-09-29T16:36:40+03:00
 - **Çalışma ağacı:** temiz — girdiler bu commit'teki dosyalarla birebir aynı.
 - Doğrulama: `git checkout <commit> && python scripts/18_paper_numbers.py` aynı sayıları üretmelidir (yalnızca bu başlık değişir).
 
@@ -613,4 +613,281 @@ Okuma: h=22'de HAR ile naif past-volatility baseline'ının fold RMSE korelasyon
 | 15 | 12/15 | 0.0352 | 0.1185 |
 
 n=9 (Bölüm 7c, h=22 yüksek kademe) için anlamlılık mümkündür ama 9 fold'un en az 8'inde aynı yön gerekir; gözlenen 6/9 bu eşiğin iki fold altındadır.
+
+## 12. Taban sıklığı, QLIKE ve fold başına smearing (yayım-hizalı)
+
+Yeniden eğitim yok; her şey kayıtlı tahmin ve fold dosyalarından. QLIKE yalnızca betimleyicidir: QLIKE kaybıyla DM veya işaret testi koşulmadı, birincil aile 8 testle sabittir.
+
+### 12a. Tahmin tabanının devreye girme sıklığı
+
+Düzey ölçekli OLS tahminleri (HAR, HAR-X, ablasyon basamakları) ve Hibrit H3, fold'un **eğitim hedefinin minimumunda** tabanlanır: `max(tahmin, min(y_train))` (train-only). Log ölçekli HAR-log ve HAR-X-log tahminleri `exp(·) × smearing` olduğu için yapısal olarak pozitiftir; tahmine taban uygulanmaz (0 tanım gereği). (Log spesifikasyonların *regresörlerine* uygulanan `LOG_FLOOR = 1e-4` ayrı bir şeydir ve burada sayılmaz.)
+
+**Tespit yöntemi.** Tahmin dosyalarında taban işareti yok. Tabanlanmış satır, tahminin o fold'un kayıtlı tabanına (`bench_folds_all.pred_floor`, H3 için `hybrid_folds_all.pred_floor`) **tam eşit** olduğu satır olarak tespit edildi. Kontroller (assert):
+- Her fold'da eşitlik sayısı, uyum anında kaydedilen sayaçla birebir aynı (`n_clipped_har`, `n_clipped_har_x`, ablasyon `n_clipped`, H3 `n_floored`).
+- Tesadüfi eşitlik yok: tabansız modellerde (HAR-log, HAR-X-log, GARCH, past-volatility) fold tabanına tam eşit tahmin sayısı 0. Oysa HAR-log 18, HAR-X-log 100 satırda tabanın **altında** tahmin veriyor; yani eşitlik ancak `max()` işleminden doğuyor.
+- Tabanlı modellerde tabanlanmamış en yakın tahmin, tabanın 3.83e-06 (göreli %0.043) üstünde; sürekli bir OLS tahmininin tabana bit düzeyinde tesadüfen eşit çıkması pratikte olanaksız.
+- Pakette kullanılan HAR-X (hibrit dosyası) aynı satırlarda tabanlanıyor.
+
+| model | h=5 | h=22 | h=66 | h=126 |
+| --- | --- | --- | --- | --- |
+| HAR | 0 / 3662 (%0.00) | 0 / 3645 (%0.00) | 0 / 3500 (%0.00) | 0 / 3500 (%0.00) |
+| HAR + OVX | 0 / 3662 (%0.00) | 22 / 3645 (%0.60; en yoğun 2013 %4.9) | 46 / 3500 (%1.31; en yoğun 2013 %10.3) | 2 / 3500 (%0.06; en yoğun 2014 %0.8) |
+| HAR + GPR | 0 / 3662 (%0.00) | 10 / 3645 (%0.27; en yoğun 2014 %2.8) | 17 / 3500 (%0.49; en yoğun 2012 %2.9) | 4 / 3500 (%0.11; en yoğun 2013 %0.8) |
+| HAR-X | 0 / 3662 (%0.00) | 70 / 3645 (%1.92; en yoğun 2014 %17.6) | 106 / 3500 (%3.03; en yoğun 2014 %20.8) | 21 / 3500 (%0.60; en yoğun 2014 %5.6) |
+| HAR-log | 0 / 3662 (taban yok) | 0 / 3645 (taban yok) | 0 / 3500 (taban yok) | 0 / 3500 (taban yok) |
+| HAR-X-log | 0 / 3662 (taban yok) | 0 / 3645 (taban yok) | 0 / 3500 (taban yok) | 0 / 3500 (taban yok) |
+| Hibrit H3 (ek) | 8 / 3662 (%0.22; en yoğun 2013 %3.3) | 9 / 3645 (%0.25; en yoğun 2013 %3.7) | 58 / 3500 (%1.66; en yoğun 2013 %14.4) | 205 / 3500 (%5.86; en yoğun 2014 %44.8) |
+
+Ana metriğe giren fold'lar (h=66/126'da 2026 hariç). 2026 dahil tüm fold'lar: HAR 0/14449, HAR + OVX 70/14449, HAR + GPR 31/14449, HAR-X 197/14449, Hibrit H3 (ek) 280/14449. XGBoost-6 aynı train-min tabanını kullanır; kayıtlı sayaç 0 (tabana takılan tahmin yok).
+
+### 12b. QLIKE (Patton 2011), varyans ölçeğinde
+
+`QLIKE = σ²/σ̂² − log(σ²/σ̂²) − 1`, σ = gerçekleşen hedef, σ̂ = tahmin. Hedef bir standart sapma olduğu için ikisi de karelenir. Düşük = iyi; mükemmel tahminde 0. **Taban bağlanan gözlemlerde QLIKE yayımlanan (tabanlanmış) tahmin üzerinden hesaplanır** — değerlendirilen şey modelin verdiği tahmindir. Tüm tahminler ve hedefler pozitif (en küçük tahmin 0.001120); durdurma koşulu tetiklenmedi. Kalın = sütundaki en düşük.
+
+**Fold ortalaması (birincil):**
+
+| model | rol | h=5 | h=22 | h=66 | h=126 |
+| --- | --- | --- | --- | --- | --- |
+| XGBoost (birincil, 65 özellik) | birincil | 0.7336 | 0.3565 | 0.4602 | 0.4324 |
+| Attention BiLSTM | birincil | 0.8885 | 0.4868 | 0.4924 | 0.4920 |
+| Hibrit H1: 0.5 XGB + 0.5 BiLSTM | hibrit | 0.6790 | 0.3703 | 0.4570 | 0.4370 |
+| Hibrit H2: 0.5 HAR-X + 0.5 XGB | hibrit | 0.5604 | 0.2964 | 0.3886 | 0.3909 |
+| Hibrit H3: HAR-X + XGB artığı | hibrit | 0.8265 | 0.3265 | 0.4339 | 0.4431 |
+| HAR-X | ekonometrik | 0.6620 | 0.2845 | 0.3581 | 0.3992 |
+| HAR-X-log | ekonometrik | **0.4815** | **0.2650** | 0.3501 | 0.3981 |
+| HAR | ekonometrik | 0.5787 | 0.3574 | 0.3828 | 0.4020 |
+| HAR-log | ekonometrik | 0.5787 | 0.3605 | 0.3851 | 0.4093 |
+| GARCH(1,1) | ekonometrik | 0.5219 | 0.3304 | 0.3706 | **0.3594** |
+| Train-mean | naif | 1.0557 | 0.7156 | 0.4994 | 0.4480 |
+| Past-volatility | naif | 1.5800 | 0.4537 | 0.5325 | 0.4622 |
+| HAR + OVX | ablasyon | 0.5389 | 0.2706 | **0.3471** | 0.3900 |
+| HAR + GPR | ablasyon | 0.5917 | 0.3779 | 0.4018 | 0.4189 |
+| XGBoost-6 | keşifsel | 0.5901 | 0.3273 | 0.3818 | 0.4176 |
+| XGBoost, Optuna + büzülmüş smearing | sağlamlık | 0.6767 | 0.3449 | 0.4803 | 0.5894 |
+| XGBoost, Optuna + ham smearing | ek (appendix) | 0.6793 | 0.3725 | 0.5702 | 0.9973 |
+
+**Havuzlanmış (ikincil):** ana metriğe giren tüm test satırları üzerinden ortalama.
+
+| model | rol | h=5 | h=22 | h=66 | h=126 |
+| --- | --- | --- | --- | --- | --- |
+| XGBoost (birincil, 65 özellik) | birincil | 0.7354 | 0.3499 | 0.4629 | 0.4335 |
+| Attention BiLSTM | birincil | 0.8921 | 0.4641 | 0.4950 | 0.4931 |
+| Hibrit H1: 0.5 XGB + 0.5 BiLSTM | hibrit | 0.6811 | 0.3598 | 0.4595 | 0.4381 |
+| Hibrit H2: 0.5 HAR-X + 0.5 XGB | hibrit | 0.5616 | 0.2928 | 0.3909 | 0.3920 |
+| Hibrit H3: HAR-X + XGB artığı | hibrit | 0.8282 | 0.3249 | 0.4363 | 0.4448 |
+| HAR-X | ekonometrik | 0.6654 | 0.2835 | 0.3602 | 0.4005 |
+| HAR-X-log | ekonometrik | **0.4842** | **0.2642** | 0.3522 | 0.3995 |
+| HAR | ekonometrik | 0.5749 | 0.3489 | 0.3847 | 0.4031 |
+| HAR-log | ekonometrik | 0.5745 | 0.3524 | 0.3870 | 0.4106 |
+| GARCH(1,1) | ekonometrik | 0.5217 | 0.3262 | 0.3722 | **0.3601** |
+| Train-mean | naif | 1.0194 | 0.6801 | 0.5002 | 0.4482 |
+| Past-volatility | naif | 1.5792 | 0.4501 | 0.5359 | 0.4639 |
+| HAR + OVX | ablasyon | 0.5401 | 0.2685 | **0.3492** | 0.3913 |
+| HAR + GPR | ablasyon | 0.5911 | 0.3710 | 0.4038 | 0.4201 |
+| XGBoost-6 | keşifsel | 0.5939 | 0.3255 | 0.3833 | 0.4187 |
+| XGBoost, Optuna + büzülmüş smearing | sağlamlık | 0.6779 | 0.3397 | 0.4832 | 0.5912 |
+| XGBoost, Optuna + ham smearing | ek (appendix) | 0.6807 | 0.3684 | 0.5728 | 0.9999 |
+
+**Tabanlanmış satırların QLIKE payı** (havuzlanmış, ana fold'lar): tabanlanmış satırların toplam QLIKE içindeki payı / satır payı. Taban, eğitim hedefinin minimumu olduğundan bu satırlarda σ̂ küçüktür ve QLIKE büyür.
+
+| model | h=5 | h=22 | h=66 | h=126 |
+| --- | --- | --- | --- | --- |
+| HAR | — | — | — | — |
+| HAR + OVX | — | %0.8 / %0.60 | %0.2 / %1.31 | %0.1 / %0.06 |
+| HAR + GPR | — | %0.3 / %0.27 | %0.2 / %0.49 | %0.1 / %0.11 |
+| HAR-X | — | %4.4 / %1.92 | %1.5 / %3.03 | %1.2 / %0.60 |
+| Hibrit H3 (ek) | %27.4 / %0.22 | %0.4 / %0.25 | %0.1 / %1.66 | %3.8 / %5.86 |
+
+### 12c. QLIKE ve RMSE sıralamaları (fold ortalaması)
+
+Sıra 1 = en iyi. Yalnızca iki kayıpta sırası farklı olan modeller listelenir. İki tutarlı kayıp farklı sıralayabilir (Patton 2011); farklılık bir bulgu olarak raporlanır.
+
+| ufuk | Kendall τ (17 model) | sırası değişen model | RMSE'de en iyi | QLIKE'ta en iyi |
+| --- | --- | --- | --- | --- |
+| h=5 | 0.632 | 13/17 | HAR + OVX | HAR-X-log |
+| h=22 | 0.765 | 12/17 | HAR + OVX | HAR-X-log |
+| h=66 | 0.662 | 11/17 | HAR + OVX | HAR + OVX |
+| h=126 | 0.603 | 14/17 | HAR-X-log | GARCH(1,1) |
+
+| ufuk | model | RMSE sırası | QLIKE sırası | fark |
+| --- | --- | --- | --- | --- |
+| h=5 | HAR + OVX | 1 | 3 | +2 |
+| h=5 | HAR-X-log | 2 | 1 | −1 |
+| h=5 | HAR-X | 3 | 9 | +6 |
+| h=5 | XGBoost-6 | 6 | 7 | +1 |
+| h=5 | HAR-log | 7 | 6 | −1 |
+| h=5 | XGBoost (birincil, 65 özellik) | 9 | 13 | +4 |
+| h=5 | Hibrit H3: HAR-X + XGB artığı | 11 | 14 | +3 |
+| h=5 | GARCH(1,1) | 12 | 2 | −10 |
+| h=5 | XGBoost, Optuna + ham smearing | 13 | 12 | −1 |
+| h=5 | Hibrit H1: 0.5 XGB + 0.5 BiLSTM | 14 | 11 | −3 |
+| h=5 | Past-volatility | 15 | 17 | +2 |
+| h=5 | Attention BiLSTM | 16 | 15 | −1 |
+| h=5 | Train-mean | 17 | 16 | −1 |
+| h=22 | HAR + OVX | 1 | 2 | +1 |
+| h=22 | HAR-X-log | 2 | 1 | −1 |
+| h=22 | XGBoost-6 | 5 | 6 | +1 |
+| h=22 | HAR | 6 | 10 | +4 |
+| h=22 | Hibrit H3: HAR-X + XGB artığı | 7 | 5 | −2 |
+| h=22 | HAR-log | 8 | 11 | +3 |
+| h=22 | HAR + GPR | 9 | 14 | +5 |
+| h=22 | XGBoost (birincil, 65 özellik) | 10 | 9 | −1 |
+| h=22 | GARCH(1,1) | 11 | 7 | −4 |
+| h=22 | XGBoost, Optuna + büzülmüş smearing | 12 | 8 | −4 |
+| h=22 | Hibrit H1: 0.5 XGB + 0.5 BiLSTM | 13 | 12 | −1 |
+| h=22 | XGBoost, Optuna + ham smearing | 14 | 13 | −1 |
+| h=66 | Hibrit H2: 0.5 HAR-X + 0.5 XGB | 4 | 8 | +4 |
+| h=66 | HAR + GPR | 8 | 9 | +1 |
+| h=66 | Past-volatility | 9 | 16 | +7 |
+| h=66 | XGBoost (birincil, 65 özellik) | 10 | 12 | +2 |
+| h=66 | GARCH(1,1) | 11 | 4 | −7 |
+| h=66 | Train-mean | 12 | 15 | +3 |
+| h=66 | Hibrit H3: HAR-X + XGB artığı | 13 | 10 | −3 |
+| h=66 | Hibrit H1: 0.5 XGB + 0.5 BiLSTM | 14 | 11 | −3 |
+| h=66 | XGBoost, Optuna + büzülmüş smearing | 15 | 13 | −2 |
+| h=66 | XGBoost, Optuna + ham smearing | 16 | 17 | +1 |
+| h=66 | Attention BiLSTM | 17 | 14 | −3 |
+| h=126 | HAR-X-log | 1 | 4 | +3 |
+| h=126 | HAR-X | 3 | 5 | +2 |
+| h=126 | Hibrit H2: 0.5 HAR-X + 0.5 XGB | 4 | 3 | −1 |
+| h=126 | XGBoost-6 | 5 | 8 | +3 |
+| h=126 | HAR + GPR | 8 | 9 | +1 |
+| h=126 | Past-volatility | 9 | 14 | +5 |
+| h=126 | Hibrit H3: HAR-X + XGB artığı | 10 | 12 | +2 |
+| h=126 | XGBoost (birincil, 65 özellik) | 11 | 10 | −1 |
+| h=126 | Train-mean | 12 | 13 | +1 |
+| h=126 | GARCH(1,1) | 13 | 1 | −12 |
+| h=126 | XGBoost, Optuna + büzülmüş smearing | 14 | 16 | +2 |
+| h=126 | Hibrit H1: 0.5 XGB + 0.5 BiLSTM | 15 | 11 | −4 |
+| h=126 | XGBoost, Optuna + ham smearing | 16 | 17 | +1 |
+| h=126 | Attention BiLSTM | 17 | 15 | −2 |
+
+**QLIKE'ın yoğunlaşması** (havuzlanmış, ana fold'lar): QLIKE eksik tahmini (σ̂ ≪ σ) sert cezalandırır, bu yüzden ortalama birkaç gözleme dayanabilir. Hücre: en büyük %1 satırın QLIKE toplamındaki payı; parantezde en büyük tek satırın σ/σ̂ oranı ve tarihi. Betimleyicidir.
+
+| model | h=5 | h=22 | h=66 | h=126 |
+| --- | --- | --- | --- | --- |
+| XGBoost (birincil, 65 özellik) | %23.9 (8.0×, 04.03.2022) | %24.4 (4.8×, 03.03.2020) | %32.8 (5.3×, 31.12.2019) | %13.7 (3.2×, 31.12.2019) |
+| Attention BiLSTM | %20.3 (7.4×, 04.03.2020) | %24.2 (5.0×, 02.03.2026) | %25.5 (5.2×, 31.12.2019) | %15.1 (3.5×, 03.01.2020) |
+| Hibrit H1: 0.5 XGB + 0.5 BiLSTM | %21.3 (5.9×, 04.03.2022) | %24.7 (4.3×, 20.02.2020) | %28.6 (5.2×, 31.12.2019) | %14.3 (3.3×, 31.12.2019) |
+| Hibrit H2: 0.5 HAR-X + 0.5 XGB | %18.3 (4.8×, 03.03.2020) | %25.9 (4.5×, 20.02.2020) | %34.4 (4.8×, 22.01.2020) | %18.3 (3.5×, 27.12.2019) |
+| Hibrit H3: HAR-X + XGB artığı | %40.4 (11.7×, 27.11.2013) | %26.9 (5.0×, 20.02.2020) | %28.4 (4.7×, 30.12.2019) | %20.8 (4.4×, 27.12.2019) |
+| HAR-X | %30.0 (11.2×, 27.11.2013) | %24.6 (4.6×, 20.02.2020) | %33.7 (4.5×, 22.01.2020) | %22.5 (4.1×, 27.12.2019) |
+| HAR-X-log | %19.0 (5.1×, 03.03.2020) | %26.1 (4.5×, 20.02.2020) | %33.8 (4.5×, 30.12.2019) | %22.6 (4.2×, 27.12.2019) |
+| HAR | %21.6 (6.7×, 06.03.2020) | %24.5 (5.0×, 04.03.2020) | %30.1 (4.3×, 03.02.2020) | %21.4 (3.8×, 31.12.2019) |
+| HAR-log | %20.9 (6.6×, 04.03.2020) | %23.3 (4.9×, 04.03.2020) | %28.5 (4.3×, 31.12.2019) | %21.5 (3.9×, 31.12.2019) |
+| GARCH(1,1) | %17.4 (5.9×, 06.03.2020) | %22.3 (4.5×, 05.03.2020) | %27.2 (4.2×, 30.01.2020) | %18.4 (3.6×, 31.12.2019) |
+| Train-mean | %26.0 (7.6×, 16.04.2020) | %24.3 (5.3×, 05.03.2020) | %22.8 (4.0×, 04.03.2020) | %13.2 (3.0×, 30.12.2019) |
+| Past-volatility | %36.2 (24.0×, 13.09.2012) | %19.5 (4.8×, 06.03.2020) | %32.3 (5.2×, 30.01.2020) | %14.2 (3.3×, 08.10.2014) |
+| HAR + OVX | %18.8 (5.1×, 03.03.2020) | %25.8 (4.6×, 20.02.2020) | %34.4 (4.6×, 22.01.2020) | %22.8 (4.0×, 27.12.2019) |
+| HAR + GPR | %21.8 (6.7×, 06.03.2020) | %25.0 (5.0×, 04.03.2020) | %29.9 (4.4×, 03.02.2020) | %21.4 (3.8×, 15.11.2019) |
+| XGBoost-6 | %18.2 (5.9×, 05.03.2020) | %23.1 (4.7×, 25.02.2020) | %29.7 (4.4×, 11.02.2020) | %23.4 (4.7×, 27.12.2019) |
+| XGBoost, Optuna + büzülmüş smearing | %20.9 (8.3×, 13.09.2012) | %23.1 (4.2×, 18.02.2020) | %28.5 (5.0×, 31.12.2019) | %13.5 (3.7×, 02.09.2014) |
+| XGBoost, Optuna + ham smearing | %20.2 (8.2×, 13.09.2012) | %23.1 (4.7×, 18.02.2020) | %22.3 (5.3×, 31.12.2019) | %16.1 (5.0×, 02.09.2014) |
+
+**Birincil ailenin iki karşılaştırmasında yön** (betimleyici; test değil). `100 × (kayıp_a / kayıp_b − 1)`, pozitif = a daha kötü.
+
+| a vs b | ufuk | RMSE (fold ort.) | QLIKE (fold ort.) | QLIKE (havuz) |
+| --- | --- | --- | --- | --- |
+| HAR vs HAR-X | h=5 | +4.75% | −12.59% | −13.61% |
+| HAR vs HAR-X | h=22 | +11.59% | +25.62% | +23.08% |
+| HAR vs HAR-X | h=66 | +6.10% | +6.90% | +6.82% |
+| HAR vs HAR-X | h=126 | +1.43% | +0.69% | +0.65% |
+| XGBoost (birincil, 65 özellik) vs HAR-X | h=5 | +5.93% | +10.81% | +10.52% |
+| XGBoost (birincil, 65 özellik) vs HAR-X | h=22 | +15.10% | +25.28% | +23.44% |
+| XGBoost (birincil, 65 özellik) vs HAR-X | h=66 | +18.21% | +28.52% | +28.53% |
+| XGBoost (birincil, 65 özellik) vs HAR-X | h=126 | +7.26% | +8.30% | +8.25% |
+
+### 12d. Fold başına Duan smearing katsayısı ve log-artık std'si
+
+Smearing `S = mean(exp(e))`, e = eğitim setindeki log ölçekli artıklar (örneklem-içi, train-only). XGBoost ve BiLSTM'de hedef `log(σ_h / past_vol_h)`, HAR-log ve HAR-X-log'da `log(σ_h)`. Kaynak: `wf_summary_all` (XGBoost: `smearing`, `resid_log_std`), `bilstm_folds_all`, `bench_folds_all` (`har_smearing`, `har_x_smearing`). **Log-artık std'si yalnızca XGBoost için kayıtlı**; 05 ve 06 yalnızca katsayıyı kaydediyor, diğerleri için std yeniden tahmin gerektirir ve burada verilmez (—).
+
+Özet, ana metriğe giren fold'lar: medyan (en küçük–en büyük).
+
+| ölçü | h=5 | h=22 | h=66 | h=126 |
+| --- | --- | --- | --- | --- |
+| XGBoost, S | 1.0176 (1.0026–1.0292) | 1.0044 (1.0017–1.0139) | 1.0174 (1.0067–1.0245) | 1.0237 (1.0052–1.0410) |
+| XGBoost, log-artık std | 0.1898 (0.0721–0.2439) | 0.0970 (0.0601–0.1644) | 0.1805 (0.1103–0.2080) | 0.2038 (0.0782–0.2662) |
+| BiLSTM, S | 1.0346 (1.0242–1.0541) | 1.0045 (1.0020–1.0183) | 1.0108 (1.0058–1.0338) | 1.0274 (1.0057–1.0480) |
+| HAR-log, S | 1.1298 (1.1179–1.1403) | 1.0546 (1.0441–1.0714) | 1.0485 (1.0371–1.0759) | 1.0575 (1.0482–1.0814) |
+| HAR-X-log, S | 1.1106 (1.0992–1.1194) | 1.0393 (1.0356–1.0551) | 1.0392 (1.0285–1.0672) | 1.0517 (1.0382–1.0758) |
+
+**h=5**
+
+| yıl | XGBoost S | XGBoost log-artık std | BiLSTM S | HAR-log S | HAR-X-log S | log-artık std (diğer) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2012 | 1.0026 | 0.0721 | 1.0432 | 1.1179 | 1.0992 | — |
+| 2013 | 1.0059 | 0.1045 | 1.0541 | 1.1256 | 1.1061 | — |
+| 2014 | 1.0081 | 0.1241 | 1.0370 | 1.1235 | 1.1075 | — |
+| 2015 | 1.0106 | 0.1419 | 1.0393 | 1.1263 | 1.1093 | — |
+| 2016 | 1.0129 | 0.1583 | 1.0321 | 1.1283 | 1.1106 | — |
+| 2017 | 1.0147 | 0.1717 | 1.0291 | 1.1298 | 1.1079 | — |
+| 2018 | 1.0162 | 0.1802 | 1.0380 | 1.1287 | 1.1068 | — |
+| 2019 | 1.0176 | 0.1898 | 1.0444 | 1.1269 | 1.1065 | — |
+| 2020 | 1.0201 | 0.2000 | 1.0242 | 1.1309 | 1.1110 | — |
+| 2021 | 1.0227 | 0.2122 | 1.0271 | 1.1364 | 1.1162 | — |
+| 2022 | 1.0255 | 0.2266 | 1.0262 | 1.1403 | 1.1194 | — |
+| 2023 | 1.0272 | 0.2337 | 1.0324 | 1.1370 | 1.1160 | — |
+| 2024 | 1.0269 | 0.2338 | 1.0346 | 1.1343 | 1.1138 | — |
+| 2025 | 1.0277 | 0.2371 | 1.0363 | 1.1310 | 1.1114 | — |
+| 2026 | 1.0292 | 0.2439 | 1.0346 | 1.1322 | 1.1122 | — |
+
+**h=22**
+
+| yıl | XGBoost S | XGBoost log-artık std | BiLSTM S | HAR-log S | HAR-X-log S | log-artık std (diğer) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2012 | 1.0054 | 0.1049 | 1.0092 | 1.0441 | 1.0356 | — |
+| 2013 | 1.0076 | 0.1244 | 1.0092 | 1.0484 | 1.0376 | — |
+| 2014 | 1.0092 | 0.1378 | 1.0155 | 1.0492 | 1.0391 | — |
+| 2015 | 1.0106 | 0.1470 | 1.0143 | 1.0495 | 1.0384 | — |
+| 2016 | 1.0124 | 0.1560 | 1.0183 | 1.0520 | 1.0393 | — |
+| 2017 | 1.0139 | 0.1644 | 1.0139 | 1.0546 | 1.0392 | — |
+| 2018 | 1.0017 | 0.0601 | 1.0030 | 1.0527 | 1.0365 | — |
+| 2019 | 1.0019 | 0.0652 | 1.0020 | 1.0525 | 1.0369 | — |
+| 2020 | 1.0024 | 0.0718 | 1.0025 | 1.0552 | 1.0409 | — |
+| 2021 | 1.0030 | 0.0784 | 1.0045 | 1.0667 | 1.0534 | — |
+| 2022 | 1.0034 | 0.0845 | 1.0044 | 1.0705 | 1.0551 | — |
+| 2023 | 1.0038 | 0.0898 | 1.0065 | 1.0714 | 1.0549 | — |
+| 2024 | 1.0040 | 0.0924 | 1.0033 | 1.0701 | 1.0535 | — |
+| 2025 | 1.0044 | 0.0970 | 1.0039 | 1.0683 | 1.0523 | — |
+| 2026 | 1.0049 | 0.1010 | 1.0042 | 1.0679 | 1.0521 | — |
+
+**h=66**
+
+| yıl | XGBoost S | XGBoost log-artık std | BiLSTM S | HAR-log S | HAR-X-log S | log-artık std (diğer) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2012 | 1.0067 | 0.1119 | 1.0212 | 1.0371 | 1.0285 | — |
+| 2013 | 1.0144 | 0.1624 | 1.0262 | 1.0385 | 1.0335 | — |
+| 2014 | 1.0163 | 0.1766 | 1.0267 | 1.0424 | 1.0350 | — |
+| 2015 | 1.0196 | 0.1845 | 1.0293 | 1.0436 | 1.0356 | — |
+| 2016 | 1.0245 | 0.2080 | 1.0338 | 1.0484 | 1.0405 | — |
+| 2017 | 1.0067 | 0.1103 | 1.0058 | 1.0486 | 1.0390 | — |
+| 2018 | 1.0077 | 0.1222 | 1.0100 | 1.0474 | 1.0366 | — |
+| 2019 | 1.0086 | 0.1286 | 1.0091 | 1.0462 | 1.0356 | — |
+| 2020 | 1.0102 | 0.1405 | 1.0141 | 1.0498 | 1.0394 | — |
+| 2021 | 1.0185 | 0.1857 | 1.0077 | 1.0759 | 1.0672 | — |
+| 2022 | 1.0194 | 0.1905 | 1.0059 | 1.0737 | 1.0646 | — |
+| 2023 | 1.0197 | 0.1914 | 1.0115 | 1.0736 | 1.0622 | — |
+| 2024 | 1.0208 | 0.1954 | 1.0092 | 1.0706 | 1.0595 | — |
+| 2025 | 1.0201 | 0.1934 | 1.0100 | 1.0686 | 1.0579 | — |
+| 2026 (ana metrik dışı) | 1.0201 | 0.1932 | 1.0067 | 1.0668 | 1.0565 | — |
+
+**h=126**
+
+| yıl | XGBoost S | XGBoost log-artık std | BiLSTM S | HAR-log S | HAR-X-log S | log-artık std (diğer) |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2012 | 1.0052 | 0.0782 | 1.0075 | 1.0498 | 1.0382 | — |
+| 2013 | 1.0143 | 0.1531 | 1.0246 | 1.0482 | 1.0447 | — |
+| 2014 | 1.0159 | 0.1654 | 1.0220 | 1.0522 | 1.0456 | — |
+| 2015 | 1.0199 | 0.1828 | 1.0248 | 1.0546 | 1.0440 | — |
+| 2016 | 1.0243 | 0.2031 | 1.0309 | 1.0617 | 1.0571 | — |
+| 2017 | 1.0243 | 0.2054 | 1.0273 | 1.0593 | 1.0538 | — |
+| 2018 | 1.0239 | 0.2045 | 1.0307 | 1.0556 | 1.0497 | — |
+| 2019 | 1.0227 | 0.1993 | 1.0265 | 1.0526 | 1.0465 | — |
+| 2020 | 1.0235 | 0.2060 | 1.0275 | 1.0529 | 1.0469 | — |
+| 2021 | 1.0410 | 0.2662 | 1.0480 | 1.0814 | 1.0758 | — |
+| 2022 | 1.0403 | 0.2619 | 1.0448 | 1.0766 | 1.0715 | — |
+| 2023 | 1.0404 | 0.2662 | 1.0408 | 1.0758 | 1.0684 | — |
+| 2024 | 1.0408 | 0.2661 | 1.0451 | 1.0717 | 1.0650 | — |
+| 2025 | 1.0196 | 0.1870 | 1.0057 | 1.0694 | 1.0627 | — |
+| 2026 (ana metrik dışı) | 1.0184 | 0.1804 | 1.0074 | 1.0665 | 1.0602 | — |
 
