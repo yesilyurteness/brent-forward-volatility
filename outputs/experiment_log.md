@@ -2224,3 +2224,36 @@ alanları eklendi.
 | ISO biçimli tarih | 1 |
 | 10 satır silinerek eklenen boşluk | 0 (satır sayısı ve SHA uyarısı) |
 | yeniden kaydedilmiş özdeş kopya | 0 (SHA uyarısı) |
+
+## Düzeltme notu (2026-09-29, Aşama 23 sonrası): Tablo 1 dipnotunun GPR sürümü
+
+Aşama 23.1'de "kendi takvimi" satırları 2026-09-24 tarihli yerel dosyadan hesaplanmıştı.
+O sürüm veri setinden 44 işlem gününde farklıydı. Özgün metin köken kaydı olarak yerinde
+bırakıldı; doğrusu burada.
+
+**Eşleşen sürüm.** Sürüm önbelleği (`data/gpr_vintages/vintages/`) 16'nın `--cleanup`
+seçeneğiyle silinmişti; 289 sürüm yerelde yoktu. 16'nın kullandığı arşivden üç dosya
+indirildi ve veri setiyle karşılaştırıldı:
+
+| sürüm | eksik işlem günü | en büyük mutlak fark | sonuç |
+| --- | --- | --- | --- |
+| 2026-08-31 | 1 | 45.8 | eşleşmiyor |
+| **2026-09-01** | 0 | **5.7e−14** | eşleşiyor (4641 işlem gününün hepsinde; kayan nokta yuvarlaması) |
+| 2026-09-08 | 0 | 33.8 | eşleşmiyor |
+
+Bu, 02'nin raporundaki "identical to the 2026-09-01 vintage" kaydıyla tutarlı.
+
+Kendi takvimi satırları bu sürümden yeniden hesaplandı (script 22, commit `cb2166e`).
+Script eşleşmeyi assert ediyor; uyuşmazlık uyarısı kaldırıldı. Değişen değerler:
+
+| seri | ortalama | fazla basıklık |
+| --- | --- | --- |
+| GPRD | 103.4 → 103.5 | 7.64 → 7.60 |
+| GPRD_THREAT | 112.1 → 112.2 | 10.46 → 10.42 |
+
+**Sıfır değerli günler** (bu sürüm, 2008-01-02 – 2026-09-01):
+- GPRD yalnızca 2025-02-09'da (pazar) 0; aynı gün GPRD_THREAT de 0.
+- GPRD_THREAT 8 günde 0: 2009-04-19, 2016-08-21, 2019-05-12, 2020-08-30, 2023-07-30,
+  2023-10-22, 2024-09-22, 2025-02-09. Hepsi pazar.
+
+Pakette yalnızca tarihler yazılı.

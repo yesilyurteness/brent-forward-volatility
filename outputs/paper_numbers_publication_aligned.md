@@ -1,7 +1,7 @@
 # Makale sayıları — yayım-hizalı GPR sürümü (BİRİNCİL)
 
-- **Üretildiği commit:** `62a65a4c2cf5ac03eff927c092d5df13e5cca68b` (Add Table 1 descriptive statistics to the number package)
-- **Üretim tarihi:** 2026-09-29T17:46:19+03:00
+- **Üretildiği commit:** `cb2166eb66c4505c8de0bdfca1e85aeb6f43f2fc` (Compute the Table 1 own-calendar GPR rows from the 2026-09-01 vintage)
+- **Üretim tarihi:** 2026-09-29T18:11:21+03:00
 - **Çalışma ağacı:** temiz — girdiler bu commit'teki dosyalarla birebir aynı.
 - Doğrulama: `git checkout <commit> && python scripts/18_paper_numbers.py` aynı sayıları üretmelidir (yalnızca bu başlık değişir).
 
@@ -1018,8 +1018,8 @@ Bölüm 1e'de: tüm modellerin o fold'daki RMSE/MAE/R²_oos'u, n = 101 (h=66) ve
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | GPRD (gözlem tarihli, işlem günleri) | 4641 | 115.1 | 54.85 | 9.492 | 540.8 | 2.07 | 8.09 | −6.44 (19) | <0.001 | 22378.6 | <0.001 |
 | GPRD_THREAT (gözlem tarihli, işlem günleri) | 4641 | 126 | 72.71 | 7.893 | 809.5 | 2.28 | 10.64 | −6.25 (19) | <0.001 | 20730.7 | <0.001 |
-| GPRD (kendi takvimi, tüm takvim günleri) | 6818 | 103.4 | 53.41 | 0 | 540.8 | 1.95 | 7.64 | −6.10 (35) | <0.001 | 25792.3 | <0.001 |
-| GPRD_THREAT (kendi takvimi, tüm takvim günleri) | 6818 | 112.1 | 69.41 | 0 | 809.5 | 2.22 | 10.46 | −5.70 (34) | <0.001 | 23702.8 | <0.001 |
+| GPRD (kendi takvimi, tüm takvim günleri) | 6818 | 103.5 | 53.45 | 0 | 540.8 | 1.95 | 7.60 | −6.07 (35) | <0.001 | 25888.4 | <0.001 |
+| GPRD_THREAT (kendi takvimi, tüm takvim günleri) | 6818 | 112.2 | 69.45 | 0 | 809.5 | 2.22 | 10.42 | −5.67 (34) | <0.001 | 23764.9 | <0.001 |
 
-Gözlem tarihli satırlar `data/veriseti.xlsx`'in kaydırılmamış GPR sütunlarıdır (işlem günleri). Kendi takvimi satırları endeksin her takvim gününü (hafta sonları dahil, 6818 gün) kapsar; kaynak yerel sürüm dosyası `data_gpr_daily_recent_accessed_2026-09-24.dta` (SHA-256 `8017f806626cd6b5…`, git dışı). Bu sürüm veri setinin eşleştiği 2026-09-01 sürümünden yenidir: 44 işlem günü değeri farklı (2025-06-02 – 2026-09-01, en büyük mutlak fark GPRD 33.8, GPRD_THREAT 33.8).
+Gözlem tarihli satırlar `data/veriseti.xlsx`'in kaydırılmamış GPR sütunlarıdır (işlem günleri). Kendi takvimi satırları endeksin her takvim gününü (hafta sonları dahil, 6818 gün) kapsar; kaynak, veri setinin üretildiği 2026-09-01 arşiv sürümü `data_gpr_daily_recent_20260901.dta` (SHA-256 `4c8dff4c580046f0…`, git dışı). Bu sürüm veri setinin GPR değerlerini 4641 işlem gününün hepsinde yeniden üretir (en büyük mutlak fark 5.7e-14, kayan nokta yuvarlaması; kontrol edildi). 2025-02-09 tarihinde GPRD 0 (aynı gün GPRD_THREAT 0). GPRD_THREAT 8 günde 0: 2009-04-19, 2016-08-21, 2019-05-12, 2020-08-30, 2023-07-30, 2023-10-22, 2024-09-22, 2025-02-09.
 
