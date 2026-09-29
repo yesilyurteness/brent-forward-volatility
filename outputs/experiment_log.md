@@ -2416,3 +2416,37 @@ getirisi çıkarılan satırlar.
 nedeni göstermez; A′ iki satır çıkardığı için şans örtüşmesi de artar.
 
 **Sınırlılık:** XGBoost'un fiyat düzeyi özelliklerindeki geçiş etkisi temizlenmedi (25.1).
+
+---
+
+# Aşama 26 (2026-09-29): Clark–West, roll-over varyantlarında — KOŞUDAN ÖNCE yazılan tasarım
+
+**Bu bölüm koşudan önce yazıldı ve koşudan önce commit edildi.** Sonuçlar 26.2'de
+olacak. Üç varyant da sonuç ne çıkarsa çıksın raporlanacak.
+
+**Ne:** Clark–West ek ailesinin (HAR ⊂ HAR-X, 4 test; Aşama 22) Aşama 25'in roll-over
+varyantlarında tekrarı. CLAUDE.md (commit `0a33dd4`): ilan edilmiş herhangi bir ailenin
+varyant veri üzerindeki tekrarı yeni aile değildir. Ek A'da kendi Holm/BH/BY
+düzeltmeleriyle raporlanır ve birincil aileyle havuzlanmaz.
+
+**Statüler (roll-over'daki gibi):**
+
+| varyant | statü |
+| --- | --- |
+| A | birincil sağlamlık varyantı |
+| A′ | duyarlılık kontrolü |
+| B | duyarlılık kontrolü, yalnızca h=5 |
+
+**Kurulum Aşama 22 ile aynı:**
+- `f_t = e_HAR,t² − [e_HARX,t² − (ŷ_HAR,t − ŷ_HARX,t)²]`, tek yanlı, H1: HAR-X daha iyi.
+- Newey-West Bartlett, L = h−1; HLN çarpanı ve t(n−1). Düzeltmeler HLN p değerine
+  uygulanır; normal p yan sütunda.
+- Tahminler Aşama 25'in kayıtlı varyant tahminleri: `rollover_predictions_publication_aligned.csv`,
+  ana fold'lar, havuzlanmış.
+
+**Düzeltmeler varyant içinde:** A ve A′'de 4 test; B'de tek test (h=5). Tek testte Holm,
+BH ve BY ham p'ye eşittir.
+
+**Doğrulama:** CW istatistiğinin hesabı 21'den bir fonksiyona taşınacak. 21'in çıktısının
+değişmediği kontrol edilecek. Maskesiz roll-over tahminleri kayıtlı
+`clark_west_publication_aligned.csv` değerlerini yeniden üretmeli (assert).
