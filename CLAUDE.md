@@ -140,6 +140,11 @@ three-tier table indexed by the fold's effective number of independent observati
 observations increase and capacity rises automatically. Tier selection depends only on the
 training row count and h, and never looks at test data.
 
+*Note (2026-09-30, post-freeze; presentation only):* "pre-declared" means that the tier
+table was declared before its own run, but after the failure of an earlier version
+(version 4) had been seen on the test folds (`outputs/experiment_log.md`, lines 91–97,
+and the dated note of 2026-09-30 at the end of the log).
+
 | effective obs. | trees | depth | min_child_weight | reg_lambda |
 | --- | --- | --- | --- | --- |
 | ≥ 100 | 400 | 4 | 1 | 1 |
