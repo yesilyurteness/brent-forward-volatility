@@ -11,7 +11,9 @@ A token is a number, a commit hash or a file path, in text order:
              brace alternatives (`bench_*{,_aligned}_publication_aligned.csv`);
   * hash   : 7-40 lowercase hex characters containing at least one letter and one digit;
   * number : digits with optional decimal/thousands groups and exponent; a leading
-             sign (−, +, or - not preceded by a letter or digit) is part of the value.
+             sign (−, +, or - not preceded by a letter or digit) is part of the value,
+             also across the Turkish prefix percent sign ("−%13.1" and "−13.1%" are
+             the same token, −13.1).
 Paths and hashes are removed before numbers are read, so their digits are not counted
 twice. The same tokenizer is applied to both texts, so a spelling difference that is
 not a number (a Turkish suffix, "%80" vs "80%") does not affect the check.
@@ -88,10 +90,11 @@ def tokens(text):
         text = rx.sub(lambda m: " " * len(m.group()), text)
     for m in NUM_RE.finditer(text):
         i, v = m.start(), m.group()
-        prev = text[i - 1] if i else ""
-        prev2 = text[i - 2] if i > 1 else ""
+        j = i - 1 if i and text[i - 1] == "%" else i  # Turkish "−%13.1" = "−13.1%"
+        prev = text[j - 1] if j else ""
+        prev2 = text[j - 2] if j > 1 else ""
         if prev in "−+" or (prev == "-" and not prev2.isalnum()):
-            i, v = i - 1, prev.replace("-", "−") + v
+            i, v = j - 1, prev.replace("-", "−") + v
         found.append((i, "num", v))
     return [(k, v) for _, k, v in sorted(found)]
 

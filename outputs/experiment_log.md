@@ -2554,3 +2554,23 @@ author and is labeled post-freeze in the log and the paper.
 `59158c5` (2026-09-29 22:11:19 +0300), sayı paketinin §18'i ve Aşama 28 ile son analiz
 commit'i. Sayı paketi o commit'te `29b20dd` başlığıyla temiz ağaçtan üretildi. Aynı not
 CLAUDE.md'de "Analysis Freeze" bölümünde.
+
+---
+
+## Çeviri notu (2026-09-30, dondurma sonrası; yalnızca sunuluş)
+
+Yalnızca sunuluş değişikliği; dondurma kuralıyla uyumlu (CLAUDE.md, "Analysis Freeze").
+Yeni test, model ya da analiz yok.
+
+- **Sayı paketi.** `scripts/18_paper_numbers.py` içindeki metinler İngilizceye çevrildi
+  (commit `229a7e6`). Paket o commit'ten temiz ağaçta yeniden üretildi (commit `c06c0e8`).
+  `scripts/check_translation.py package --gpr-alignment publication`: 6050 token (6008
+  sayı, 4 commit hash'i, 38 dosya yolu) `59158c5`'teki paketle aynı değerde ve aynı
+  sırada; iki paket de 1254 satır. Karşılaştırma dışında kalan yalnızca üretim commit'ini
+  ve zamanını kaydeden iki başlık satırı. `primary_family_tests_publication_aligned.csv`
+  bayt düzeyinde aynı.
+- **Günlük çevirisi.** `outputs/experiment_log_en.md` oluşturuldu: bu dosyanın satır satır
+  İngilizce çevirisi. 1–2556. satırlar `378d551`'deki (dondurma kaydı) haliyle, bu not aynı
+  commit'te eklendiği haliyle çevrildi. Bağlayıcı kayıt bu Türkçe dosyadır; uyuşmazlıkta
+  bu dosya geçerlidir. `scripts/check_translation.py log`: her aşamada sayılar, commit
+  hash'leri ve dosya yolları çeviride birebir aynı.
