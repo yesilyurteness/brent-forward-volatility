@@ -623,6 +623,90 @@ def section_15(w):
     w("")
 
 
+def section_17(w, pr, A):
+    """Pooled R2_oos with the common reference, and the H3 residual-stage R2."""
+    models = [m for m, _, _ in MODELS]
+    ref = (pr[pr["model"] == "train_mean"].groupby(["horizon", "test_year"])["pred"]
+           .first().rename("tm").reset_index())
+    x = pr[pr["include_in_main"]].merge(ref, on=["horizon", "test_year"], validate="m:1")
+    x["sse"] = (x["y_true"] - x["pred"]) ** 2
+    x["sst"] = (x["y_true"] - x["tm"]) ** 2
+    pooled = x.groupby(["model", "horizon"])[["sse", "sst"]].sum()
+    pooled = (1 - pooled["sse"] / pooled["sst"]).rename("r2_oos_pooled").reset_index()
+    P = A[["model", "horizon", "r2_oos_common"]].merge(pooled, on=["model", "horizon"],
+                                                       validate="1:1")
+    assert (P.loc[P["model"] == "train_mean", "r2_oos_pooled"].abs() < 1e-12).all()
+    w("## 17. Havuzlanmış R²_oos (ortak referans) ve H3 artık aşamasının R²'si")
+    w("")
+    w("### 17a. Havuzlanmış R²_oos, ortak referans — §1d'deki standart R² DEĞİLDİR")
+    w("")
+    w("`R²_oos,havuz = 1 − Σ SSE_model / Σ (y − train_mean_fold)²`; toplamlar ana metriğe "
+      "giren tüm test gözlemleri üzerinden. Referans her fold'da train-mean baseline'ının "
+      "tahmini (§1c ile aynı ortak referans; XGBoost train penceresinin hedef ortalaması), "
+      "yani tahmin anında bilinen bir sabit. §1d'deki standart R² ise test diliminin kendi "
+      "ortalamasına göredir (ex post); bu tablo onunla karıştırılmamalı. Train-mean satırı "
+      "tanım gereği 0 (assert). Fold ortalaması sütunu §1c'nin ortak referanslı "
+      "değeridir. Havuzlanmış değer yüksek volatiliteli yılları daha çok ağırlıklandırır.")
+    w("")
+    rows = []
+    for m in models:
+        r = {"model": LABEL[m]}
+        for h in HORIZONS:
+            q = P[(P["model"] == m) & (P["horizon"] == h)].iloc[0]
+            r[f"h={h} fold ort."] = f3(q["r2_oos_common"])
+            r[f"h={h} havuz"] = f3(q["r2_oos_pooled"])
+        rows.append(r)
+    w(md_table(pd.DataFrame(rows)))
+    w("")
+    flip = P[(P["model"] != "train_mean")
+             & (np.sign(P["r2_oos_common"]) != np.sign(P["r2_oos_pooled"]))]
+    w("**İşareti iki ölçütte farklı olan hücreler** (fold ortalaması → havuz): "
+      + ("; ".join(f"{LABEL[r.model]}, h={r.horizon}: {f3(r.r2_oos_common)} → "
+                   f"{f3(r.r2_oos_pooled)}" for r in flip.sort_values(
+                       ["horizon", "model"]).itertuples()) if len(flip) else "yok") + ".")
+    w("")
+
+    # ---- 17b. H3 residual stage ----
+    hf = rd("hybrid_folds_all.csv", PUB)
+    hp = rd("hybrid_predictions_all.csv", PUB)
+    # Check the recorded out-of-sample residual R2 against the saved predictions where it is
+    # exactly recoverable: in folds with no floored row, e_hat = pred_h3 - pred_har_x.
+    chk = 0
+    for r in hf[hf["n_floored"] == 0].itertuples():
+        g = hp[(hp["horizon"] == r.horizon) & (hp["test_year"] == r.test_year)]
+        e = g["y_true"].to_numpy() - g["pred_har_x"].to_numpy()
+        eh = g["pred_h3_harx_resid"].to_numpy() - g["pred_har_x"].to_numpy()
+        r2 = 1 - ((e - eh) ** 2).sum() / (e ** 2).sum()
+        assert np.isclose(r2, r.resid_r2_oos, rtol=1e-9, atol=1e-12), (r.horizon, r.test_year)
+        chk += 1
+    m = hf[hf["include_in_main"]]
+    w("### 17b. H3 mekanizması: XGBoost'un HAR-X artıklarını modelleme R²'si (betimleyici)")
+    w("")
+    w("**Betimleyici; test yok.** `R²_artık = 1 − SSE(e − ê) / SSE(e)`, e = HAR-X artığı, ê = "
+      "XGBoost'un artık tahmini; taban \"artığı tahmin etmemek\" (0). Pozitif = artık "
+      "aşaması HAR-X'e bilgi ekliyor. Örneklem içi: XGBoost'un kendi eğitim satırlarında; "
+      "örneklem dışı: test yılında. Değerler `07_hybrid.py`'nin yayım modunda fold başına "
+      "kaydettiği `resid_r2_in_sample` ve `resid_r2_oos`; yeniden uyum gerekmedi. Kontrol: "
+      f"tabana takılan satırı olmayan {chk} fold'da örneklem dışı R², kayıtlı H3 ve HAR-X "
+      "tahminlerinden yeniden hesaplanıp kayıtlı değerle aynı çıkıyor (assert); tabanlı "
+      "fold'larda ê tahminlerden geri elde edilemez. Kaynak: "
+      "`hybrid_folds_all_publication_aligned.csv`.")
+    w("")
+    rows = []
+    for h in HORIZONS:
+        g = m[m["horizon"] == h]
+        rows.append({"ufuk": f"h={h}", "fold": len(g),
+                     "örneklem içi, fold ort.": f3(g["resid_r2_in_sample"].mean()),
+                     "örneklem dışı, fold ort.": f3(g["resid_r2_oos"].mean()),
+                     "örneklem dışı, medyan": f3(g["resid_r2_oos"].median()),
+                     "örneklem dışı > 0 olan fold": f"{int((g['resid_r2_oos'] > 0).sum())}/{len(g)}",
+                     "örneklem dışı, en küçük – en büyük":
+                         f"{f3(g['resid_r2_oos'].min())} – {f3(g['resid_r2_oos'].max())}"})
+    w(md_table(pd.DataFrame(rows)))
+    w("")
+    return P, flip, rows
+
+
 def section_16(w):
     """Appendix A additions: A1 feature list, volatility regime analysis (07b), A8."""
     w("## 16. Ek A eklemeleri: özellik listesi, volatilite rejimi analizi, eğitim uzunluğu")
@@ -2246,6 +2330,9 @@ def main():
     # ---------------- 15-16. Appendix A: roll-over, A1, regime analysis, A8 ----------
     section_15(w)
     section_16(w)
+
+    # ---------------- 17. Pooled R2_oos (common reference), H3 residual R2 ----------
+    section_17(w, pr[PUB], A)
 
     path = OUT_DIR / "paper_numbers_publication_aligned.md"
     path.write_text("\n".join(L) + "\n", encoding="utf-8")
