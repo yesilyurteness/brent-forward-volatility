@@ -48,7 +48,7 @@ def main():
     for c in ("n", "CW", "CW_HLN", "p_normal_one_sided", "p_HLN_one_sided", "p_HLN_holm",
               "p_HLN_bh", "p_HLN_by", "mean_mse_diff", "mean_adjustment"):
         assert np.allclose(base[c], saved[c], rtol=1e-8, atol=1e-15), c
-    print("[kontrol] maskesiz tahminler kayitli Clark-West sonuclarini yeniden uretiyor")
+    print("[check] the unmasked forecasts reproduce the stored Clark-West results")
 
     out = []
     for v in ("A", "A2", "B"):
@@ -63,7 +63,7 @@ def main():
     print(res[["variant", "horizon", "n", "mean_mse_diff", "CW", "CW_HLN",
                "p_normal_one_sided", "p_HLN_one_sided", "p_HLN_holm", "p_HLN_bh",
                "p_HLN_by", "folds_f_positive", "n_folds"]].to_string(index=False))
-    print(f"Yazildi: {path.name}")
+    print(f"Written: {path.name}")
 
 
 if __name__ == "__main__":

@@ -136,12 +136,12 @@ def main():
     if report["errors"]:
         with open(OUT_DIR / "validate_data_report.json", "w", encoding="utf-8") as f:
             json.dump(report, f, ensure_ascii=False, indent=2, default=str)
-        print("=== VERI DOGRULAMA BASARISIZ ===")
+        print("=== DATA VALIDATION FAILED ===")
         for e in report["errors"]:
-            print(f"HATA: {e}")
+            print(f"ERROR: {e}")
         for w_ in report["warnings"]:
-            print(f"UYARI: {w_}")
-        print(f"Rapor kaydedildi: {OUT_DIR / 'validate_data_report.json'}")
+            print(f"WARNING: {w_}")
+        print(f"Report saved: {OUT_DIR / 'validate_data_report.json'}")
         sys.exit(1)
 
     df["Date_parsed"] = dates
@@ -217,37 +217,37 @@ def main():
         json.dump(report, f, ensure_ascii=False, indent=2, default=str)
 
     # Console output
-    print("=== 1) Sutun / satir / tarih dogrulama ===")
-    print(f"Sutunlar eslesiyor mu: {report['columns_match']} -> {report['columns_found']}")
-    print(f"Satir sayisi: {report['row_count']} (beklenen {EXPECTED_ROWS}) -> eslesiyor: {report['row_count_match']}")
-    print(f"Tarih monoton artan: {report['date_monotonic_increasing']}, tekrar: {report['date_duplicates']}")
-    print(f"Tarih araligi: {report['date_min']} - {report['date_max']}")
-    print(f"NaN sayilari: {report['nan_counts']}")
+    print("=== 1) Column / row / date validation ===")
+    print(f"Columns match: {report['columns_match']} -> {report['columns_found']}")
+    print(f"Row count: {report['row_count']} (expected {EXPECTED_ROWS}) -> matches: {report['row_count_match']}")
+    print(f"Dates monotone increasing: {report['date_monotonic_increasing']}, duplicates: {report['date_duplicates']}")
+    print(f"Date range: {report['date_min']} - {report['date_max']}")
+    print(f"NaN counts: {report['nan_counts']}")
     print()
-    print("=== 2) OVX rekor degeri (2020-04-21) ===")
+    print("=== 2) OVX record value (2020-04-21) ===")
     print(report["ovx_record_check"])
-    print(f"Veri setindeki global OVX max: {report['ovx_global_max']}")
+    print(f"Global OVX max in the dataset: {report['ovx_global_max']}")
     print()
-    print("=== 3) 10 gunden uzun bosluklar ===")
-    print(f"En buyuk bosluk: {report['max_gap_days']} gun")
+    print("=== 3) Gaps longer than 10 days ===")
+    print(f"Largest gap: {report['max_gap_days']} days")
     if long_gaps.empty:
-        print("10 gunden uzun bosluk yok.")
+        print("No gap longer than 10 days.")
     else:
         print(long_gaps.to_string(index=False))
     print()
-    print("=== 4) Ufuk basina gecerli hedef sayisi ===")
+    print("=== 4) Valid targets per horizon ===")
     print(horizon_df.to_string(index=False))
     print()
-    print("Yillara gore gecerli gozlem dagilimi (2026 dahil):")
+    print("Distribution of valid observations by year (including 2026):")
     print(pivot.to_string())
     print()
-    print(f"Rapor kaydedildi: {OUT_DIR / 'validate_data_report.json'}")
+    print(f"Report saved: {OUT_DIR / 'validate_data_report.json'}")
     print()
     sha = report["sha256"]
-    print(f"SHA-256: {sha['actual']} -> kayitli ozetle eslesiyor: {sha['matches']}")
+    print(f"SHA-256: {sha['actual']} -> matches the recorded digest: {sha['matches']}")
     for w_ in report["warnings"]:
-        print(f"UYARI: {w_}")
-    print("=== VERI DOGRULAMA GECTI ===" + (" (uyarilarla)" if report["warnings"] else ""))
+        print(f"WARNING: {w_}")
+    print("=== DATA VALIDATION PASSED ===" + (" (with warnings)" if report["warnings"] else ""))
 
 
 if __name__ == "__main__":

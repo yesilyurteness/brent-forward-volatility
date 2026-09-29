@@ -114,11 +114,11 @@ def main():
     assert len(out) == len(test_years) * len(bm.HORIZONS) * 2
     path = alignment.out("log_residual_std.csv", al)
     out.to_csv(path, index=False)
-    print(f"[kontrol] {len(out)} model x ufuk x fold: yeniden tahmin kayitli test "
-          "tahminlerini ve smearing katsayisini bit duzeyinde uretti")
+    print(f"[check] {len(out)} model x horizon x fold: the re-estimation reproduced the saved test "
+          "forecasts and smearing coefficients bit for bit")
     print(out[out["include_in_main"]].groupby(["model", "horizon"])["resid_log_std"]
           .median().unstack().round(4).to_string())
-    print(f"Yazildi: {path.name}")
+    print(f"Written: {path.name}")
 
 
 if __name__ == "__main__":

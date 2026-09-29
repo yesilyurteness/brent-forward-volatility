@@ -221,7 +221,7 @@ def select_capacity(n_effective):
     for threshold, name, params in CAPACITY_TIERS:
         if n_effective >= threshold:
             return name, {**XGB_COMMON, **params}
-    raise RuntimeError("CAPACITY_TIERS son elemani 0 esikli olmali")
+    raise RuntimeError("the last element of CAPACITY_TIERS must have threshold 0")
 
 
 def suggest_params(trial, tier):
@@ -327,7 +327,7 @@ def run_fold(df, feature_cols, log_cols, h, fold_id, test_year, target_mode,
     # --- The outer embargo (the train / test boundary) ---------------------
     train_idx = train_idx_all[:-h]
     assert train_idx.max() + h < test_idx_all.min(), \
-        f"h={h} fold {fold_id}: dis embargo yetersiz"
+        f"h={h} fold {fold_id}: outer embargo insufficient"
 
     # --- The validation length, from the formula ---------------------------
     n_val_years, val_years, _ = choose_validation_span(df, train_idx, test_year, h)
@@ -351,15 +351,15 @@ def run_fold(df, feature_cols, log_cols, h, fold_id, test_year, target_mode,
         # --- The inner embargo (train-proper / validation boundary) --------
         tp_idx = tp_idx_all[:-h]
         assert tp_idx.max() + h < val_idx_all.min(), (
-            f"h={h} fold {fold_id}: ic embargo yetersiz -- son train-proper satiri "
-            f"{tp_idx.max()} + h={h}, ilk validation satiri {val_idx_all.min()}"
+            f"h={h} fold {fold_id}: inner embargo insufficient -- last train-proper row "
+            f"{tp_idx.max()} + h={h}, first validation row {val_idx_all.min()}"
         )
         assert val_idx_all.max() + h < test_idx_all.min(), (
-            f"h={h} fold {fold_id}: validation hedefi test donemine tasiyor"
+            f"h={h} fold {fold_id}: the validation target spills into the test period"
         )
-        assert not (set(tp_idx) & set(val_idx_all)), "train-proper/validation kesisiyor"
-        assert not (set(val_idx_all) & set(test_idx_all)), "validation/test kesisiyor"
-        assert not (set(tp_idx) & set(test_idx_all)), "train-proper/test kesisiyor"
+        assert not (set(tp_idx) & set(val_idx_all)), "train-proper/validation overlap"
+        assert not (set(val_idx_all) & set(test_idx_all)), "validation/test overlap"
+        assert not (set(tp_idx) & set(test_idx_all)), "train-proper/test overlap"
 
         tp = clean(tp_idx)
         va = clean(val_idx_all)

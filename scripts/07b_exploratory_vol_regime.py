@@ -59,10 +59,10 @@ def main():
     pred = pred[pred["include_in_main"]].copy()
 
     pd.set_option("display.width", 240)
-    print("=== KESIFSEL / IKINCIL ANALIZ: volatilite rejimine gore HAR-X vs H2 ===")
-    print("Birincil bulguyu DEGISTIRMEZ, model secimi icin KULLANILMAZ.")
-    print("Bolme kriteri MEKANIK: test yilinin ortalama gerceklesen volatilitesi,")
-    print("ufuk basina medyana gore ikiye ayrilir. Esik performanstan turemez.\n")
+    print("=== EXPLORATORY / SECONDARY ANALYSIS: HAR-X vs H2 by volatility regime ===")
+    print("Does NOT CHANGE the primary finding, NOT USED for model selection.")
+    print("The split criterion is MECHANICAL: the test year's mean realized volatility")
+    print("is split in two at the median per horizon. The threshold does not derive from performance.\n")
 
     year_rows, group_rows, fold_rows = [], [], []
 
@@ -112,15 +112,15 @@ def main():
     groups = pd.DataFrame(group_rows)
     folds = pd.concat(fold_rows, ignore_index=True)
 
-    print("=== Rejim atamasi (mekanik medyan bolmesi) ===")
+    print("=== Regime assignment (mechanical median split) ===")
     piv = years.pivot(index="test_year", columns="horizon", values="rejim")
     print(piv.to_string())
-    print("\nUfuk basina medyan esik (gunluk log-getiri std):")
+    print("\nMedian threshold per horizon (std of daily log returns):")
     print(years.groupby("horizon")["medyan_esik"].first().to_string(
         float_format=lambda v: f"{v:.6f}"))
     print()
 
-    print("=== ANA TABLO: HAR-X vs H2, rejim bazinda ===")
+    print("=== MAIN TABLE: HAR-X vs H2, by regime ===")
     show = groups[["horizon", "rejim", "n_fold", "vol_ort", "har_x_fold_ort",
                    "h2_harx_xgb_fold_ort", "h2_vs_harx_fold_ort_pct",
                    "h2_vs_harx_havuz_pct", "h2_kazanan_fold",
@@ -128,21 +128,21 @@ def main():
     print(show.to_string(index=False, float_format=lambda v: f"{v:.4f}"))
     print()
 
-    print("H2'nin HAR-X'e gore farki (%, fold ortalamasi; negatif = H2 iyi):")
+    print("H2's difference relative to HAR-X (%, fold mean; negative = H2 better):")
     print(groups.pivot(index="rejim", columns="horizon",
                        values="h2_vs_harx_fold_ort_pct").to_string(
         float_format=lambda v: f"{v:+.2f}"))
-    print("\nAyni fark, havuzlanmis olcutle:")
+    print("\nThe same difference, pooled measure:")
     print(groups.pivot(index="rejim", columns="horizon",
                        values="h2_vs_harx_havuz_pct").to_string(
         float_format=lambda v: f"{v:+.2f}"))
-    print("\nYuksek rejimin havuzlanmis olcutteki agirligi (kareli hata payi, %):")
+    print("\nWeight of the high regime in the pooled measure (squared-error share, %):")
     print(groups.pivot(index="rejim", columns="horizon",
                        values="kareli_hata_payi_pct").to_string(
         float_format=lambda v: f"{v:.1f}"))
     print()
 
-    print("=== Fold bazinda ayrinti ===")
+    print("=== Per-fold detail ===")
     print(folds[["horizon", "test_year", "rejim", "vol_ort", "har_x",
                  "xgboost", "h2_harx_xgb", "h2_vs_harx_pct"]].to_string(
         index=False, float_format=lambda v: f"{v:.6f}"))
@@ -159,7 +159,7 @@ def main():
     # (b) The 2020 fold is removed ENTIRELY and the analysis is repeated from scratch.
     #     The threshold is recomputed as well (the remaining sample's own 1%), so this
     #     is more than just filtering.
-    print("=== UC OLAY SAGLAMLIK KONTROLU ===")
+    print("=== EXTREME-EVENT ROBUSTNESS CHECK ===")
     tail_rows, dist_rows = [], []
     for h in HORIZONS:
         g_full = pred[pred["horizon"] == h].copy()
@@ -191,22 +191,22 @@ def main():
     tail = pd.DataFrame(tail_rows)
     dist = pd.DataFrame(dist_rows)
 
-    print("En kotu %1 gozlemin TAKVIM dagilimi (tum yillar ornegi):")
+    print("CALENDAR distribution of the worst 1% of observations (all-years sample):")
     dpiv = dist.pivot(index="test_year", columns="horizon",
                       values="n_uc_gozlem").fillna(0).astype(int)
     dpiv["toplam"] = dpiv.sum(axis=1)
     print(dpiv.sort_values("toplam", ascending=False).to_string())
-    print("\n2020'nin uc gozlemler icindeki payi (%):")
+    print("\nShare of 2020 among the extreme observations (%):")
     print(dist[dist["test_year"] == 2020][["horizon", "pay_pct"]].to_string(
         index=False, float_format=lambda v: f"{v:.1f}"))
     print()
-    print("2020 haric tekrar (esik yeniden hesaplandi):")
+    print("Repeated without 2020 (threshold recomputed):")
     print(tail.to_string(index=False, float_format=lambda v: f"{v:.4f}"))
-    print("\nH2'nin uc gozlemlerdeki farki (%, negatif = H2 iyi):")
+    print("\nH2's difference on the extreme observations (%, negative = H2 better):")
     print(tail.pivot(index="ornek", columns="horizon",
                      values="h2_vs_harx_uc_pct").to_string(
         float_format=lambda v: f"{v:+.2f}"))
-    print("\nAyni fark, uc gozlemler DISINDA kalan %99:")
+    print("\nThe same difference, the 99% OUTSIDE the extreme observations:")
     print(tail.pivot(index="ornek", columns="horizon",
                      values="h2_vs_harx_geri_kalan_pct").to_string(
         float_format=lambda v: f"{v:+.2f}"))
@@ -232,10 +232,10 @@ def main():
             "runtime_seconds": round(time.time() - t0, 2),
         }, f, ensure_ascii=False, indent=2, default=str)
 
-    print("Yazildi: explore_vol_regime_years.csv, explore_vol_regime_groups.csv, "
+    print("Written: explore_vol_regime_years.csv, explore_vol_regime_groups.csv, "
           "explore_vol_regime_folds.csv")
-    print("Rapor  : explore_vol_regime_summary.json")
-    print(f"Sure   : {time.time() - t0:.1f} saniye")
+    print("Report : explore_vol_regime_summary.json")
+    print(f"Runtime: {time.time() - t0:.1f} seconds")
 
 
 if __name__ == "__main__":

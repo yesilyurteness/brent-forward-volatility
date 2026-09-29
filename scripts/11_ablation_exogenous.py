@@ -136,7 +136,7 @@ def main():
     test_years = list(range(FIRST_TEST_YEAR, LAST_TEST_YEAR + 1))
     assert len(test_years) == EXPECTED_N_FOLDS
 
-    print("=== Disgil degisken ablasyonu | ufuklar {} | {} fold ===".format(
+    print("=== Exogenous-variable ablation | horizons {} | {} folds ===".format(
         HORIZONS, len(test_years)))
     for key, cols in VARIANTS.items():
         print("  {:26s} <- {}".format(VARIANT_LABEL[key], cols))
@@ -161,7 +161,7 @@ def main():
             # ---- Embargo: the last h training rows are dropped (forward-looking label)
             tr_emb = train_idx_all[:-h]
             assert tr_emb.max() + h < first_test, \
-                "fold {} h={}: embargo yetersiz".format(fold_id, h)
+                "fold {} h={}: embargo insufficient".format(fold_id, h)
             assert not (set(tr_emb) & set(test_idx_all))
 
             # The test observation set must be IDENTICAL across variants, otherwise the
@@ -170,7 +170,7 @@ def main():
             te = test_slices["har"]
             for k, s in test_slices.items():
                 assert (s.index == te.index).all(), \
-                    "fold {} h={}: {} test gozlemleri HAR'dan farkli".format(
+                    "fold {} h={}: {} test observations differ from HAR".format(
                         fold_id, h, k)
 
             y_te = te[y_col].to_numpy("float64")
@@ -187,7 +187,7 @@ def main():
                 # the same training rows. Asserted, because a silent difference in n would
                 # make the ablation measure sample size instead of information content.
                 assert (tr.index == tr_base.index).all(), \
-                    "fold {} h={}: {} train satirlari HAR'dan farkli".format(
+                    "fold {} h={}: {} train rows differ from HAR".format(
                         fold_id, h, key)
 
                 b = ols_fit(tr[cols].to_numpy("float64"),
@@ -258,18 +258,18 @@ def main():
             assert len(ref) == 1
             for col in ("rmse_fold_mean", "mae_fold_mean", "r2_oos_fold_mean"):
                 assert np.isclose(r[col], float(ref[col].iloc[0]), rtol=0, atol=1e-12), (
-                    "h={} {} {}: ablasyon {!r} != benchmark {!r} -- "
-                    "fold/embargo/maske ayarlari kaymis".format(
+                    "h={} {} {}: ablation {!r} != benchmark {!r} -- "
+                    "fold/embargo/mask settings have drifted".format(
                         r["horizon"], key, col, r[col], float(ref[col].iloc[0])))
-    print("[OK] har ve har_x, bench_aggregate_all.csv ile birebir ayni cikti.\n")
+    print("[OK] har and har_x came out identical to bench_aggregate_all.csv.\n")
 
     # ===================================================================
-    print("=== Fold ortalamasi metrikler (ana metrige giren fold'lar) ===")
+    print("=== Fold-mean metrics (folds entering the main metric) ===")
     for h in HORIZONS:
         sub = agg[agg["horizon"] == h]
         print("\n-- h={} ({} fold) --".format(h, int(sub["n_folds"].iloc[0])))
         print("{:28s} {:>12s} {:>12s} {:>10s}".format(
-            "varyant", "RMSE", "MAE", "R2_oos"))
+            "variant", "RMSE", "MAE", "R2_oos"))
         for _, r in sub.iterrows():
             print("{:28s} {:12.6f} {:12.6f} {:10.4f}".format(
                 r["variant_label"], r["rmse_fold_mean"], r["mae_fold_mean"],
@@ -313,20 +313,20 @@ def main():
     sign = pd.DataFrame(sign_rows)
     deltas = pd.DataFrame(delta_rows)
 
-    print("\n\n=== Isaret testi: HAR+OVX  vs  HAR-X (HAR+OVX+GPR) ===")
-    print("delta = HAR-X hatasi - HAR+OVX hatasi ; delta>0 ise GPR zarar vermis.")
+    print("\n\n=== Sign test: HAR+OVX  vs  HAR-X (HAR+OVX+GPR) ===")
+    print("delta = HAR-X error - HAR+OVX error ; delta>0 means GPR did harm.")
     for metric in ("rmse", "mae"):
         print("\n-- {} --".format(metric.upper()))
         print("{:>4s} {:>5s} {:>12s} {:>14s} {:>13s} {:>12s} {:>13s} {:>18s}".format(
-            "h", "fold", "OVX kazanir", "HAR-X kazanir", "p(iki yonlu)",
-            "ort. delta", "en kotu fold", "o fold haric ort."))
+            "h", "fold", "OVX wins", "HAR-X wins", "p(two-sided)",
+            "mean delta", "worst fold", "mean excl. that fold"))
         for _, r in sign[sign["metric"] == metric].iterrows():
             print("{:4d} {:5d} {:12d} {:14d} {:13.4f} {:12.2e} {:13d} {:18.2e}".format(
                 int(r["horizon"]), int(r["n_folds"]), int(r["wins_har_ovx"]),
                 int(r["wins_har_x"]), r["p_two_sided"], r["mean_delta"],
                 int(r["year_of_max_delta"]), r["mean_delta_excl_worst"]))
 
-    print("\n\n=== Fold bazinda RMSE farki (HAR-X - HAR+OVX) ===")
+    print("\n\n=== Per-fold RMSE difference (HAR-X - HAR+OVX) ===")
     wide = deltas.pivot(index="test_year", columns="horizon",
                         values="delta_rmse_harx_minus_harovx")
     print(wide.to_string(float_format=lambda v: "{:+.2e}".format(v)))
@@ -349,9 +349,9 @@ def main():
         chk = chk.merge(ref, on=["horizon", "fold", "regresor"], validate="1:1")
         assert len(chk) == len(ref)
         assert np.allclose(chk["mine"], chk["std_beta"], rtol=1e-9, atol=1e-12), \
-            "standartlastirilmis har_x betalari harx_standardized_betas.csv ile uyusmuyor"
-        print("[OK] har_x standartlastirilmis betalari harx_standardized_betas.csv "
-              "ile ayni.\n")
+            "the standardized har_x betas do not match harx_standardized_betas.csv"
+        print("[OK] the standardized har_x betas are identical to harx_standardized_betas.csv"
+              ".\n")
 
     long = coefs_std.melt(id_vars=["horizon", "fold", "test_year", "variant",
                                    "include_in_main"],
@@ -380,8 +380,8 @@ def main():
     std_summary = std_summary[["fold_set", "horizon", "variant", "regressor", "n_folds",
                                "mean", "median", "min", "max", "n_positive", "n_negative"]]
 
-    print("\n=== Standartlastirilmis beta ozeti (fold_set=main; 15 tahmin fold'u, "
-          "h=66/126'da 14 metrik fold'u) ===")
+    print("\n=== Standardized beta summary (fold_set=main; 15 estimation folds, "
+          "14 metric folds at h=66/126) ===")
     show = std_summary[std_summary["fold_set"] == "main"]
     print(show.drop(columns="fold_set").to_string(
         index=False, float_format=lambda v: "{:+.3f}".format(v)))
@@ -424,7 +424,7 @@ def main():
                    "aggregate": agg_out.to_dict(orient="records"),
                    "sign_test": sign.to_dict(orient="records")},
                   f, indent=2)
-    print("\nYazildi: outputs/ablation_exogenous.csv (+ _folds, _sign_test, "
+    print("\nWritten: outputs/ablation_exogenous.csv (+ _folds, _sign_test, "
           "_fold_deltas, _coefficients, _coefficients_standardized, "
           "_std_beta_summary, _predictions, _summary.json)")
 

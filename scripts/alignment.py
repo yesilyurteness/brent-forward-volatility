@@ -82,6 +82,6 @@ def check_equal(new, base_name, keys, cols, alignment, rows=None, what=""):
             b[c] = b[c].astype(a[c].dtype)
     pd.testing.assert_frame_equal(a, b, check_exact=True,
                                   obj=f"{base_name} [{what}]")
-    print(f"[kontrol] {base_name} [{what}]: {len(a)} satir, timestamp surumuyle "
-          "BIT DUZEYINDE AYNI")
+    print(f"[check] {base_name} [{what}]: {len(a)} rows, "
+          "BIT-IDENTICAL to the timestamp version")
     return len(a)

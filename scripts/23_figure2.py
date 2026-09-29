@@ -151,7 +151,7 @@ def main():
     alignment.add_argument(ap)
     al = ap.parse_args().gpr_alignment
     for p in (figure_a(al), figure_b(al)):
-        print(f"Yazildi: {p.name} + .pdf/.svg")
+        print(f"Written: {p.name} + .pdf/.svg")
 
 
 if __name__ == "__main__":

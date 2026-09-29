@@ -173,7 +173,7 @@ def select_arch(n_effective):
     for threshold, name, params in ARCH_TIERS:
         if n_effective >= threshold:
             return name, params
-    raise RuntimeError("ARCH_TIERS son elemani 0 esikli olmali")
+    raise RuntimeError("the last element of ARCH_TIERS must have threshold 0")
 
 
 def set_all_seeds(seed=SEED):
@@ -395,7 +395,7 @@ def main():
             # --- Embargo (identical to XGBoost) ----------------------------
             tr_emb = train_idx_all[:-h]
             assert tr_emb.max() + h < test_idx_all.min(), \
-                f"h={h} fold {fold_id}: embargo yetersiz"
+                f"h={h} fold {fold_id}: embargo insufficient"
             assert not (set(tr_emb) & set(test_idx_all))
 
             # --- Valid rows: the sequence window must fit completely -------

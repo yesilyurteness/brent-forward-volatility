@@ -275,7 +275,7 @@ def high_corr_pairs(feat, cols, threshold):
 def main():
     df = pd.read_excel(DATA_PATH)
     assert len(df) == EXPECTED_ROWS, (
-        f"Kaynak veri satir sayisi degismis: {len(df)} (beklenen {EXPECTED_ROWS})"
+        f"Source data row count changed: {len(df)} (expected {EXPECTED_ROWS})"
     )
 
     feat = build_features(df)
@@ -298,23 +298,23 @@ def main():
             obj=f"prefix-invariance (kesme={cut})",
         )
         prefix_results.append({"cut_row": cut, "tolerance": 0.0, "passed": True})
-    print("=== Prefix-invariance testi ===")
-    print(f"Kesme noktalari {[r['cut_row'] for r in prefix_results]}: "
-          "kesilmis veriyle uretilen ozellikler tam veriyle BIREBIR ayni (tolerans=0).")
-    print("Hicbir ozellik gelecege bakmiyor.\n")
+    print("=== Prefix-invariance test ===")
+    print(f"Cut points {[r['cut_row'] for r in prefix_results]}: "
+          "features built from the truncated data are IDENTICAL to the full-data ones (tolerance=0).")
+    print("No feature looks into the future.\n")
 
     # === CHECK 2: date alignment ===========================================
-    assert len(feat) == EXPECTED_ROWS, f"Satir sayisi degisti: {len(feat)}"
+    assert len(feat) == EXPECTED_ROWS, f"Row count changed: {len(feat)}"
     targets_path = OUT_DIR / "targets.csv"
     targets_aligned = None
     if targets_path.exists():
         tg = pd.read_csv(targets_path)
-        assert len(tg) == len(feat), "targets.csv satir sayisi features ile uyusmuyor"
+        assert len(tg) == len(feat), "targets.csv row count does not match the features"
         assert (tg["Date"].values == feat["Date"].values).all(), (
-            "targets.csv ile features Date sutunlari birebir eslesmiyor"
+            "the Date columns of targets.csv and the features do not match exactly"
         )
         targets_aligned = True
-        print("targets.csv ile Date hizalamasi: TAM ESLESME\n")
+        print("Date alignment with targets.csv: EXACT MATCH\n")
 
     # === CHECK 3: scan for infinite values ==================================
     inf_counts = {}
@@ -323,17 +323,17 @@ def main():
         if n_inf:
             inf_counts[c] = n_inf
     if inf_counts:
-        print(f"UYARI: sonsuz deger bulundu -> NaN'a cevriliyor: {inf_counts}\n")
+        print(f"WARNING: infinite values found -> converted to NaN: {inf_counts}\n")
         feat[cols] = feat[cols].replace([np.inf, -np.inf], np.nan)
     else:
-        print("Sonsuz deger taramasi: temiz (0 adet)\n")
+        print("Infinite-value scan: clean (0 found)\n")
 
     # === CHECK 4: scan for constant columns ================================
     constant_cols = [c for c in cols if feat[c].nunique(dropna=True) <= 1]
     if constant_cols:
-        print(f"UYARI: sabit (tek degerli) sutunlar: {constant_cols}\n")
+        print(f"WARNING: constant (single-valued) columns: {constant_cols}\n")
     else:
-        print("Sabit sutun taramasi: temiz (0 adet)\n")
+        print("Constant-column scan: clean (0 found)\n")
 
     # === Feature inventory: index of the first valid row ====================
     inv_rows = []
@@ -349,13 +349,13 @@ def main():
         })
     inv_df = pd.DataFrame(inv_rows)
 
-    print("=== Uretilen ozellikler (ilk gecerli satir indeksi ile) ===")
+    print("=== Features produced (with the index of the first valid row) ===")
     print(inv_df.to_string(index=False))
     print()
-    print(f"TOPLAM OZELLIK SAYISI: {len(cols)}")
-    print(f"CSV sutun sayisi (Date + Date_parsed dahil): {feat.shape[1]}")
+    print(f"TOTAL NUMBER OF FEATURES: {len(cols)}")
+    print(f"CSV column count (including Date + Date_parsed): {feat.shape[1]}")
     late = inv_df.loc[inv_df["first_valid_row"].idxmax()]
-    print(f"En gec baslayan ozellik: {late['feature']} -> satir "
+    print(f"Latest-starting feature: {late['feature']} -> row "
           f"{late['first_valid_row']} ({late['first_valid_date']})")
     print()
 
@@ -370,11 +370,11 @@ def main():
         "brent_vol20_min": float(vol20.min()),
         "epsilon": EPS,
     }
-    print("=== vol_ratio dagilimi ===")
+    print("=== vol_ratio distribution ===")
     print(f"  min    : {vr_stats['min']:.6f}")
-    print(f"  medyan : {vr_stats['median']:.6f}")
+    print(f"  median : {vr_stats['median']:.6f}")
     print(f"  maks   : {vr_stats['max']:.6f}")
-    print(f"  brent_vol20 en kucuk degeri: {vr_stats['brent_vol20_min']:.8f} "
+    print(f"  brent_vol20 smallest value: {vr_stats['brent_vol20_min']:.8f} "
           f"(epsilon={EPS:g})")
     print()
 
@@ -383,15 +383,15 @@ def main():
     warmup_mask = feat["Date_parsed"] < pd.Timestamp(WARMUP_END)
     pairs_warmup = high_corr_pairs(feat.loc[warmup_mask], cols, CORR_THRESHOLD)
 
-    print(f"=== |r| > {CORR_THRESHOLD} ozellik ciftleri (TANILAMA AMACLI) ===")
-    print("UYARI: asagidaki 'tum veri' listesi 2008-2026'nin tamamindan hesaplandi.")
-    print("Bu listeye bakarak ozellik SILMEK test donemi bilgisini secime tasir ve")
-    print("sizintidir. Eleme gerekirse isinma donemi listesi ya da fold-ici train")
-    print("korelasyonu kullanilmalidir. Bu asamada hicbir ozellik SILINMIYOR.")
-    print(f"\nTum veri (2008-2026): {len(pairs_full)} cift")
+    print(f"=== |r| > {CORR_THRESHOLD} feature pairs (DIAGNOSTIC ONLY) ===")
+    print("WARNING: the 'full data' list below was computed from all of 2008-2026.")
+    print("DELETING features by looking at this list carries test-period information into")
+    print("the selection and is leakage. If pruning is needed, the warm-up list or in-fold train")
+    print("correlation must be used. At this stage NO feature is deleted.")
+    print(f"\nFull data (2008-2026): {len(pairs_full)} pairs")
     if pairs_full:
         print(pd.DataFrame(pairs_full).to_string(index=False))
-    print(f"\nIsinma donemi (2008-2011, ilk egitim seti): {len(pairs_warmup)} cift")
+    print(f"\nWarm-up period (2008-2011, first training set): {len(pairs_warmup)} pairs")
     if pairs_warmup:
         print(pd.DataFrame(pairs_warmup).to_string(index=False))
     print()
@@ -434,9 +434,9 @@ def main():
     with open(OUT_DIR / "build_features_report.json", "w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
 
-    print(f"Yazildi: {OUT_DIR / 'features.csv'} "
-          f"({len(feat)} satir x {feat.shape[1]} sutun)")
-    print(f"Rapor: {OUT_DIR / 'build_features_report.json'}")
+    print(f"Written: {OUT_DIR / 'features.csv'} "
+          f"({len(feat)} rows x {feat.shape[1]} columns)")
+    print(f"Report: {OUT_DIR / 'build_features_report.json'}")
 
     build_publication_aligned(df, feat, cols)
 
@@ -494,14 +494,14 @@ def build_publication_aligned(df, feat_ts, cols):
                                       check_dtype=True,
                                       obj=f"prefix-invariance pub (kesme={cut})")
         prefix_results.append({"cut_row": cut, "tolerance": 0.0, "passed": True})
-    print("\n=== Yayim-hizali: prefix-invariance testi GECTI (kesme 3000, 4000; "
-          "tolerans=0) ===")
+    print("\n=== Publication-aligned: prefix-invariance test PASSED (cuts 3000, 4000; "
+          "tolerance=0) ===")
 
     sens = publication_sensitivity_test(df, pub)
     n_ts = sum(r["timestamp_aligned_row_changed"] for r in sens)
-    print(f"=== Yayim tarihine duyarlilik testi: {len(sens)}/{len(sens)} satirda "
-          "yayim-hizali ozellikler degismedi; zaman-damgali surumde ayni bozma "
-          f"{n_ts}/{len(sens)} satiri degistirdi (kontrol) ===")
+    print(f"=== Publication-date sensitivity test: in {len(sens)}/{len(sens)} rows "
+          "the publication-aligned features did not change; in the timestamp version the same perturbation "
+          f"changed {n_ts}/{len(sens)} rows (control) ===")
 
     # Which columns changed, and did the first valid row move?
     changed, inv = [], []
@@ -518,12 +518,12 @@ def build_publication_aligned(df, feat_ts, cols):
     inv = pd.DataFrame(inv)
     assert all(c.startswith(("gprd", "threat")) or "gprd" in c for c in changed), (
         "a non-GPR feature changed")
-    print(f"Degisen ozellik: {len(changed)}/{len(cols)}")
+    print(f"Changed features: {len(changed)}/{len(cols)}")
     print(inv[inv["changed"]].to_string(index=False))
     last_ts = int(inv["first_valid_row_timestamp"].max())
     last_pub = int(inv["first_valid_row_publication"].max())
-    print(f"Tum ozelliklerin dolu oldugu ilk satir: zaman-damgali {last_ts}, "
-          f"yayim-hizali {last_pub}")
+    print(f"First row with all features populated: timestamp {last_ts}, "
+          f"publication-aligned {last_pub}")
 
     # Effective lag actually used: calendar days between row t and the GPR observation
     # its features end on (timestamp version: t-1).
@@ -553,7 +553,7 @@ def build_publication_aligned(df, feat_ts, cols):
         "calendar_days_by_trading_weekday": by_dow.round(2).to_dict("index"),
         "share_rows_timestamp_uses_unpublished_obs": float((lag_rows > 1).mean()),
     }
-    print("Kullanilan GPR gozleminin yasi (takvim gunu), yayim-hizali:",
+    print("Age of the GPR observation used (calendar days), publication-aligned:",
           lag_summary["calendar_days_publication"])
     print(by_dow.round(2).to_string())
 
@@ -589,7 +589,7 @@ def build_publication_aligned(df, feat_ts, cols):
     with open(OUT_DIR / "build_features_publication_aligned_report.json", "w",
               encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
-    print(f"Yazildi: {OUT_DIR / 'features_publication_aligned.csv'}")
+    print(f"Written: {OUT_DIR / 'features_publication_aligned.csv'}")
 
 
 if __name__ == "__main__":

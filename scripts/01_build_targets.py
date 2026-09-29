@@ -40,7 +40,7 @@ EXPECTED_VALID_COUNTS = {5: 4636, 22: 4619, 66: 4575, 126: 4515}
 def main():
     df = pd.read_excel(DATA_PATH)
     assert len(df) == EXPECTED_ROWS, (
-        f"Kaynak veri satir sayisi degismis: {len(df)} (beklenen {EXPECTED_ROWS})"
+        f"Source data row count changed: {len(df)} (expected {EXPECTED_ROWS})"
     )
 
     df["Date_parsed"] = pd.to_datetime(df["Date"], format="%d.%m.%Y")
@@ -73,14 +73,14 @@ def main():
         })
 
     check_df = pd.DataFrame(check_rows)
-    print("=== Ufuk basina gecerli hedef sayisi dogrulamasi ===")
+    print("=== Check of the number of valid targets per horizon ===")
     print(check_df.to_string(index=False))
     print()
 
     for row in check_rows:
         assert row["matches"], (
-            f"h={row['h']}: gecerli hedef sayisi {row['valid_count']}, "
-            f"beklenen {row['expected_pinned']} (genel kural: {row['expected_generic']})"
+            f"h={row['h']}: valid targets {row['valid_count']}, "
+            f"expected {row['expected_pinned']} (general rule: {row['expected_generic']})"
         )
 
     # Distribution check: min, median, max, number of negative values
@@ -97,14 +97,14 @@ def main():
         })
 
     dist_df = pd.DataFrame(dist_rows)
-    print("=== Ufuk basina dagilim kontrolu ===")
+    print("=== Distribution check per horizon ===")
     print(dist_df.to_string(index=False))
     print()
 
     for row in dist_rows:
         assert row["n_negative"] == 0, (
-            f"h={row['h']}: {row['n_negative']} negatif standart sapma degeri bulundu -- "
-            "standart sapma negatif olamaz, hesaplamada hata var."
+            f"h={row['h']}: {row['n_negative']} negative standard deviation values found -- "
+            "a standard deviation cannot be negative; the computation is wrong."
         )
 
     # All checks passed -> write
@@ -136,8 +136,8 @@ def main():
     with open(OUT_DIR / "build_targets_report.json", "w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
 
-    print(f"Yazildi: {OUT_DIR / 'targets.csv'} ({len(out)} satir)")
-    print(f"Rapor: {OUT_DIR / 'build_targets_report.json'}")
+    print(f"Written: {OUT_DIR / 'targets.csv'} ({len(out)} rows)")
+    print(f"Report: {OUT_DIR / 'build_targets_report.json'}")
 
 
 if __name__ == "__main__":

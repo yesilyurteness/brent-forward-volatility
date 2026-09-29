@@ -393,8 +393,8 @@ def main():
     roll[cal["roll_row"].to_numpy()] = True
     roll2 = roll | np.roll(roll, 1)
     roll2[0] = False
-    print(f"[takvim] ICE resmi tablosu: {n_official}/{n_official} vade birebir; "
-          f"orneklemde {len(cal)} vade, {int((~cal['expiry_in_data']).sum())} vade gunu veride yok")
+    print(f"[calendar] ICE official table: {n_official}/{n_official} expiries exact; "
+          f"{len(cal)} expiries in the sample, {int((~cal['expiry_in_data']).sum())} expiry days absent from the data")
 
     # ---- validation: empty mask reproduces the primary pipeline ----------------------
     f0, t0_, hd0, pv0 = build_variant(raw_ret, feat, tgt, np.zeros(len(raw), bool))
@@ -428,20 +428,20 @@ def main():
     for c in ("DM_HLN", "p_HLN", "p_sign", "p_HLN_bh", "p_sign_by"):
         assert np.allclose(k[c], k[f"{c}_s"], rtol=1e-8, atol=1e-12), c
     assert (k["harx_fold_wins"] == k["harx_fold_wins_s"]).all()
-    print("[kontrol] bos maske: hedefler, getiri ozellikleri, HAR/HAR-X/XGBoost tahminleri "
-          "bit duzeyinde; 8 test kayitli degerlerle ayni")
+    print("[check] empty mask: targets, return features, HAR/HAR-X/XGBoost forecasts "
+          "bit for bit; the 8 tests equal the stored values")
 
     # ---- variants ---------------------------------------------------------------------
     preds = [base]
     for name, mask in (("A", roll), ("A2", roll2)):
         fv, tv, hdv, pvv = build_variant(raw_ret, feat, tgt, mask)
         preds.append(run_variant(name, fv, tv, hdv, pvv, raw_ret, test_years, HORIZONS))
-        print(f"[{name}] tamam ({time.time() - t0:.0f} sn)")
+        print(f"[{name}] done ({time.time() - t0:.0f} s)")
     tb = {h: tgt[f"target_vol_{h}"].copy() for h in HORIZONS}
     win_has_roll = pd.Series(roll.astype(float)).rolling(5).sum().shift(-5) > 0
     tb[5] = tb[5].where(~win_has_roll.values)
     preds.append(run_variant("B", f0, tb, hd0, pv0, raw_ret, test_years, [5]))
-    print(f"[B] tamam ({time.time() - t0:.0f} sn)")
+    print(f"[B] done ({time.time() - t0:.0f} s)")
     P = pd.concat(preds, ignore_index=True)
 
     tests = pd.concat([family_tests(g).assign(variant=v) for v, g in P.groupby("variant")],
@@ -483,7 +483,7 @@ def main():
                  "p_sign_bh"]].to_string(index=False))
     print(json.dumps({k: summary[k] for k in ("calendar", "B_rows_dropped_h5")}))
     print({k: v["n"] for k, v in summary["gap_rows_removed"].items()})
-    print(f"Sure {time.time() - t0:.0f} sn")
+    print(f"Runtime {time.time() - t0:.0f} s")
 
 
 if __name__ == "__main__":

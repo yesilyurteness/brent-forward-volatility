@@ -118,7 +118,7 @@ def main():
     t0 = time.time()
     res = pd.read_csv(alignment.out("dm_test_results.csv", al))
     prim = res[res["aile"] == "birincil"].copy()
-    assert len(prim) == 8, f"Birincil aile 8 test olmali, bulunan {len(prim)}"
+    assert len(prim) == 8, f"The primary family must have 8 tests, found {len(prim)}"
 
     # Trading days per year: measured from the test period
     pred = pd.read_csv(alignment.out("hybrid_predictions_all.csv", al))
@@ -177,40 +177,40 @@ def main():
     out.to_csv(alignment.out("power_analysis.csv", al), index=False)
 
     pd.set_option("display.width", 250)
-    print("=== GUC ANALIZI: birincil aile (2 karsilastirma x 4 ufuk) ===")
-    print(f"Hedef: %{TARGET_POWER*100:.0f} guc, %{ALPHA*100:.0f} iki yonlu.")
-    print(f"Yil basina islem gunu (test doneminden olculdu): {days_per_year:.1f}")
-    print("DM icin orneklem = ETKIN BLOK (n/h); isaret icin orneklem = FOLD (yil).\n")
+    print("=== POWER ANALYSIS: primary family (2 comparisons x 4 horizons) ===")
+    print(f"Target: {TARGET_POWER*100:.0f}% power, {ALPHA*100:.0f}% two-sided.")
+    print(f"Trading days per year (measured from the test period): {days_per_year:.1f}")
+    print("Sample for DM = EFFECTIVE BLOCK (n/h); sample for the sign test = FOLD (year).\n")
 
-    print("--- DM testi ---")
+    print("--- DM test ---")
     print(out[["horizon", "karsilastirma", "rmse_fark_pct", "dm_etkin_blok",
                "dm_istatistik", "dm_gerceklesen_guc", "dm_gerekli_blok",
                "dm_gerekli_yil", "dm_kat_artis"]].to_string(
         index=False, float_format=lambda v: f"{v:.4g}"))
     print()
-    print("--- Isaret testi ---")
+    print("--- Sign test ---")
     print(out[["horizon", "karsilastirma", "isaret_kazanan", "isaret_fold",
                "isaret_oran", "isaret_gerceklesen_guc",
                "isaret_gerekli_fold_yil", "isaret_kat_artis"]].to_string(
         index=False, float_format=lambda v: f"{v:.4g}"))
     print()
 
-    print("=== OZET: %80 guc icin gereken TEST DONEMI uzunlugu (yil) ===")
+    print("=== SUMMARY: TEST PERIOD length required for 80% power (years) ===")
     piv = out.pivot(index="karsilastirma", columns="horizon",
                     values="dm_gerekli_yil")
-    print("DM testi:")
+    print("DM test:")
     print(piv.to_string(float_format=lambda v: f"{v:,.0f}"))
-    print("\nIsaret testi:")
+    print("\nSign test:")
     print(out.pivot(index="karsilastirma", columns="horizon",
                     values="isaret_gerekli_fold_yil").to_string(
         float_format=lambda v: f"{v:,.0f}"))
-    print(f"\nMevcut test donemi: {out['isaret_fold'].max()} yil "
-          f"(h=5/22), {out['isaret_fold'].min()} yil (h=66/126).")
+    print(f"\nCurrent test period: {out['isaret_fold'].max()} years "
+          f"(h=5/22), {out['isaret_fold'].min()} years (h=66/126).")
     print()
-    print("UYARI: gozlenen etkiden hesaplanan 'gerceklesen guc', p-degerinin monoton")
-    print("bir donusumudur ve yeni bilgi tasimaz. Asil cevap gerekli orneklem")
-    print("sutunlarindadir. Gozlenen etki gercek etki kabul edilmistir; kucuk")
-    print("gozlenen etkiler gercek etkiyi hafife veya abartabilir.")
+    print("WARNING: the 'realized power' computed from the observed effect is a monotone")
+    print("transformation of the p-value and carries no new information. The actual answer is in the")
+    print("required-sample columns. The observed effect is taken as the true effect; small")
+    print("observed effects may under- or overstate the true effect.")
     print()
 
     # ===================================================================
@@ -219,12 +219,12 @@ def main():
     # This section does NOT USE the observed results; it answers "what could this design
     # have detected" over hypothetical effect sizes. It is not circular.
     print("=" * 70)
-    print("ONSEL (A PRIORI) GUC EGRILERI -- gozlenen etkilerden bagimsiz")
+    print("A PRIORI POWER CURVES -- independent of the observed effects")
     print("=" * 70)
     print()
 
     # --- Sign test: exact binomial, hypothetical true win probabilities ---
-    print("--- ISARET TESTI: n fold, gercek kazanma olasiligi p ---")
+    print("--- SIGN TEST: n folds, true win probability p ---")
     p_grid = [0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90]
     srows = []
     for n in (15, 14):
@@ -235,7 +235,7 @@ def main():
                           "guc": round(sign_power(n, pv), 4),
                           "anlamlilik_icin_gereken_kazanma": hi})
     sdf = pd.DataFrame(srows)
-    print("%5 iki yonlu anlamlilik icin gereken en az kazanma sayisi: "
+    print("Minimum number of wins required for 5% two-sided significance: "
           f"n=15 -> {sdf[sdf.n_fold==15]['anlamlilik_icin_gereken_kazanma'].iloc[0]}, "
           f"n=14 -> {sdf[sdf.n_fold==14]['anlamlilik_icin_gereken_kazanma'].iloc[0]}")
     print()
@@ -257,11 +257,11 @@ def main():
     kprim = res_all[res_all["aile"] == "birincil"].groupby("horizon")["k"].agg(
         ["mean", "min", "max"])
 
-    print("--- DM TESTI: etkin blok sayisi B, hipotetik RMSE farki ---")
+    print("--- DM TEST: number of effective blocks B, hypothetical RMSE difference ---")
     print("Donusum: delta_blok = k*|r^2-1|, ncp = sqrt(B)*delta_blok.")
-    print("k verinin GURULTU yapisindan kalibre edilir (hata korelasyonu ve kayip")
-    print("dagilimi), gozlenen ETKI buyuklugunden DEGIL. Ufuk basina birincil")
-    print("ailedeki iki ciftin ortalamasi kullanilir:")
+    print("k is calibrated from the NOISE structure of the data (error correlation and loss")
+    print("distribution), NOT from the observed EFFECT size. Per horizon, the mean of the two")
+    print("pairs in the primary family is used:")
     print(kprim.to_string(float_format=lambda v: f"{v:.3f}"))
     print()
     pct_grid = [0.05, 0.10, 0.20]
@@ -281,13 +281,13 @@ def main():
     ddf = pd.DataFrame(drows)
     print(ddf.pivot(index=["horizon", "etkin_blok"], columns="rmse_farki_pct",
                     values="guc").to_string(float_format=lambda v: f"{v:.3f}"))
-    print("\nk belirsizligine duyarlilik (birincil ailedeki iki cift arasi aralik):")
+    print("\nSensitivity to the uncertainty in k (range between the two pairs of the primary family):")
     print(ddf[["horizon", "rmse_farki_pct", "guc_k_min", "guc", "guc_k_max"]].to_string(
         index=False, float_format=lambda v: f"{v:.3f}"))
     print()
-    print("YORUM: %80 esigini gecen hucreler bu tasarimin tespit edebilecegi")
-    print("etkileri gosterir. Gecmeyenler icin 'anlamli fark yok' sonucu, farkin")
-    print("olmadigi degil, tasarimin onu goremeyecegi anlamina gelir.")
+    print("INTERPRETATION: cells above the 80% threshold show the effects this design")
+    print("can detect. For the others, the result 'no significant difference' means not that there")
+    print("is no difference, but that the design cannot see it.")
     print()
 
     sdf.to_csv(alignment.out("apriori_power_sign.csv", al), index=False)
@@ -326,10 +326,10 @@ def main():
             "runtime_seconds": round(time.time() - t0, 2),
         }, f, ensure_ascii=False, indent=2, default=str)
 
-    print(f"Yazildi: power_analysis{alignment.suffix(al)}.csv ({len(out)} satir) ve "
+    print(f"Written: power_analysis{alignment.suffix(al)}.csv ({len(out)} rows) and "
           f"apriori_power_*/power_analysis_summary{alignment.suffix(al)}")
-    print(f"Rapor  : power_analysis_summary{alignment.suffix(al)}.json")
-    print(f"Sure   : {time.time() - t0:.1f} saniye")
+    print(f"Report : power_analysis_summary{alignment.suffix(al)}.json")
+    print(f"Runtime: {time.time() - t0:.1f} seconds")
 
 
 if __name__ == "__main__":

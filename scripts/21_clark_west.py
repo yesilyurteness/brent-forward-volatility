@@ -133,7 +133,7 @@ def main():
     pd.set_option("display.width", 250)
     print(res[["horizon", "n", "f_mean", "CW", "CW_HLN", "p_HLN_one_sided", "p_HLN_holm",
                "p_HLN_bh", "p_HLN_by", "folds_f_positive", "n_folds"]].to_string(index=False))
-    print(f"Yazildi: {out.name}, {out.with_suffix('.json').name}")
+    print(f"Written: {out.name}, {out.with_suffix('.json').name}")
 
 
 if __name__ == "__main__":

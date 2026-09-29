@@ -152,7 +152,7 @@ def main():
     chk = agg.join(ref, how="inner")
     assert np.allclose(chk["rmse_original"], chk["rmse_fold_mean"], rtol=1e-9)
     assert np.allclose(chk["mae_original"], chk["mae_fold_mean"], rtol=1e-9)
-    print(f"Kontrol: duzeltilmemis fold ortalamalari yayimlanan tablolarla ayni ({len(chk)} satir).")
+    print(f"Check: the uncorrected fold means equal the published tables ({len(chk)} rows).")
 
     agg["rmse_change_pct"] = 100 * (agg["rmse_corrected"] / agg["rmse_original"] - 1)
     agg["mae_change_pct"] = 100 * (agg["mae_corrected"] / agg["mae_original"] - 1)
@@ -180,10 +180,10 @@ def main():
             "mae_rank_swaps": swaps["model"].tolist(),
         }
         d = summary["horizons"][str(h)]
-        print(f"\n=== h={h}: degisen test hedefi {d['n_test_targets_changed']}/"
-              f"{d['n_test_targets']}, ort. hedef degisimi {d['target_change_pct_mean']:+.2f}% | "
-              f"RMSE degisimi [{d['rmse_change_pct_min']:+.2f}%, {d['rmse_change_pct_max']:+.2f}%] | "
-              f"RMSE sira degisimi {d['n_rmse_rank_changes']}, MAE sira degisimi "
+        print(f"\n=== h={h}: changed test targets {d['n_test_targets_changed']}/"
+              f"{d['n_test_targets']}, mean target change {d['target_change_pct_mean']:+.2f}% | "
+              f"RMSE change [{d['rmse_change_pct_min']:+.2f}%, {d['rmse_change_pct_max']:+.2f}%] | "
+              f"RMSE rank changes {d['n_rmse_rank_changes']}, MAE rank changes "
               f"{d['n_mae_rank_changes']} {d['mae_rank_swaps']}")
         print(s[["model", "rmse_original", "rmse_corrected", "rmse_change_pct",
                  "rank_rmse_original", "rank_rmse_corrected"]]
@@ -192,7 +192,7 @@ def main():
     with open(alignment.out("gap_target_test_summary.json", AL), "w", encoding="utf-8") as f:
         summary["gpr_alignment"] = AL
         json.dump(summary, f, indent=2)
-    print("\nYazildi: gap_target_test.csv, gap_target_test_folds.csv, gap_target_test_summary.json")
+    print("\nWritten: gap_target_test.csv, gap_target_test_folds.csv, gap_target_test_summary.json")
 
 
 if __name__ == "__main__":

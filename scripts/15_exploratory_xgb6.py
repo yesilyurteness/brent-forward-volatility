@@ -161,7 +161,7 @@ def run(df, horizons, test_years):
                 "test_year": test_year, "include_in_main": include_main,
                 "y_true": y_te, "pred_xgb6": p}))
             print(f"  h={h:3d} fold {fold_id:2d} | test {test_year} | train {len(tr):4d} "
-                  f"| etkin {n_eff:6.1f} -> {tier:6s} | taban {n_clip:3d} "
+                  f"| effective {n_eff:6.1f} -> {tier:6s} | floor {n_clip:3d} "
                   f"| RMSE {m['rmse']:.6f}")
     return pd.DataFrame(fold_rows), pd.concat(pred_frames, ignore_index=True)
 
@@ -182,8 +182,8 @@ def main():
         test_years = test_years[:args.max_folds]
 
     df = load_frame(al)
-    print("=== XGBoost-6 (KESIFSEL, post hoc) | girdiler: HAR-X'in 6 regresoru | "
-          "hedef: duzey, donusum/smearing yok ===")
+    print("=== XGBoost-6 (EXPLORATORY, post hoc) | inputs: HAR-X's 6 regressors | "
+          "target: level, no transformation/smearing ===")
     folds, preds = run(df, args.horizons, test_years)
 
     # ---- Same rows as HAR-X: training size per fold, test rows and y_true ----
@@ -191,23 +191,23 @@ def main():
     abl = abl[abl["variant"] == "har_x"].set_index(["horizon", "test_year"])
     j = folds.set_index(["horizon", "test_year"]).join(
         abl[["n_train", "n_test", "rmse", "mae", "r2_oos"]], rsuffix="_har_x")
-    assert (j["n_train"] == j["n_train_har_x"]).all(), "train satirlari HAR-X'ten farkli"
-    assert (j["n_test"] == j["n_test_har_x"]).all(), "test satirlari HAR-X'ten farkli"
+    assert (j["n_train"] == j["n_train_har_x"]).all(), "train rows differ from HAR-X"
+    assert (j["n_test"] == j["n_test_har_x"]).all(), "test rows differ from HAR-X"
     ap_ = pd.read_csv(alignment.out("ablation_exogenous_predictions.csv", al))
     ap_ = ap_[ap_["variant"] == "har_x"]
     chk = preds.merge(ap_[["horizon", "Date", "y_true", "pred"]], on=["horizon", "Date"],
                       suffixes=("", "_harx"), validate="1:1")
     assert len(chk) == len(preds)
     assert np.allclose(chk["y_true"], chk["y_true_harx"], rtol=0, atol=0)
-    print("\n[OK] XGBoost-6 ile HAR-X ayni train/test satirlarini goruyor.")
+    print("\n[OK] XGBoost-6 and HAR-X see the same train/test rows.")
     covered = lambda d: d["horizon"].isin(args.horizons) & d["test_year"].isin(test_years)
     alignment.check_equal(folds, "exploratory_xgb6_folds.csv", ["horizon", "test_year"],
                           ["n_train", "n_test", "n_train_effective", "capacity_tier",
                            "train_mean_target"], al, rows=covered,
                           what="train/test satir sayilari + kapasite kademesi")
     if trial:
-        print(f"Deneme kosusu ({args.max_folds} fold) -- cikti YAZILMADI. "
-              f"Sure {time.time() - t0:.1f} sn.")
+        print(f"Trial run ({args.max_folds} folds) -- outputs NOT WRITTEN. "
+              f"Runtime {time.time() - t0:.1f} s.")
         return
 
     # ---- Side-by-side: XGBoost-6, HAR-X, primary XGBoost ----
@@ -257,7 +257,7 @@ def main():
                    "seed": SEED, "runtime_seconds": round(runtime, 1),
                    "results": out.to_dict(orient="records")}, f, indent=2)
 
-    print("\n=== Fold ortalamasi (ana metrige giren fold'lar) ===")
+    print("\n=== Fold mean (folds entering the main metric) ===")
     print(out[["horizon", "n_folds", "rmse_xgb6", "rmse_har_x", "rmse_xgb_primary",
                "rmse_pct_xgb6_vs_har_x", "rmse_pct_xgb_primary_vs_xgb6",
                "rmse_wins_xgb6", "rmse_wins_har_x", "rmse_sign_p_two_sided"]]
@@ -266,8 +266,8 @@ def main():
                "mae_wins_har_x", "mae_sign_p_two_sided", "r2_oos_xgb6", "r2_oos_har_x",
                "n_folds_tier_yuksek", "n_folds_tier_orta", "n_folds_tier_dusuk",
                "n_clipped_total"]].to_string(index=False, float_format=lambda v: f"{v:.4f}"))
-    print(f"\nYazildi: exploratory_xgb6.csv, _folds, _predictions, _summary.json "
-          f"({runtime:.1f} sn)")
+    print(f"\nWritten: exploratory_xgb6.csv, _folds, _predictions, _summary.json "
+          f"({runtime:.1f} s)")
 
 
 if __name__ == "__main__":

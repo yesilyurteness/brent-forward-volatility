@@ -142,8 +142,8 @@ def main():
     mkey = lambda m, h, y: m[(m["model"] == "bilstm") & (m["horizon"] == h) &
                              (m["test_year"] == y)].iloc[0]
 
-    print(f"=== BiLSTM sabit {N_EPOCHS} epoch | {al} | ufuklar {args.horizons} | "
-          f"yalnizca '{TIER}' kademe ===")
+    print(f"=== BiLSTM fixed {N_EPOCHS} epochs | {al} | horizons {args.horizons} | "
+          f"'{TIER}' tier only ===")
     fold_rows, hist_rows, pred_frames = [], [], []
     for h in args.horizons:
         d = df.copy()
@@ -252,12 +252,12 @@ def main():
                 "test_year": test_year, "include_in_main": include_main,
                 "y_true": y_te, "pred_bilstm_k": snaps[k]["pred"],
                 "pred_bilstm_200": snaps[N_EPOCHS]["pred"]}))
-            print(f"  h={h:3d} {test_year} | k={k:3d} | kayip k {loss_at(k):.4f} -> "
+            print(f"  h={h:3d} {test_year} | k={k:3d} | loss k {loss_at(k):.4f} -> "
                   f"200 {loss_at(N_EPOCHS):.4f} ({row['loss_ratio_k_to_200']:.2f}x; "
                   f"eval {row['train_mse_eval_ratio_k_to_200']:.2f}x) | RMSE "
                   f"{m[k]['rmse']:.6f} -> {m[N_EPOCHS]['rmse']:.6f} | "
                   f"sd_or {row['pred_std_ratio_k']:.2f} -> {row['pred_std_ratio_200']:.2f}"
-                  f" | {fit_secs:.0f}s  [k'da kosuyla ayni: OK]", flush=True)
+                  f" | {fit_secs:.0f}s  [same as the run at k: OK]", flush=True)
 
     folds = pd.DataFrame(fold_rows)
     agg = []
@@ -282,11 +282,11 @@ def main():
         })
     agg = pd.DataFrame(agg)
     pd.set_option("display.width", 250)
-    print("\n=== OZET (ana fold'lar; yuksek kademe) ===")
+    print("\n=== SUMMARY (main folds; high tier) ===")
     print(agg.round(4).T.to_string())
-    print(f"Sure: {(time.time() - t0) / 60:.1f} dakika")
+    print(f"Runtime: {(time.time() - t0) / 60:.1f} minutes")
     if smoke:
-        print("Duman testi: cikti yazilmadi.")
+        print("Smoke test: no outputs written.")
         return
 
     sfx = alignment.suffix(al)
@@ -313,7 +313,7 @@ def main():
     }
     with open(OUT_DIR / f"bilstm_fixed200_summary{sfx}.json", "w", encoding="utf-8") as f:
         json.dump(summary, f, ensure_ascii=False, indent=2)
-    print(f"Yazildi: bilstm_fixed200_*{sfx}")
+    print(f"Written: bilstm_fixed200_*{sfx}")
 
 
 if __name__ == "__main__":

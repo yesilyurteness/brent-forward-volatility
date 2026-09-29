@@ -174,7 +174,7 @@ def select_capacity(n_effective):
     for threshold, name, params in CAPACITY_TIERS:
         if n_effective >= threshold:
             return name, {**XGB_COMMON, **params}
-    raise RuntimeError("CAPACITY_TIERS son elemani 0 esikli olmali")
+    raise RuntimeError("the last element of CAPACITY_TIERS must have threshold 0")
 
 MODELS = ("xgboost", "train_mean", "past_vol")
 
@@ -269,21 +269,21 @@ def run_horizon(h, df, feature_cols, log_cols, daily_ret, test_years,
         train_idx_all = df.index[df["year"] < test_year]
         test_idx_all = df.index[df["year"] == test_year]
         assert len(train_idx_all) > 0 and len(test_idx_all) > 0, \
-            f"h={h} fold {fold_id}: bos dilim"
+            f"h={h} fold {fold_id}: empty slice"
         assert train_idx_all.max() < test_idx_all.min(), \
-            f"h={h} fold {fold_id}: train test'ten sonra gelen satir iceriyor"
+            f"h={h} fold {fold_id}: train contains a row that comes after test"
 
         # --- (b) Embargo: drop the last h training rows --------------------
         embargo_idx = train_idx_all[-h:]
         train_idx = train_idx_all[:-h]
-        assert len(train_idx) > 0, f"h={h} fold {fold_id}: embargo train'i tuketti"
+        assert len(train_idx) > 0, f"h={h} fold {fold_id}: the embargo consumed the training set"
         # The last remaining training row's target (t+1...t+h) must not reach the first test row.
         assert train_idx.max() + h < test_idx_all.min(), (
-            f"h={h} fold {fold_id}: embargo yetersiz -- son train satiri "
-            f"{train_idx.max()} + h={h}, ilk test satiri {test_idx_all.min()}"
+            f"h={h} fold {fold_id}: embargo insufficient -- last train row "
+            f"{train_idx.max()} + h={h}, first test row {test_idx_all.min()}"
         )
         assert len(set(train_idx) & set(test_idx_all)) == 0, \
-            f"h={h} fold {fold_id}: train ve test kesisiyor"
+            f"h={h} fold {fold_id}: train and test overlap"
 
         # --- NaN cleanup (AFTER the embargo) -------------------------------
         # pred_past_vol is both a baseline and the denominator of the "ratio" target, so
@@ -294,16 +294,16 @@ def run_horizon(h, df, feature_cols, log_cols, daily_ret, test_years,
         tr = df.loc[train_idx[tr_ok.values]]
         te = df.loc[test_idx_all[te_ok.values]]
         assert len(tr) > 0 and len(te) > 0, \
-            f"h={h} fold {fold_id}: NaN sonrasi bos dilim"
+            f"h={h} fold {fold_id}: empty slice after NaN removal"
 
         X_tr, y_tr = tr[feature_cols], tr["y"].to_numpy(dtype="float64")
         X_te, y_te = te[feature_cols], te["y"].to_numpy(dtype="float64")
         pv_tr = tr["pred_past_vol"].to_numpy(dtype="float64")
         pv_te = te["pred_past_vol"].to_numpy(dtype="float64")
         assert (y_tr > 0).all() and (y_te > 0).all(), \
-            "Hedef pozitif olmali (log donusumu icin)"
+            "The target must be positive (for the log transform)"
         assert (pv_tr > 0).all() and (pv_te > 0).all(), \
-            "past_vol pozitif olmali (ratio hedefinin paydasi ve log argumani)"
+            "past_vol must be positive (denominator of the ratio target and log argument)"
 
         # --- (c) Preprocessing: fit on training data only ------------------
         pp = fit_preproc(X_tr, log_cols)
@@ -319,7 +319,7 @@ def run_horizon(h, df, feature_cols, log_cols, daily_ret, test_years,
         elif target_mode == "log":
             y_tr_fit = np.log(y_tr)
         else:
-            raise ValueError(f"Bilinmeyen target_mode: {target_mode}")
+            raise ValueError(f"Unknown target_mode: {target_mode}")
         # Capacity tier: derived only from the training row count and h.
         n_effective = len(tr) / h
         tier_name, xgb_params = select_capacity(n_effective)
@@ -426,7 +426,7 @@ def run_horizon(h, df, feature_cols, log_cols, daily_ret, test_years,
                   f"train {len(tr):4d} (embargo -{len(embargo_idx)}, "
                   f"NaN -{len(train_idx) - len(tr)}) | test {len(te):3d} "
                   f"(NaN -{len(test_idx_all) - len(te)}) | "
-                  f"etkin {n_effective:6.1f} -> {tier_name:6s} | "
+                  f"effective {n_effective:6.1f} -> {tier_name:6s} | "
                   f"smear {smearing:.4f} | "
                   f"RMSE {fold_metrics['xgboost']['rmse']:.6f}{flag}")
 
@@ -484,15 +484,15 @@ def aggregate(metrics_df, preds_df, h):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--max-folds", type=int, default=None,
-                    help="Duman testi icin ilk N fold (varsayilan: hepsi)")
+                    help="First N folds for a smoke test (default: all)")
     ap.add_argument("--horizons", type=int, nargs="+", default=HORIZONS,
-                    help=f"Calisacak ufuklar (varsayilan: {HORIZONS})")
+                    help=f"Horizons to run (default: {HORIZONS})")
     ap.add_argument("--target-mode", choices=["ratio", "log"],
                     default=TARGET_MODE_DEFAULT,
-                    help="ratio: past_vol'den sapmayi tahmin et (varsayilan). "
-                         "log: duz log hedef (onceki surum).")
+                    help="ratio: forecast the deviation from past_vol (default). "
+                         "log: plain log target (earlier version).")
     ap.add_argument("--suffix", default="",
-                    help="Cikti dosya adlarina eklenecek ek (karsilastirma icin)")
+                    help="Suffix to append to the output file names (for comparison)")
     alignment.add_argument(ap)
     args = ap.parse_args()
     asfx = alignment.suffix(args.gpr_alignment)
@@ -504,17 +504,17 @@ def main():
                        parse_dates=["Date_parsed"])
     tgt = pd.read_csv(OUT_DIR / "targets.csv", parse_dates=["Date_parsed"])
     raw = pd.read_excel(DATA_PATH)
-    assert len(feat) == len(tgt) == len(raw), "Kaynak dosyalarin satir sayisi uyusmuyor"
+    assert len(feat) == len(tgt) == len(raw), "The row counts of the source files do not match"
     assert (feat["Date"].values == tgt["Date"].values).all(), \
-        "features ve targets Date sutunlari eslesmiyor"
+        "The Date columns of features and targets do not match"
     assert (feat["Date"].values == raw["Date"].values).all(), \
-        "features ve ham veri Date sutunlari eslesmiyor"
-    assert feat["Date_parsed"].is_monotonic_increasing, "Tarihler sirali degil"
+        "The Date columns of features and the raw data do not match"
+    assert feat["Date_parsed"].is_monotonic_increasing, "The dates are not sorted"
 
     feature_cols = [c for c in feat.columns if c not in ("Date", "Date_parsed")]
     log_cols = [c for c in LOG_FEATURES if c in feature_cols]
     assert len(log_cols) == len(LOG_FEATURES), (
-        "LOG_FEATURES icinde features.csv'de olmayan sutun var: "
+        "LOG_FEATURES contains a column that is not in features.csv: "
         f"{set(LOG_FEATURES) - set(feature_cols)}"
     )
 
@@ -526,18 +526,18 @@ def main():
 
     test_years = list(range(FIRST_TEST_YEAR, LAST_TEST_YEAR + 1))
     assert len(test_years) == EXPECTED_N_FOLDS, \
-        f"Beklenen fold sayisi {EXPECTED_N_FOLDS}, bulunan {len(test_years)}"
+        f"Expected number of folds {EXPECTED_N_FOLDS}, found {len(test_years)}"
     if args.max_folds is not None:
         test_years = test_years[:args.max_folds]
-        print(f"[DUMAN TESTI] yalnizca ilk {len(test_years)} fold\n")
+        print(f"[SMOKE TEST] only the first {len(test_years)} folds\n")
 
-    print(f"=== Walk-forward | ufuklar {args.horizons} | {len(test_years)} fold | "
-          f"{len(feature_cols)} ozellik | hedef modu: {args.target_mode} ===")
+    print(f"=== Walk-forward | horizons {args.horizons} | {len(test_years)} folds | "
+          f"{len(feature_cols)} features | target mode: {args.target_mode} ===")
     if args.target_mode == "ratio":
-        print("Model past_vol'den SAPMAYI tahmin ediyor; y_hat~0 ise tahmin "
-              "baseline'a esitlenir.\n")
+        print("The model forecasts the DEVIATION from past_vol; if y_hat~0 the forecast "
+              "equals the baseline.\n")
     else:
-        print("Model duz log(vol_h) tahmin ediyor (onceki surum).\n")
+        print("The model forecasts plain log(vol_h) (earlier version).\n")
 
     all_preds, all_folds, all_agg = [], [], []
     for h in args.horizons:
@@ -570,7 +570,7 @@ def main():
     # ===================================================================
     pd.set_option("display.width", 200)
 
-    print("=== Fold satir sayilari (ufuk basina embargo etkisi) ===")
+    print("=== Fold row counts (embargo effect per horizon) ===")
     piv = fold_all.pivot_table(
         index="horizon",
         values=["n_embargoed", "n_train_final", "n_test_final"],
@@ -579,12 +579,12 @@ def main():
     )
     print(piv.to_string())
     print()
-    print("=== ETKIN BAGIMSIZ GOZLEM SAYISI (ortusen hedef pencereleri) ===")
-    print("Hedef, gelecek h gunun ORTUSEN penceresinden hesaplanir; ardisik satirlarin")
-    print("hedefleri neredeyse ayni bilgiyi tasir. Kabaca her h satir = 1 bagimsiz")
-    print("gozlem. Model kapasitesiyle birlikte okunmalidir:")
-    print(f"XGBoost {len(feature_cols)} ozellik kullaniyor; agac sayisi ve derinlik "
-          "kademeli kapasite kuraliyla fold basina secilir.")
+    print("=== NUMBER OF EFFECTIVE INDEPENDENT OBSERVATIONS (overlapping target windows) ===")
+    print("The target is computed from the OVERLAPPING window of the next h days; the targets of")
+    print("consecutive rows carry almost the same information. Roughly every h rows = 1 independent")
+    print("observation. To be read together with the model capacity:")
+    print(f"XGBoost uses {len(feature_cols)} features; the number of trees and the depth are "
+          "chosen per fold by the tiered capacity rule.")
     eff = fold_all.groupby("horizon").agg(
         train_satir_min=("n_train_final", "min"),
         train_satir_maks=("n_train_final", "max"),
@@ -601,29 +601,29 @@ def main():
     crowded = eff[eff["train_etkin_maks"] < len(feature_cols)]
     if len(crowded):
         print()
-        print("SINIRLILIK: asagidaki ufuklarda EN BUYUK fold'un etkin bagimsiz gozlem")
-        print("sayisi bile ozellik sayisindan azdir. Bu ufuklardaki sonuclar asiri")
-        print("uyuma acik kabul edilmeli ve makalede sinirlilik olarak raporlanmalidir.")
-        print(f"Etkilenen ufuklar: {crowded.index.tolist()}")
+        print("LIMITATION: at the horizons below, even the LARGEST fold's number of effective")
+        print("independent observations is below the number of features. The results at these horizons")
+        print("must be regarded as prone to overfitting and reported as a limitation in the paper.")
+        print(f"Affected horizons: {crowded.index.tolist()}")
     print()
 
-    print("=== KAPASITE KADEMELERI (fold basina, onceden ilan edilmis kural) ===")
-    print("Kademe = f(train satiri / h). Test verisine bakilmaz. TEK SEFERLIK teshis;")
-    print("bu esikler ve parametreler uzerinde iterasyon yapilmayacak.")
+    print("=== CAPACITY TIERS (per fold, rule declared in advance) ===")
+    print("Tier = f(train rows / h). Test data is not looked at. ONE-OFF diagnosis;")
+    print("no iteration will be done on these thresholds and parameters.")
     for thr, name, prm in CAPACITY_TIERS:
-        print(f"  etkin gozlem >= {thr:3d} -> {name:6s}: {prm}")
+        print(f"  effective obs. >= {thr:3d} -> {name:6s}: {prm}")
     print()
     tier_piv = fold_all.pivot(index="test_year", columns="horizon",
                               values="capacity_tier")
-    print("Fold x ufuk kademe haritasi:")
+    print("Fold x horizon tier map:")
     print(tier_piv.to_string())
     print()
-    print("Kademe dagilimi:")
+    print("Tier distribution:")
     print(fold_all.groupby(["horizon", "capacity_tier"]).size()
           .rename("fold_sayisi").reset_index().to_string(index=False))
     print()
 
-    print("2026 fold'unda gecerli test gozlemi (kismi yil):")
+    print("Valid test observations in the 2026 fold (partial year):")
     p26 = fold_all[fold_all["test_year"] == PARTIAL_YEAR][
         ["horizon", "n_test_before_nan", "n_test_dropped_nan", "n_test_final",
          "include_in_main"]
@@ -631,25 +631,25 @@ def main():
     print(p26.to_string(index=False))
     print()
 
-    print("=== Duan smearing katsayilari ===")
+    print("=== Duan smearing coefficients ===")
     sm = fold_all.pivot(index="test_year", columns="horizon", values="smearing")
     print(sm.to_string(float_format=lambda v: f"{v:.4f}"))
     weak = fold_all[fold_all["smearing"] < SMEARING_WEAK_THRESHOLD]
     if len(weak):
-        print(f"\nUYARI: {len(weak)}/{len(fold_all)} fold'da katsayi < "
-              f"{SMEARING_WEAK_THRESHOLD}. Ornekleme-ici artiklar modelin train'e")
-        print("asiri uyumu nedeniyle kucuk cikiyor olabilir; duzeltme yetersiz kaliyor.")
-        print("Optuna asamasinda katsayi validation artiklarindan hesaplanacak.")
-        print("Etkilenen (ufuk, yil) ciftleri:",
+        print(f"\nWARNING: in {len(weak)}/{len(fold_all)} folds the coefficient < "
+              f"{SMEARING_WEAK_THRESHOLD}. The in-sample residuals may be small because the model")
+        print("overfits the training set; the correction falls short.")
+        print("In the Optuna stage the coefficient will be computed from validation residuals.")
+        print("Affected (horizon, year) pairs:",
               list(zip(weak["horizon"].tolist(), weak["test_year"].tolist())))
     print()
 
-    print("=== ANA METRIKLER: RMSE ve MAE (fold ortalamasi) ===")
+    print("=== MAIN METRICS: RMSE and MAE (fold mean) ===")
     show = agg_all[["horizon", "model", "n_folds", "rmse_fold_mean",
                     "mae_fold_mean", "r2_oos_fold_mean"]]
     print(show.to_string(index=False, float_format=lambda v: f"{v:.6f}"))
     print()
-    print("XGBoost'un baseline'lara gore RMSE kazanci (fold ortalamasi, negatif=iyi):")
+    print("XGBoost's RMSE gain relative to the baselines (fold mean, negative=better):")
     gain = []
     for h in args.horizons:
         a = agg_all[agg_all["horizon"] == h].set_index("model")
@@ -663,15 +663,15 @@ def main():
     print(pd.DataFrame(gain).to_string(index=False, float_format=lambda v: f"{v:.2f}"))
     print()
 
-    print("=== DIPNOT METRIGI: standart R2 (karar dayanagi DEGIL) ===")
-    print("Referansi test yilinin KENDI ortalamasidir; bu deger tahmin aninda")
-    print("bilinemez. Sakin yillarda fold SST'si kuculdugu icin buyuk negatif degerler")
-    print("uretir. Bkz. CLAUDE.md 'Metrik raporlama kurali'.")
+    print("=== FOOTNOTE METRIC: standard R2 (NOT a basis for decisions) ===")
+    print("Its reference is the test year's OWN mean; this value cannot be known")
+    print("at forecast time. In calm years the fold SST shrinks, which produces large negative")
+    print("values. See CLAUDE.md 'Metric reporting rule'.")
     r2piv = metrics_all[metrics_all["model"] == "xgboost"].pivot(
         index="test_year", columns="horizon", values="r2")
     print(r2piv.to_string(float_format=lambda v: f"{v:.3f}"))
     print()
-    print("Fold SST'lerinin ufuk basina yayilimi (standart R2'nin kararsizligi):")
+    print("Spread of the fold SSTs per horizon (instability of standard R2):")
     sstp = metrics_all[metrics_all["model"] == "xgboost"].groupby("horizon")["sst_own"]
     print(pd.DataFrame({"sst_min": sstp.min(), "sst_max": sstp.max(),
                         "maks/min_kat": sstp.max() / sstp.min()}).to_string(
@@ -680,17 +680,17 @@ def main():
 
     # --- The 2026 partial-year footnote -----------------------------------
     excluded = metrics_all[~metrics_all["include_in_main"]]
-    print("=== 2026 KISMI YIL DIPNOTU ===")
+    print("=== 2026 PARTIAL-YEAR FOOTNOTE ===")
     if len(excluded):
-        print("Asagidaki fold'lar ana metrik ortalamasina DAHIL EDILMEDI.")
-        print("Kismi yil, dusuk istatistiksel guc. Yalnizca bilgi amaclidir;")
-        print("model karsilastirmasi veya secimi icin KULLANILMAZ.")
+        print("The folds below were NOT INCLUDED in the main metric average.")
+        print("Partial year, low statistical power. Informational only;")
+        print("NOT USED for model comparison or selection.")
         print(excluded[["horizon", "test_year", "model", "n_test", "rmse", "mae",
                         "r2_oos"]].to_string(index=False,
                                              float_format=lambda v: f"{v:.6f}"))
     else:
-        print("Bu calistirmada haric tutulan fold yok "
-              f"(yalnizca h={sorted(EXCLUDE_2026_HORIZONS)} icin devreye girer).")
+        print("No fold excluded in this run "
+              f"(applies only to h={sorted(EXCLUDE_2026_HORIZONS)}).")
     print()
 
     # ===================================================================
@@ -786,11 +786,11 @@ def main():
     with open(OUT_DIR / f"wf_summary_all{sfx}.json", "w", encoding="utf-8") as f:
         json.dump(summary, f, ensure_ascii=False, indent=2)
 
-    print(f"Yazildi: wf_predictions_h*{sfx}.csv, wf_metrics_h*{sfx}.csv")
-    print(f"Yazildi: wf_metrics_all{sfx}.csv ({len(metrics_all)} satir), "
-          f"wf_aggregate_all{sfx}.csv ({len(agg_all)} satir)")
-    print(f"Rapor  : wf_summary_all{sfx}.json")
-    print(f"Sure   : {runtime:.1f} saniye")
+    print(f"Written: wf_predictions_h*{sfx}.csv, wf_metrics_h*{sfx}.csv")
+    print(f"Written: wf_metrics_all{sfx}.csv ({len(metrics_all)} rows), "
+          f"wf_aggregate_all{sfx}.csv ({len(agg_all)} rows)")
+    print(f"Report : wf_summary_all{sfx}.json")
+    print(f"Runtime: {runtime:.1f} seconds")
 
 
 if __name__ == "__main__":

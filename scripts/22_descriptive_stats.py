@@ -126,7 +126,7 @@ def main():
                     "footnote", v[c].to_numpy()) for c in ("GPRD", "GPRD_THREAT")]
     else:
         meta["own_calendar"] = None
-        print(f"UYARI: {OWN_CAL_PATH.name} yok; kendi-takvim dipnot satirlari atlandi")
+        print(f"WARNING: {OWN_CAL_PATH.name} missing; own-calendar footnote rows skipped")
 
     rows = [{"variable": k, "label": lab, "role": role, **describe(s)}
             for k, lab, role, s in series]
@@ -137,7 +137,7 @@ def main():
         json.dump(meta, f, ensure_ascii=False, indent=2)
     pd.set_option("display.width", 250)
     print(out.drop(columns=["label"]).to_string(index=False, float_format=lambda v: f"{v:.4g}"))
-    print(f"Yazildi: {path.name}, {path.with_suffix('.json').name}")
+    print(f"Written: {path.name}, {path.with_suffix('.json').name}")
 
 
 if __name__ == "__main__":

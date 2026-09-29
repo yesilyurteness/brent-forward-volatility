@@ -36,7 +36,11 @@ log      outputs/experiment_log_en.md vs outputs/experiment_log.md. The translat
 ast      For each script, the syntax tree at --base and in the working tree are compared
          with every string constant blanked (inside f-strings: the formatted values are
          kept in order, with their format specs). An empty difference proves that only
-         string literals (messages, labels, docstrings) changed.
+         string literals (messages, labels, docstrings) changed. With --allow, every
+         changed string is also classified by where it is used (print, assert, raise,
+         help, docstring, other) and a change outside the allowed contexts fails: a
+         string that only reaches the console or an error message cannot change an
+         output file.
 terms    Side-by-side listing of the lines whose Turkish original contains one of the
          status terms (önceden, ön-kayıt, keşifsel, post hoc, görüldükten sonra, ...),
          for the log and the package. Also lists every English line containing
@@ -235,7 +239,47 @@ def _stmts(src):
     return ast.dump(tree), out
 
 
-def check_ast(base, paths):
+def _strings(tree):
+    """String-bearing nodes in a fixed order: each f-string as one item (its literal parts
+    joined, values as {}), each other str constant as one item. Values inside f-strings are
+    visited too, so a changed dictionary key inside a placeholder is still seen."""
+    out, stack = [], [tree]
+    while stack:
+        n = stack.pop(0)
+        if isinstance(n, ast.JoinedStr):
+            out.append((n, "".join(v.value if isinstance(v, ast.Constant) else "{}"
+                                    for v in n.values)))
+            stack.extend(v.value for v in n.values if isinstance(v, ast.FormattedValue))
+            continue
+        if isinstance(n, ast.Constant) and isinstance(n.value, str):
+            out.append((n, n.value))
+        stack.extend(ast.iter_child_nodes(n))
+    return out
+
+
+def _context(node, parent):
+    """print / assert / raise / help / docstring / other, from the nearest enclosing use."""
+    cur = node
+    while cur in parent:
+        par = parent[cur]
+        if isinstance(par, ast.Assert) and cur is par.msg:
+            return "assert"
+        if isinstance(par, ast.Raise):
+            return "raise"
+        if isinstance(par, ast.keyword) and par.arg == "help":
+            return "help"
+        if isinstance(par, ast.Call) and isinstance(par.func, ast.Name) and par.func.id == "print":
+            return "print"
+        if (isinstance(par, ast.Expr) and cur is par.value and isinstance(cur, ast.Constant)
+                and isinstance(parent.get(par), (ast.Module, ast.FunctionDef, ast.ClassDef))):
+            return "docstring"
+        if isinstance(par, ast.stmt):
+            return "other"
+        cur = par
+    return "other"
+
+
+def check_ast(base, paths, allow=None):
     diff_files = 0
     for p in paths:
         rel = Path(p).resolve().relative_to(ROOT).as_posix()
@@ -244,6 +288,18 @@ def check_ast(base, paths):
         (to, so), (tn, sn) = _stmts(old), _stmts(new)
         if to == tn:
             print(f"[OK] {rel}: syntax tree identical with string constants blanked")
+            if allow is not None:
+                t_new = ast.parse(new)
+                parent = {c: n for n in ast.walk(t_new) for c in ast.iter_child_nodes(n)}
+                a, b = _strings(ast.parse(old)), _strings(t_new)
+                if len(a) != len(b):
+                    fail(f"{rel}: string node count differs ({len(a)} vs {len(b)})")
+                ctx = Counter(_context(nb, parent) for (_, sa), (nb, sb) in zip(a, b)
+                              if sa != sb)
+                bad = {k: v for k, v in ctx.items() if k not in allow}
+                print(f"     changed strings by context: {dict(ctx) or 'none'}")
+                if bad:
+                    fail(f"{rel}: strings changed outside {sorted(allow)}: {bad}")
             continue
         diff_files += 1
         ca, cb = Counter(d for _, d in so), Counter(d for _, d in sn)
@@ -288,13 +344,17 @@ def main():
     s = sub.add_parser("ast")
     s.add_argument("paths", nargs="+")
     s.add_argument("--base", default=FREEZE_COMMIT)
+    s.add_argument("--allow", default=None,
+                   help="comma list of contexts in which a string may change "
+                        "(print, assert, raise, help, docstring, other)")
     args = ap.parse_args()
     if args.mode == "package":
         check_package(args.base, args.gpr_alignment)
     elif args.mode == "log":
         check_log()
     elif args.mode == "ast":
-        check_ast(args.base, args.paths)
+        check_ast(args.base, args.paths,
+                  None if args.allow is None else set(args.allow.split(",")))
     else:
         check_terms(args.base, args.gpr_alignment)
 

@@ -82,7 +82,7 @@ def main():
     for c in ["rmse_fold_mean", "mae_fold_mean", "r2_oos_fold_mean"]:
         assert np.allclose(chk[f"{c}_full"], chk[c], rtol=1e-9, atol=1e-12), c
     assert (chk["n_folds_full"] == chk["n_folds"]).all()
-    print(f"Kontrol: tam orneklem ana tabloyu birebir uretiyor ({len(ref)} satir).")
+    print(f"Check: the full sample reproduces the main table exactly ({len(ref)} rows).")
 
     gapfree = aggregate(m[m["test_year"] >= GAPFREE_START], "2017plus")
     gapper = aggregate(m[m["test_year"].between(*GAP_PERIOD)], "2012_2016")
@@ -116,13 +116,13 @@ def main():
                   "rank_rmse_2017plus", "rank_rmse_change", "mae_fold_mean_2017plus",
                   "rank_mae_full", "rank_mae_2017plus", "r2_oos_fold_mean_2017plus"]]
         print(show.to_string(index=False, float_format=lambda v: f"{v:.6f}"))
-        print(f"Spearman RMSE-sirasi tam vs 2017+: {d['spearman_rmse_full_vs_2017plus']:.3f} | "
+        print(f"Spearman RMSE rank full vs 2017+: {d['spearman_rmse_full_vs_2017plus']:.3f} | "
               f"MAE: {d['spearman_mae_full_vs_2017plus']:.3f}")
 
     with open(alignment.out("robustness_gapfree_2017plus_summary.json", AL), "w", encoding="utf-8") as f:
         summary["gpr_alignment"] = AL
         json.dump(summary, f, indent=2, ensure_ascii=False)
-    print("\nYazildi: robustness_gapfree_2017plus.csv, robustness_gapfree_2017plus_summary.json")
+    print("\nWritten: robustness_gapfree_2017plus.csv, robustness_gapfree_2017plus_summary.json")
 
 
 if __name__ == "__main__":

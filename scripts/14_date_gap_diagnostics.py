@@ -254,23 +254,23 @@ def main():
     with open(OUT_DIR / "date_gap_diagnostics_summary.json", "w", encoding="utf-8") as f:
         json.dump(summary, f, indent=2)
 
-    print(f"=== Tarih boslugu tanisi | {n_ret} getiri ===")
+    print(f"=== Date-gap diagnostics | {n_ret} returns ===")
     print(dist.groupby("bucket")["n_rows"].sum().to_string())
-    print(f"\nEksik hafta ici gun iceren satir: {len(skipped)} "
-          f"({summary['n_missing_weekdays']} gun)")
-    print(f"  NYSE tatiliyle aciklanan: {summary['n_rows_explained_by_nyse_holidays']}")
-    print(f"  Yalniz UK tatili: {summary['n_rows_uk_only_holiday']}")
-    print(f"  GERCEK BOSLUK: {summary['n_real_gap_rows']} satir, "
-          f"{summary['n_skipped_trading_days']} islem gunu")
-    print(f"UK-yalniz tatiller veride mevcut: {uk_present}/{len(uk_trading)} "
-          f"-> veri ABD takvimini izliyor")
-    print("\nYillara gore:")
+    print(f"\nRows with missing weekdays: {len(skipped)} "
+          f"({summary['n_missing_weekdays']} days)")
+    print(f"  explained by NYSE holidays: {summary['n_rows_explained_by_nyse_holidays']}")
+    print(f"  UK-only holiday: {summary['n_rows_uk_only_holiday']}")
+    print(f"  REAL GAP: {summary['n_real_gap_rows']} rows, "
+          f"{summary['n_skipped_trading_days']} trading days")
+    print(f"UK-only holidays present in the data: {uk_present}/{len(uk_trading)} "
+          f"-> the data follow the US calendar")
+    print("\nBy year:")
     print(by_year[by_year["n_real_gap_rows"] > 0].to_string(index=False))
-    print("\nHedef penceresinde gercek bosluk:")
+    print("\nReal gap in the target window:")
     print(exposure[["horizon", "n_affected_full", "n_valid_targets_full", "pct_affected_full",
                     "n_affected_test", "n_test_targets", "pct_affected_test"]]
           .to_string(index=False, float_format=lambda v: f"{v:.2f}"))
-    print("\nYazildi: date_gap_distribution.csv, date_gap_rows.csv, date_gap_by_year.csv, "
+    print("\nWritten: date_gap_distribution.csv, date_gap_rows.csv, date_gap_by_year.csv, "
           "date_gap_target_exposure.csv, date_gap_diagnostics_summary.json")
 
 

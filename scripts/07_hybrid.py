@@ -221,7 +221,7 @@ def main():
                      suffixes=("", "_b"))
               .merge(ben_p[key + ["pred_har_x", "pred_har_x_log", "pred_har",
                                   "y_true"]], on=key, suffixes=("", "_n")))
-    assert len(merged) == len(xgb_p), "Tahmin dosyalari test satirlarinda ortusmuyor"
+    assert len(merged) == len(xgb_p), "The prediction files do not coincide on the test rows"
     assert (merged["y_true"] - merged["y_true_b"]).abs().max() < 1e-12
     assert (merged["y_true"] - merged["y_true_n"]).abs().max() < 1e-12
     merged = merged.drop(columns=["y_true_b", "y_true_n"])
@@ -262,7 +262,7 @@ def main():
             tr_all = d.index[d["year"] < ty]
             te_all = d.index[d["year"] == ty]
             tr_emb = tr_all[:-h]
-            assert tr_emb.max() + h < te_all.min(), f"h={h} {ty}: embargo yetersiz"
+            assert tr_emb.max() + h < te_all.min(), f"h={h} {ty}: embargo insufficient"
             assert not (set(tr_emb) & set(te_all))
 
             need_x = HARX_COLS + ["y"]
@@ -283,7 +283,7 @@ def main():
                          & (merged["Date"].isin(d.loc[te, "Date"]))]
             ref = ref.set_index("Date").loc[d.loc[te, "Date"]]["pred_har_x"].to_numpy()
             assert np.allclose(harx_te, ref, atol=1e-10), (
-                f"h={h} {ty}: HAR-X refit'i standalone ile eslesmiyor"
+                f"h={h} {ty}: the HAR-X refit does not match the standalone one"
             )
 
             # 2) Training residuals, only on the rows XGBoost can use

@@ -207,8 +207,8 @@ def main():
     log_cols = [c for c in LOG_FEATURES if c in feature_cols]
     grouped = [c for v in GROUPS.values() for c in v]
     assert len(grouped) == len(set(grouped)) == len(feature_cols), \
-        "Grup atamasi ortusuyor ya da eksik"
-    assert set(grouped) == set(feature_cols), "Grup atamasi ozellik setiyle uyusmuyor"
+        "The group assignment overlaps or is incomplete"
+    assert set(grouped) == set(feature_cols), "The group assignment does not match the feature set"
 
     d = feat.copy()
     d["year"] = d["Date_parsed"].dt.year
@@ -256,7 +256,7 @@ def main():
                 pred_contribs=True)
             assert contribs.shape == (len(te), len(feature_cols) + 1)
             assert np.allclose(contribs.sum(1), model.predict(Xs_te), atol=1e-4), \
-                f"h={h} {ty}: SHAP toplama ozelligi saglanmiyor"
+                f"h={h} {ty}: the SHAP additivity property does not hold"
             sv = contribs[:, :-1]
             mean_abs = np.abs(sv).mean(axis=0)
 

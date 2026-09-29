@@ -194,9 +194,9 @@ def main():
     key = ["horizon", "Date"]
     df = hyb.merge(ben[key + ["pred_garch", "y_true"]], on=key,
                    suffixes=("", "_b"))
-    assert len(df) == len(hyb), "GARCH birlestirmesi satir sayisini degistirdi"
+    assert len(df) == len(hyb), "the GARCH merge changed the row count"
     assert (df["y_true"] - df["y_true_b"]).abs().max() < 1e-12, \
-        "y_true kaynaklar arasinda eslesmiyor"
+        "y_true does not match across the sources"
     df = df.drop(columns=["y_true_b"])
     df = df[df["include_in_main"]].copy()
     df["dt"] = pd.to_datetime(df["Date"], format="%d.%m.%Y")

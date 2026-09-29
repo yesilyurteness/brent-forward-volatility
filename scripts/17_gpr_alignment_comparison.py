@@ -118,10 +118,10 @@ def main():
     ctrl = j[~j["uses_gpr"]]
     for m in ("rmse", "mae", "r2_oos"):
         assert (ctrl[f"{m}_ts"] == ctrl[f"{m}_pub"]).all(), f"GPR-free model changed: {m}"
-    print(f"[kontrol] ayni orneklem: {len(j)} model x ufuk x fold satirinda test boyutu "
-          "ve fold dahil edilmesi iki surumde ayni")
-    print(f"[kontrol] GPR kullanmayan {sorted(ctrl['model'].unique())}: {len(ctrl)} fold "
-          "satirinda RMSE/MAE/R2_oos BIT DUZEYINDE AYNI")
+    print(f"[check] same sample: in {len(j)} model x horizon x fold rows the test size "
+          "and fold inclusion are the same in both versions")
+    print(f"[check] models without GPR {sorted(ctrl['model'].unique())}: in {len(ctrl)} fold "
+          "rows RMSE/MAE/R2_oos BIT-IDENTICAL")
 
     for m in ("rmse", "mae"):
         j[f"{m}_pct"] = 100 * (j[f"{m}_pub"] / j[f"{m}_ts"] - 1)
@@ -199,20 +199,20 @@ def main():
                   default=str)
 
     pd.set_option("display.width", 220)
-    print("\n=== RMSE: zaman damgali vs yayim-hizali (fold ortalamasi, % = pub/ts - 1) ===")
+    print("\n=== RMSE: timestamp vs publication-aligned (fold mean, % = pub/ts - 1) ===")
     show = agg.pivot(index="model", columns="horizon", values="rmse_pct").reindex(
         [m for m, *_ in MODELS])
     print(show.to_string(float_format=lambda v: f"{v:+.2f}%"))
-    print("\nYayim-hizalinin daha iyi oldugu fold / fark olan fold (RMSE):")
+    print("\nFolds where publication-aligned is better / folds with a difference (RMSE):")
     wins = agg.assign(w=agg["rmse_folds_pub_better"].astype(str) + "/" +
                       (agg["rmse_folds_pub_better"] + agg["rmse_folds_ts_better"]).astype(str))
     print(wins.pivot(index="model", columns="horizon", values="w").reindex(
         [m for m, _, _, g in MODELS if g]).to_string())
-    print("\n=== Dort basamakli ayristirma (RMSE %) ===")
+    print("\n=== Four-step decomposition (RMSE %) ===")
     print(dec.to_string(index=False, formatters={
         c: (lambda v: f"{v:.6f}") if c.startswith("rmse") else (lambda v: f"{v:+.2f}")
         for c in dec.columns if c not in ("horizon", "gpr_alignment")}))
-    print("\nNot:", note)
+    print("\nNote:", note)
 
 
 if __name__ == "__main__":
