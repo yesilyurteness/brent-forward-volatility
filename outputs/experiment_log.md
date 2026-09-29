@@ -2362,3 +2362,57 @@ bir sürekli seri gerektirir ve verisi yok.
 Tek kod değişikliği 03'teki `run_horizon`'a eklenen isteğe bağlı `past_vol` parametresi.
 Varsayılanı mevcut davranışı koruyor; birincil çıktılar yeniden üretilip değişmediği
 kontrol edilecek.
+
+## 25.2 Sonuçlar (2026-09-29, koşudan sonra)
+
+Commit `a4d990f`; `scripts/24_rollover_robustness.py --gpr-alignment publication`, süre
+93 sn. Sayılar paketin §15'inde. Statüler 25.1'deki gibi, değiştirilmedi.
+
+**Doğrulama (assert):**
+- Vade takvimi ICE'ın resmi tablosundaki 88 vadenin 88'ini üretiyor.
+- Boş maskeyle hedefler, getiri özellikleri ve HAR, HAR-X, XGBoost tahminleri bit
+  düzeyinde yeniden üretiliyor; 8 testin değerleri kayıtlı birincil değerlerle aynı.
+- 03'teki `past_vol` parametresinin varsayılan yolu: 03 yayım modunda yeniden koşuldu;
+  tahmin ve metrik dosyaları birebir aynı, yalnızca `runtime_seconds` değişti ve kayıtlı
+  değer geri alındı.
+
+**Örneklem:**
+- 225 vade; 14 vade günü veride yok.
+- A 225, A′ 450 getiri çıkarıyor.
+- B, h=5'te 1122 satırı atıyor (penceresinde geçiş olan satırlar).
+
+**Varyant içi farklar**, fold ortalaması RMSE, `100 × (a/b − 1)`, h=5 / 22 / 66 / 126.
+Birincil sonuç yalnızca yüzdeler için referans olarak verildi; mutlak RMSE
+karşılaştırılmıyor.
+
+| varyant | HAR vs HAR-X | XGBoost vs HAR-X |
+| --- | --- | --- |
+| birincil (referans) | +4.75 / +11.59 / +6.10 / +1.43% | +5.93 / +15.10 / +18.21 / +7.26% |
+| A | +4.88 / +12.10 / +5.86 / +1.13% | +5.83 / +18.80 / +14.48 / +8.56% |
+| A′ | +5.19 / +12.43 / +6.09 / +0.96% | +8.06 / +19.24 / +15.50 / +8.53% |
+| B (yalnızca h=5) | +4.90% | +3.99% |
+
+Üç varyantta da HAR-X her ufukta hem HAR'dan hem XGBoost'tan düşük RMSE'ye sahip. Birincil
+sonuçta da durum bu.
+
+**8 test** (DM ve işaret testi; Holm/BH/BY varyantın kendi testleri içinde):
+
+| varyant | %5'te ayakta kalan | ham değerler |
+| --- | --- | --- |
+| A | hiçbir test, hiçbir düzeltmede | DM HLN p 0.122–0.937. İşaret testinde h=22'de iki test 12/15, ham p 0.035; BH 0.141. |
+| A′ | hiçbir test | h=22 HAR vs HAR-X 13/15, ham p 0.007; Holm ve BH 0.059, BY 0.161. |
+| B (2 test) | hiçbir test | — |
+
+Birincil ailede BH altında reddedilen iki h=22 işaret testi (13/15, BH 0.030) A'da 12/15'e
+iner ve BH altında ayakta kalmaz. A′'de biri 13/15'te kalır ama BH 0.059 ile %5 eşiğinin
+üstündedir.
+
+**Tarih boşluklarıyla örtüşme:** belgelenmiş 40 boşluk satırının 18'i A'da, 27'si A′'de
+getirisi çıkarılan satırlar.
+- A'da: 2008–2013 arası 18 satır.
+- A′'de ek 9 satır: 2013-03-19 – 2014-02-19 arası.
+
+*Hipotez, kanıtlanmış değil:* boşlukların bir kısmı geçiş kaynaklı olabilir. Örtüşme
+nedeni göstermez; A′ iki satır çıkardığı için şans örtüşmesi de artar.
+
+**Sınırlılık:** XGBoost'un fiyat düzeyi özelliklerindeki geçiş etkisi temizlenmedi (25.1).

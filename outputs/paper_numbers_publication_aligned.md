@@ -1,7 +1,7 @@
 # Makale sayıları — yayım-hizalı GPR sürümü (BİRİNCİL)
 
-- **Üretildiği commit:** `cb2166eb66c4505c8de0bdfca1e85aeb6f43f2fc` (Compute the Table 1 own-calendar GPR rows from the 2026-09-01 vintage)
-- **Üretim tarihi:** 2026-09-29T18:11:21+03:00
+- **Üretildiği commit:** `a4d990f446dcb0b4bef802532862bc9fc401b43e` (Run the roll-over robustness check; add Appendix A items to the package)
+- **Üretim tarihi:** 2026-09-29T21:37:51+03:00
 - **Çalışma ağacı:** temiz — girdiler bu commit'teki dosyalarla birebir aynı.
 - Doğrulama: `git checkout <commit> && python scripts/18_paper_numbers.py` aynı sayıları üretmelidir (yalnızca bu başlık değişir).
 
@@ -1022,4 +1022,122 @@ Bölüm 1e'de: tüm modellerin o fold'daki RMSE/MAE/R²_oos'u, n = 101 (h=66) ve
 | GPRD_THREAT (kendi takvimi, tüm takvim günleri) | 6818 | 112.2 | 69.45 | 0 | 809.5 | 2.22 | 10.42 | −5.67 (34) | <0.001 | 23764.9 | <0.001 |
 
 Gözlem tarihli satırlar `data/veriseti.xlsx`'in kaydırılmamış GPR sütunlarıdır (işlem günleri). Kendi takvimi satırları endeksin her takvim gününü (hafta sonları dahil, 6818 gün) kapsar; kaynak, veri setinin üretildiği 2026-09-01 arşiv sürümü `data_gpr_daily_recent_20260901.dta` (SHA-256 `4c8dff4c580046f0…`, git dışı). Bu sürüm veri setinin GPR değerlerini 4641 işlem gününün hepsinde yeniden üretir (en büyük mutlak fark 5.7e-14, kayan nokta yuvarlaması; kontrol edildi). 2025-02-09 tarihinde GPRD 0 (aynı gün GPRD_THREAT 0). GPRD_THREAT 8 günde 0: 2009-04-19, 2016-08-21, 2019-05-12, 2020-08-30, 2023-07-30, 2023-10-22, 2024-09-22, 2025-02-09.
+
+## 15. Ek A: Roll-over sağlamlık analizi (HAR, HAR-X, XGBoost)
+
+**Statüler koşudan önce yazıldı** (experiment log Stage 25.1, commit 44b9eaf) ve sonuçlara göre değiştirilmedi; üç varyant da sonuç ne çıkarsa çıksın raporlanır. Kaynak: `24_rollover_robustness.py`, `rollover_*_publication_aligned`.
+
+- **Vade takvimi:** ICE Brent kuralı (Şubat 2016'ya kadar 15 gün kuralı, Mart 2016'dan itibaren ay-öncesi kuralı; ICE sözleşme spesifikasyonu ve Circular 15/235). ICE'ın resmi tablosundaki 88 vadenin (Aralık 2015 – Mart 2023) tümü birebir üretiliyor (assert); 2008–2015 için resmi tablo bulunamadı. Örneklemde 225 vade; 14 vade günü veride yok. Varsayım (CME belgesinden doğrulanmadı): `BZ=F`'in dayandığı NYMEX BZ kontratı bu takvimi izler.
+- **Geçiş satırı:** vade gününden sonraki ilk veri satırı. **A:** o satırın getirisi çıkarılır (225 satır); hedef aynı pencerede kalan getirilerin std'si; getiri özellikleri ve past-vol baseline temiz getirilerle. **A′:** vade sonrası iki satır (450 satır). **B (yalnızca h=5):** getiri çıkarılmaz; hedef penceresinde geçiş olan 1122 satır örneklemden atılır. Penceresinde çıkarılmış getiri olmayan satırlarda hedef ve özellikler birincil değerlerle birebir aynı.
+- **Doğrulama:** boş maskeyle hedefler, getiri özellikleri ve HAR/HAR-X/XGBoost tahminleri bit düzeyinde, 8 testin değerleri kayıtlı birincil değerlerle aynı üretiliyor (assert).
+- **Sınırlılık:** kontrol hedefteki ve getiri özelliklerindeki geçiş etkisini temizler; XGBoost'un fiyat düzeyi özelliklerindeki (`brent_lag1-5`, `brent_ema5/10/20`) etkiyi temizlemez, çünkü bu geri ayarlanmış bir seri gerektirir.
+- **Tarih boşluklarıyla örtüşme:** belgelenmiş 40 boşluk satırının **18**'i A'da, **27**'si A′'de getirisi çıkarılan satırlardır. *Hipotez, kanıtlanmış değil:* boşlukların bir kısmı geçiş kaynaklı olabilir (Yahoo vade günü veya ertesi günü satırını atlıyor olabilir); örtüşme sayısı nedeni göstermez.
+
+### 15a. Varyant içi model farkları (fold ortalaması)
+
+`100 × (RMSE_a / RMSE_b − 1)`, pozitif = a daha kötü. **Mutlak RMSE birincil sonuçla karşılaştırılmaz** (hedef değişiyor); yalnızca varyant içi farklar verilir. Referans satırı, aynı kod yolunun maskesiz koşusudur (= birincil sonuç).
+
+| varyant | ufuk | HAR vs HAR-X, RMSE | XGBoost vs HAR-X, RMSE | HAR vs HAR-X, MAE | XGBoost vs HAR-X, MAE |
+| --- | --- | --- | --- | --- | --- |
+| birincil (referans) | h=5 | +4.75% | +5.93% | +5.24% | +6.65% |
+| birincil (referans) | h=22 | +11.59% | +15.10% | +13.66% | +18.24% |
+| birincil (referans) | h=66 | +6.10% | +18.21% | +7.63% | +25.01% |
+| birincil (referans) | h=126 | +1.43% | +7.26% | +1.09% | +13.00% |
+| A (birincil sağlamlık varyantı) | h=5 | +4.88% | +5.83% | +4.74% | +4.69% |
+| A (birincil sağlamlık varyantı) | h=22 | +12.10% | +18.80% | +12.93% | +19.95% |
+| A (birincil sağlamlık varyantı) | h=66 | +5.86% | +14.48% | +6.65% | +22.03% |
+| A (birincil sağlamlık varyantı) | h=126 | +1.13% | +8.56% | +0.36% | +13.60% |
+| A′ (duyarlılık: iki satır) | h=5 | +5.19% | +8.06% | +6.14% | +6.89% |
+| A′ (duyarlılık: iki satır) | h=22 | +12.43% | +19.24% | +13.35% | +21.69% |
+| A′ (duyarlılık: iki satır) | h=66 | +6.09% | +15.50% | +7.50% | +24.47% |
+| A′ (duyarlılık: iki satır) | h=126 | +0.96% | +8.53% | +0.52% | +13.70% |
+| B (duyarlılık: yalnızca h=5) | h=5 | +4.90% | +3.99% | +6.05% | +4.13% |
+
+### 15b. Birincil ailenin testleri, her varyantta kendi düzeltmeleriyle
+
+Kurulum 08 ile aynı: DM (Newey-West Bartlett, L = h−1, HLN, t(n−1)) ve fold düzeyinde işaret testi. Holm/BH/BY her varyantın kendi testleri içinde (A ve A′: 8, B: 2, çünkü B tasarım gereği yalnızca h=5). CLAUDE.md: varyant veri üzerindeki tekrarlar yeni aile değildir ve birincil aileyle havuzlanmaz.
+
+**A (birincil sağlamlık varyantı)**
+
+| karşılaştırma | ufuk | DM (HLN) | p | Holm | BH | BY | HAR-X kazanır | işaret p | işaret Holm | işaret BH | işaret BY |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| HAR vs HAR-X | h=5 | +0.622 | 0.534 | 1.000 | 0.722 | 1.000 | 11/15 | 0.118 | 0.711 | 0.287 | 0.781 |
+| HAR-X vs XGBoost | h=5 | −0.834 | 0.405 | 1.000 | 0.722 | 1.000 | 10/15 | 0.302 | 0.905 | 0.402 | 1.000 |
+| HAR vs HAR-X | h=22 | +0.831 | 0.406 | 1.000 | 0.722 | 1.000 | 12/15 | 0.035 | 0.281 | 0.141 | 0.382 |
+| HAR-X vs XGBoost | h=22 | −1.548 | 0.122 | 0.975 | 0.646 | 1.000 | 12/15 | 0.035 | 0.281 | 0.141 | 0.382 |
+| HAR vs HAR-X | h=66 | −0.079 | 0.937 | 1.000 | 0.937 | 1.000 | 10/14 | 0.180 | 0.898 | 0.287 | 0.781 |
+| HAR-X vs XGBoost | h=66 | −1.400 | 0.162 | 1.000 | 0.646 | 1.000 | 10/14 | 0.180 | 0.898 | 0.287 | 0.781 |
+| HAR vs HAR-X | h=126 | −0.536 | 0.592 | 1.000 | 0.722 | 1.000 | 8/14 | 0.791 | 0.905 | 0.791 | 1.000 |
+| HAR-X vs XGBoost | h=126 | −0.480 | 0.632 | 1.000 | 0.722 | 1.000 | 9/14 | 0.424 | 0.905 | 0.485 | 1.000 |
+
+%5'te ayakta kalan: DM Holm 0, BH 0, BY 0; işaret Holm 0, BH 0, BY 0 (toplam 8 test).
+
+**A′ (duyarlılık: iki satır)**
+
+| karşılaştırma | ufuk | DM (HLN) | p | Holm | BH | BY | HAR-X kazanır | işaret p | işaret Holm | işaret BH | işaret BY |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| HAR vs HAR-X | h=5 | +0.629 | 0.529 | 1.000 | 0.671 | 1.000 | 12/15 | 0.035 | 0.246 | 0.094 | 0.255 |
+| HAR-X vs XGBoost | h=5 | −1.456 | 0.146 | 0.977 | 0.388 | 1.000 | 10/15 | 0.302 | 0.905 | 0.402 | 1.000 |
+| HAR vs HAR-X | h=22 | +0.852 | 0.394 | 1.000 | 0.671 | 1.000 | 13/15 | 0.007 | 0.059 | 0.059 | 0.161 |
+| HAR-X vs XGBoost | h=22 | −1.756 | 0.079 | 0.633 | 0.388 | 1.000 | 12/15 | 0.035 | 0.246 | 0.094 | 0.255 |
+| HAR vs HAR-X | h=66 | −0.130 | 0.897 | 1.000 | 0.897 | 1.000 | 10/14 | 0.180 | 0.898 | 0.287 | 0.781 |
+| HAR-X vs XGBoost | h=66 | −1.478 | 0.140 | 0.977 | 0.388 | 1.000 | 10/14 | 0.180 | 0.898 | 0.287 | 0.781 |
+| HAR vs HAR-X | h=126 | −0.575 | 0.565 | 1.000 | 0.671 | 1.000 | 8/14 | 0.791 | 1.000 | 0.791 | 1.000 |
+| HAR-X vs XGBoost | h=126 | −0.542 | 0.588 | 1.000 | 0.671 | 1.000 | 8/14 | 0.791 | 1.000 | 0.791 | 1.000 |
+
+%5'te ayakta kalan: DM Holm 0, BH 0, BY 0; işaret Holm 0, BH 0, BY 0 (toplam 8 test).
+
+**B (duyarlılık: yalnızca h=5)**
+
+| karşılaştırma | ufuk | DM (HLN) | p | Holm | BH | BY | HAR-X kazanır | işaret p | işaret Holm | işaret BH | işaret BY |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| HAR vs HAR-X | h=5 | +0.278 | 0.781 | 1.000 | 0.939 | 1.000 | 11/15 | 0.118 | 0.237 | 0.237 | 0.355 |
+| HAR-X vs XGBoost | h=5 | +0.077 | 0.939 | 1.000 | 0.939 | 1.000 | 9/15 | 0.607 | 0.607 | 0.607 | 0.911 |
+
+%5'te ayakta kalan: DM Holm 0, BH 0, BY 0; işaret Holm 0, BH 0, BY 0 (toplam 2 test).
+
+## 16. Ek A eklemeleri: özellik listesi, volatilite rejimi analizi, eğitim uzunluğu
+
+### 16a. A1: 65 özelliğin tam listesi
+
+Kaynak: `features_publication_aligned.csv` (`02_build_features.py`); grup eşlemesi `shap_feature_importance_publication_aligned.csv`. Takvim dışındaki tüm özellikler `.shift(1)` ile nedenseldir; GPR özellikleri ayrıca yayım tarihine göre hizalıdır.
+
+| grup | sayı | özellikler |
+| --- | --- | --- |
+| Brent gerçekleşen volatilite | 7 | `brent_vol5`, `brent_vol20`, `brent_vol60`, `brent_vol126`, `vol_ratio`, `vol5_vol60`, `vol20_vol126` |
+| Brent fiyat düzeyi ve getiri | 13 | `brent_lag1`, `brent_lag2`, `brent_lag3`, `brent_lag4`, `brent_lag5`, `brent_ema5`, `brent_ema10`, `brent_ema20`, `brent_ret_lag1`, `brent_ret_lag2`, `brent_ret_lag3`, `brent_ret_lag4`, `brent_ret_lag5` |
+| OVX | 13 | `ovx_lag1`, `ovx_lag2`, `ovx_lag3`, `ovx_lag4`, `ovx_lag5`, `ovx_ema5`, `ovx_ema10`, `ovx_ema20`, `ovx_z60`, `ovx_spike`, `ovx_regime_high`, `ovx_regime_low`, `ovx_mr60` |
+| GPR (yayım-hizalı) | 23 | `gprd_lag1`, `gprd_lag2`, `gprd_lag3`, `gprd_lag4`, `gprd_lag5`, `gprd_threat_lag1`, `gprd_threat_lag2`, `gprd_threat_lag3`, `gprd_threat_lag4`, `gprd_threat_lag5`, `gprd_ema5`, `gprd_ema10`, `gprd_ema20`, `gprd_threat_ema5`, `gprd_threat_ema10`, `gprd_threat_ema20`, `gprd_z60`, `gprd_spike`, `gprd_momentum`, `gprd_threat_z60`, `gprd_threat_spike`, `gprd_threat_momentum`, `threat_ratio` |
+| Etkileşim | 4 | `ovx_x_gprd`, `ovx_x_gprd_threat`, `ovx_regime_high_x_gprd`, `ovx_regime_low_x_gprd` |
+| Takvim | 5 | `dow`, `month`, `is_month_start`, `is_month_end`, `is_quarter_end` |
+
+### 16b. Volatilite rejimi analizi (`07b_exploratory_vol_regime.py`)
+
+**Keşifsel ve post hoc.** Aşama 7'de ölçülen çelişki (H2 havuzda HAR-X'ten iyi, fold ortalamasında kötü) görüldükten sonra, onu açıklamak için tasarlandı (günlük, açıklama notu 2026-09-27). Birincil bulguyu değiştirmez, model seçiminde kullanılmaz. **Rejim sınırı mekaniktir:** her ufukta test yılının ortalama gerçekleşen volatilitesi, yıllar arası medyana göre ikiye ayrılır; sınır performansa bakılarak seçilmedi. (Paketin §7b'si ayrı bir şeydir: BiLSTM yakınsama kontrolü.)
+
+| ufuk | rejim | fold | ort. volatilite | RMSE HAR-X (fold ort.) | RMSE H2 (fold ort.) | H2 vs HAR-X, fold ort. | H2 vs HAR-X, havuz | H2 kazanan fold | kareli hata payı |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| h=5 | düşük | 8 | 0.014130 | 0.007457 | 0.007406 | −0.69% | +0.15% | 5/8 | %23.9 |
+| h=5 | yüksek | 7 | 0.025979 | 0.013641 | 0.013752 | +0.82% | −2.47% | 2/7 | %76.1 |
+| h=22 | düşük | 8 | 0.015231 | 0.004947 | 0.005134 | +3.78% | +3.01% | 3/8 | %17.2 |
+| h=22 | yüksek | 7 | 0.028030 | 0.010860 | 0.011196 | +3.10% | −2.08% | 1/7 | %82.8 |
+| h=66 | düşük | 7 | 0.015592 | 0.004906 | 0.005367 | +9.39% | +7.83% | 2/7 | %13.1 |
+| h=66 | yüksek | 7 | 0.025767 | 0.010362 | 0.010606 | +2.35% | −0.91% | 3/7 | %86.9 |
+| h=126 | düşük | 7 | 0.016088 | 0.005450 | 0.005628 | +3.28% | +4.75% | 2/7 | %16.5 |
+| h=126 | yüksek | 7 | 0.026942 | 0.010726 | 0.010643 | −0.77% | −4.57% | 4/7 | %83.5 |
+
+`100 × (RMSE_H2 / RMSE_HAR-X − 1)`, pozitif = H2 daha kötü. Kareli hata payı: o rejimin HAR-X kareli hatalarının havuzdaki payı. Kaynak: `explore_vol_regime_groups_publication_aligned.csv`.
+
+### 16c. A8: Eğitim uzunluğu asimetrisi
+
+Her fold'da modellerin eğitim satırı sayıları. Test satırları tüm modellerde aynı; fark yalnızca eğitim penceresinin başında ve embargoda. HAR ailesi satır 21'den, XGBoost satır 127'den (126 günlük volatilite penceresi) başlar; BiLSTM'in 20 günlük girdi dizisi (lookback) serinin başında bir kez 19 satır daha götürür; GARCH getiri serisinin başından başlar ve etiket kullanmadığı için embargo uygulanmaz. Kaynak: `bench_folds_all` (`05_benchmarks.py`), `wf_summary_all` (`03_walkforward.py`), `bilstm_folds_all` (`06_attention_bilstm.py`).
+
+| ufuk | XGBoost, ilk – son fold | BiLSTM − XGBoost | HAR/HAR-X − XGBoost | GARCH − XGBoost | HAR fazlası / XGBoost, ilk – son fold |
+| --- | --- | --- | --- | --- | --- |
+| h=5 | 842 – 4342 | −19 | +106 | +131 (126 ısınma + 5 embargo) | %12.6 – %2.4 |
+| h=22 | 825 – 4325 | −19 | +106 | +148 (126 ısınma + 22 embargo) | %12.8 – %2.5 |
+| h=66 | 781 – 4281 | −19 | +106 | +192 (126 ısınma + 66 embargo) | %13.6 – %2.5 |
+| h=126 | 721 – 4221 | −19 | +106 | +252 (126 ısınma + 126 embargo) | %14.7 – %2.5 |
+
+Bu asimetrinin sonuca etkisi §7a'da (veri eşitleme) ölçülmüştür.
 
