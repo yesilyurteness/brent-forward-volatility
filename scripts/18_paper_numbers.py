@@ -707,6 +707,47 @@ def section_17(w, pr, A):
     return P, flip, rows
 
 
+def section_18(w, pr):
+    """Pooled squared-error difference HAR-X vs XGB-6 by year, h=66 and h=126."""
+    w("## 18. XGBoost-6 ile HAR-X: havuzlanmış kare hata farkının yıllara ayrışması "
+      "(h=66, h=126; betimleyici)")
+    w("")
+    w("**Betimleyici; test yok.** Katkı = fold'un Σ(e²_HAR-X − e²_XGB-6); pozitif = o yılda "
+      "XGBoost-6'nın kare hatası daha düşük. Pay = katkı / ufuktaki toplam (toplam = 100%; "
+      "negatif pay, toplamın aksi yönündeki yıllardır). Ana fold'lar; 2026 bu iki ufukta "
+      "hariç. Kayıtlı tahminlerden (`hybrid_predictions_all`, `exploratory_xgb6_predictions`).")
+    w("")
+    q = pr[pr["include_in_main"] & pr["model"].isin(["har_x", "xgb6"])
+           & pr["horizon"].isin([66, 126])].pivot_table(
+        index=["horizon", "test_year", "Date"], columns="model",
+        values=["pred", "y_true"], aggfunc="first")
+    assert (q[("y_true", "har_x")] == q[("y_true", "xgb6")]).all()
+    q = pd.DataFrame({
+        "d": (q[("y_true", "har_x")] - q[("pred", "har_x")]) ** 2
+             - (q[("y_true", "har_x")] - q[("pred", "xgb6")]) ** 2}).reset_index()
+    out = {}
+    for h in (66, 126):
+        g = q[q["horizon"] == h].groupby("test_year")["d"].agg(["sum", "size"])
+        tot = g["sum"].sum()
+        mse = q[q["horizon"] == h]["d"].mean()
+        out[h] = g
+        w(f"**h={h}.** Toplam Σ(e²_HAR-X − e²_XGB-6) = "
+          + f"{tot:+.4e} ".replace("-", "−")
+          + f"(n = {int(g['size'].sum())}; havuzlanmış MSE farkı "
+          + f"{mse:+.3e}".replace("-", "−") + "; toplam "
+          f"{'pozitif: XGBoost-6 havuzda daha iyi' if tot > 0 else 'negatif: HAR-X havuzda daha iyi'}).")
+        w("")
+        srt = g.reindex(g["sum"].sort_values(ascending=False).index)
+        cum = (srt["sum"].cumsum() / tot * 100)
+        w(md_table(pd.DataFrame({
+            "yıl": srt.index, "n": srt["size"].values,
+            "katkı": [f"{v:+.3e}".replace("-", "−") for v in srt["sum"]],
+            "pay": [f"{100 * v / tot:+.1f}%".replace("-", "−") for v in srt["sum"]],
+            "kümülatif pay (büyükten küçüğe)": [f"{v:.1f}%".replace("-", "−") for v in cum]})))
+        w("")
+    return out
+
+
 def section_16(w):
     """Appendix A additions: A1 feature list, volatility regime analysis (07b), A8."""
     w("## 16. Ek A eklemeleri: özellik listesi, volatilite rejimi analizi, eğitim uzunluğu")
@@ -2333,6 +2374,9 @@ def main():
 
     # ---------------- 17. Pooled R2_oos (common reference), H3 residual R2 ----------
     section_17(w, pr[PUB], A)
+
+    # ---------------- 18. XGB-6 vs HAR-X pooled squared-error difference by year ------
+    section_18(w, pr[PUB])
 
     path = OUT_DIR / "paper_numbers_publication_aligned.md"
     path.write_text("\n".join(L) + "\n", encoding="utf-8")
