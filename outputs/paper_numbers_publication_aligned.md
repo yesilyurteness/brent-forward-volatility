@@ -1,7 +1,7 @@
 # Makale sayıları — yayım-hizalı GPR sürümü (BİRİNCİL)
 
-- **Üretildiği commit:** `f3aa449ef25127fa86e8cf74a969135a6fd65e70` (Note the HLN choice in the Clark-West section of the number package)
-- **Üretim tarihi:** 2026-09-29T17:23:58+03:00
+- **Üretildiği commit:** `62a65a4c2cf5ac03eff927c092d5df13e5cca68b` (Add Table 1 descriptive statistics to the number package)
+- **Üretim tarihi:** 2026-09-29T17:46:19+03:00
 - **Çalışma ağacı:** temiz — girdiler bu commit'teki dosyalarla birebir aynı.
 - Doğrulama: `git checkout <commit> && python scripts/18_paper_numbers.py` aynı sayıları üretmelidir (yalnızca bu başlık değişir).
 
@@ -991,4 +991,35 @@ XGBoost-6 keşifseldir; p değeri verilmez. Kazanma: fold RMSE'si HAR'ınkinden 
 ### 13c. 2026 kısmi yıl, h=66 ve h=126
 
 Bölüm 1e'de: tüm modellerin o fold'daki RMSE/MAE/R²_oos'u, n = 101 (h=66) ve 41 (h=126). Birincil toplulaştırmadan dışlanmıştır; model karşılaştırması veya seçimi için kullanılmaz.
+
+## 14. Tablo 1: Tanımlayıcı istatistikler
+
+| değişken | N | ortalama | std | min | maks | çarpıklık | fazla basıklık | ADF (gecikme) | ADF p | Q(20) | Q p |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Brent günlük log getirisi | 4640 | −7.144e−06 | 0.0245 | −0.2798 | 0.1908 | −0.78 | 11.66 | −10.37 (29) | <0.001 | 60.4 | <0.001 |
+| Hedef, h=5 | 4636 | 0.01996 | 0.01431 | 0.00112 | 0.1395 | 2.73 | 12.50 | −7.14 (17) | <0.001 | 27701.8 | <0.001 |
+| Hedef, h=22 | 4619 | 0.02129 | 0.01217 | 0.005038 | 0.1034 | 2.47 | 8.97 | −6.60 (30) | <0.001 | 68867.0 | <0.001 |
+| Hedef, h=66 | 4575 | 0.02185 | 0.01089 | 0.007245 | 0.08032 | 2.17 | 6.59 | −6.58 (30) | <0.001 | 83703.3 | <0.001 |
+| Hedef, h=126 | 4515 | 0.02222 | 0.009906 | 0.007906 | 0.06017 | 1.66 | 3.21 | −4.54 (30) | <0.001 | 86183.7 | <0.001 |
+| OVX | 4641 | 39.46 | 17.84 | 14.5 | 325.1 | 4.15 | 34.90 | −6.27 (31) | <0.001 | 64064.4 | <0.001 |
+| GPRD (model girdisi, publication) | 4637 | 114 | 54.89 | 24.76 | 540.8 | 2.36 | 11.09 | −7.55 (19) | <0.001 | 23236.2 | <0.001 |
+| GPRD_THREAT (model girdisi, publication) | 4637 | 121.1 | 70.07 | 16.62 | 809.5 | 2.51 | 13.46 | −7.38 (19) | <0.001 | 21978.7 | <0.001 |
+
+**Tablo notu.**
+- Örneklem: modelin kullandığı örneklem, 4641 satır, işlem takvimi (2008-01-02 – 2026-09-01). Getiri ilk satırı kaybeder; `target_vol_h` son h satırda tanımsızdır (tamamlanmamış pencere, `skipna=False`).
+- Getiri: `log(P_t / P_{t−1})`. Hedef: sonraki h günlük log getirinin standart sapması. Birim: günlük log getiri. OVX: düzey, endeks puanı.
+- **GPRD ve GPRD_THREAT modelin gördüğü haliyle, yani yayım-hizalı:** satır t'de, t−1'e kadar yayımlanmış en son gözlem (`gprd_lag1`, `gprd_threat_lag1`). Seri iki yayım arasında sabit kalır; ilk yayımdan önceki satırlarda tanımsızdır.
+- Çarpıklık ve fazla basıklık pandas'ın yanlılık düzeltmeli tahmincileri (normal dağılımda fazla basıklık 0). ADF: sabitli, gecikme AIC ile (statsmodels varsayılan en büyük gecikme 12(n/100)^(1/4)); H0 birim kök. Ljung–Box Q(20): H0 20. gecikmeye kadar otokorelasyon yok.
+- **Hedeflerde Ljung–Box reddi mekaniktir.** Ardışık `target_vol_h` değerleri h getirinin h−1'ini paylaşan örtüşen pencerelerden hesaplanır; otokorelasyon yapıdan gelir. Bu red kalıcılık kanıtı olarak okunmamalıdır. Yayım-hizalı GPR serisi de iki yayım arasında sabit kaldığından otokorelasyonunun bir kısmı yapıdandır (Q(20): GPRD 23236.2; gözlem tarihli seride 22378.6, dipnot).
+
+**Dipnot: GPR başka takvimlerde** (karşılaştırma için; model bunları görmez).
+
+| değişken | N | ortalama | std | min | maks | çarpıklık | fazla basıklık | ADF (gecikme) | ADF p | Q(20) | Q p |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| GPRD (gözlem tarihli, işlem günleri) | 4641 | 115.1 | 54.85 | 9.492 | 540.8 | 2.07 | 8.09 | −6.44 (19) | <0.001 | 22378.6 | <0.001 |
+| GPRD_THREAT (gözlem tarihli, işlem günleri) | 4641 | 126 | 72.71 | 7.893 | 809.5 | 2.28 | 10.64 | −6.25 (19) | <0.001 | 20730.7 | <0.001 |
+| GPRD (kendi takvimi, tüm takvim günleri) | 6818 | 103.4 | 53.41 | 0 | 540.8 | 1.95 | 7.64 | −6.10 (35) | <0.001 | 25792.3 | <0.001 |
+| GPRD_THREAT (kendi takvimi, tüm takvim günleri) | 6818 | 112.1 | 69.41 | 0 | 809.5 | 2.22 | 10.46 | −5.70 (34) | <0.001 | 23702.8 | <0.001 |
+
+Gözlem tarihli satırlar `data/veriseti.xlsx`'in kaydırılmamış GPR sütunlarıdır (işlem günleri). Kendi takvimi satırları endeksin her takvim gününü (hafta sonları dahil, 6818 gün) kapsar; kaynak yerel sürüm dosyası `data_gpr_daily_recent_accessed_2026-09-24.dta` (SHA-256 `8017f806626cd6b5…`, git dışı). Bu sürüm veri setinin eşleştiği 2026-09-01 sürümünden yenidir: 44 işlem günü değeri farklı (2025-06-02 – 2026-09-01, en büyük mutlak fark GPRD 33.8, GPRD_THREAT 33.8).
 

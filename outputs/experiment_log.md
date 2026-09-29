@@ -2138,3 +2138,89 @@ olduğu gibi bırakıldı.
 Pakette zaten var: Bölüm 1e. Tüm modellerin o fold'daki RMSE, MAE ve R²_oos değerleri;
 n = 101 (h=66) ve 41 (h=126); birincil toplulaştırmadan dışlanmış. Yeni hesap yapılmadı;
 Bölüm 13c yalnızca oraya işaret ediyor.
+
+---
+
+# Aşama 23 (2026-09-29): Tablo 1 ve veri doğrulamanın sertleştirilmesi (dış inceleme, bulgu 7)
+
+Commit'ler: `664a8fb` (doğrulama ve SHA-256), `62a65a4` (Tablo 1). Sayılar paketin
+Bölüm 14'ünde.
+
+## 23.1 Tablo 1: Tanımlayıcı istatistikler (`scripts/22_descriptive_stats.py`)
+
+**Değişkenler:** Brent günlük log getirisi, dört hedef, OVX, GPRD ve GPRD_THREAT.
+
+**Örneklem:** modelin örneklemi, 4641 satır, işlem takvimi.
+- GPR serileri **modelin gördüğü haliyle**, yani yayım-hizalı `gprd_lag1` ve
+  `gprd_threat_lag1`. N = 4637; ilk yayımdan önceki 4 satır tanımsız.
+- Getiri N = 4640; hedefler N = 4641 − h.
+
+**İstatistikler:** N, ortalama, std, min, maks, çarpıklık, fazla basıklık, ADF (sabitli,
+AIC gecikmesi) ve Ljung–Box Q(20). Tüm serilerde ADF birim kökü ve Ljung–Box
+otokorelasyonsuzluğu reddediyor (p < 0.001).
+
+**Hedeflerde Ljung–Box reddi mekanik.** Ardışık hedefler h getirinin h−1'ini paylaşan
+örtüşen pencerelerden hesaplanıyor. Tablo notunda bu açıkça yazılı; red kalıcılık kanıtı
+olarak sunulmuyor. Yayım-hizalı GPR iki yayım arasında sabit kaldığı için onun
+otokorelasyonu da kısmen yapıdan geliyor. Q(20) değeri 23 236; gözlem tarihli seride
+22 379.
+
+**GPR'ın kendi takvimi belirgin farklı; dipnota alındı.** Kaynak, tüm takvim günleri
+(6818 gün, hafta sonları dahil). Yayım-hizalı model girdisiyle karşılaştırma:
+
+| ölçü | kendi takvimi | yayım-hizalı model girdisi |
+| --- | --- | --- |
+| GPRD ortalaması | 103.4 | 114.0 |
+| min | 0 | 24.8 |
+| fazla basıklık | 7.6 | 11.1 |
+
+Dipnottaki diğer satırlar gözlem tarihli işlem günü serileri: GPRD ortalaması 115.1,
+fazla basıklık 8.1.
+
+Kendi takvimi serisinin kaynağı yerel sürüm dosyası
+`data_gpr_daily_recent_accessed_2026-09-24.dta`. Dosya git dışında; SHA-256'sı JSON'da
+kayıtlı. Bu sürüm veri setinin eşleştiği 2026-09-01 sürümünden yeni: 44 işlem günü değeri
+farklı (2025-06-02 – 2026-09-01), en büyük mutlak fark 33.8. Paket notunda yazılı.
+
+`statsmodels` artık doğrudan import ediliyor; `requirements.txt` notu güncellendi.
+
+## 23.2 `validate_data.py` hatada duruyor (dış inceleme, bulgu 7)
+
+Önceden script hiçbir koşulda sıfır dışı çıkış vermiyordu. Şimdi şu kritik koşullarda
+raporu yazıp **çıkış kodu 1** ile duruyor:
+- beklenen kolon eksik;
+- zorunlu kolonda (beşi de) eksik değer;
+- `DD.MM.YYYY` olarak ayrıştırılamayan tarih;
+- artan sırası bozuk tarih;
+- yinelenen tarih.
+
+**Belgelenmiş 40 tarih boşluğu hata değil**; raporlanıyor, doğrulamayı düşürmüyor.
+
+Uyarı olarak kalanlar:
+- fazladan veya sırası farklı kolon;
+- 4641'den farklı satır sayısı;
+- değişmiş OVX rekor değeri;
+- SHA-256 uyuşmazlığı veya kayıtlı özetin bulunmaması.
+
+**SHA-256.** `data/veriseti.xlsx` özeti
+`f13956e7d0eef3dfa49dee1ac83e098f0d1cea872774eb2c72f3fe33661ebd26`. Özet
+`data/veriseti.xlsx.sha256` dosyasında, `sha256sum -c` biçiminde; git dışı bırakılmadı.
+README'nin veri bölümünde ve `data/README.md`'de de var. Özet dosya baytları üzerinden
+hesaplandığı için aynı değerleri başka bir programla kaydedilmiş bir dosya eşleşmez. Bu
+yüzden uyuşmazlık hata değil uyarı.
+
+**Mevcut veriyle sonuç:** GEÇTİ, çıkış kodu 0, uyarı yok, SHA-256 eşleşiyor. Tarih
+boşluğu ve ufuk CSV'leri değişmedi; rapor JSON'una `errors`, `warnings` ve `sha256`
+alanları eklendi.
+
+**Hata yollarının testi.** Scratchpad'deki bozuk kopyalarla denendi:
+
+| senaryo | çıkış kodu |
+| --- | --- |
+| kolon eksik | 1 |
+| GPRD'de eksik değer | 1 |
+| iki satırın sırası değişmiş | 1 |
+| yinelenen tarih | 1 |
+| ISO biçimli tarih | 1 |
+| 10 satır silinerek eklenen boşluk | 0 (satır sayısı ve SHA uyarısı) |
+| yeniden kaydedilmiş özdeş kopya | 0 (SHA uyarısı) |
