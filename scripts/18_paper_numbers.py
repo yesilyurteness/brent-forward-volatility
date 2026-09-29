@@ -10,7 +10,9 @@ the two-version comparison section, which belongs to paper Appendix A.
 Sections: main RMSE/MAE/R2_oos table (all models x four horizons, standard R2 as footnote,
 2026 partial-year footnote at h=66/126), four-step decomposition, exogenous ablation ladder,
 standardized betas, SHAP group shares, the primary hypothesis family (8 tests), robustness
-checks (data equalization, BiLSTM convergence) and the two-version comparison.
+checks (data equalization, BiLSTM convergence), the two-version comparison, README numbers,
+power analysis, methodology numbers, and (Section 12) HAR prediction-floor frequency,
+QLIKE (descriptive only, no test) and per-fold smearing coefficients.
 
 CONSISTENCY CHECKS (assertions)
 -------------------------------
@@ -258,6 +260,296 @@ def wide(agg, col, fmt, models, bold_min=False):
         out[f"h={h}"] = [(f"**{fmt(v)}**" if bold_min and v == best else fmt(v))
                          for v in t[h]]
     return out
+
+
+# ---------------------------------------------------------------------------
+# Section 12: HAR floor frequency, QLIKE, per-fold smearing (publication version only)
+# ---------------------------------------------------------------------------
+def qlike(y, p):
+    """Patton (2011) QLIKE on the variance scale: r - log r - 1, r = y^2 / p^2."""
+    r = (y / p) ** 2
+    return r - np.log(r) - 1
+
+
+def section_12(w, pr, A):
+    fkeys = ["horizon", "fold"]
+    ben = rd("bench_predictions_all.csv", PUB)
+    bf = rd("bench_folds_all.csv", PUB)
+    b = ben.merge(bf[fkeys + ["pred_floor", "n_clipped_har", "n_clipped_har_x"]],
+                  on=fkeys, validate="m:1")
+    abl = rd("ablation_exogenous_predictions.csv", PUB)
+    af = rd("ablation_exogenous_folds.csv", PUB)
+    a = abl.merge(bf[fkeys + ["pred_floor"]], on=fkeys, validate="m:1")
+    hyb = rd("hybrid_predictions_all.csv", PUB)
+    hf = rd("hybrid_folds_all.csv", PUB)
+    x6f = rd("exploratory_xgb6_folds.csv", PUB)
+
+    # --- floor detection: prediction == that fold's training-target minimum -----------
+    # The floor is np.maximum(pred, floor) with floor = min of the fold's TRAINING target
+    # (05 / 11 / 07). The prediction files carry no flag, so a floored row is detected as
+    # an exact equality with the fold's recorded floor, and the per-fold count must equal
+    # the counter the fitting script recorded at fit time.
+    flo = {}  # model -> frame with horizon, test_year, include_in_main, floored
+    for m in ("har", "har_x"):
+        eq = b[f"pred_{m}"] == b["pred_floor"]
+        per = b.assign(eq=eq).groupby(fkeys)["eq"].sum()
+        rec = bf.set_index(fkeys)[f"n_clipped_{m}"].reindex(per.index)
+        assert (per == rec).all(), f"{m}: floor equality != recorded n_clipped"
+        flo[m] = b[["horizon", "Date", "test_year", "include_in_main"]].assign(floored=eq.values)
+    for m in ("har_ovx", "har_gpr"):
+        g = a[a["variant"] == m]
+        eq = g["pred"] == g["pred_floor"]
+        per = g.assign(eq=eq).groupby(fkeys)["eq"].sum()
+        rec = af[af["variant"] == m].set_index(fkeys)["n_clipped"].reindex(per.index)
+        assert (per == rec).all(), f"{m}: floor equality != recorded n_clipped"
+        flo[m] = g[["horizon", "Date", "test_year", "include_in_main"]].assign(floored=eq.values)
+    hh = hyb.merge(hf[["horizon", "test_year", "pred_floor", "n_floored"]],
+                   on=["horizon", "test_year"], validate="m:1")
+    eq = hh["pred_h3_harx_resid"] == hh["pred_floor"]
+    per = hh.assign(eq=eq).groupby(["horizon", "test_year"])["eq"].sum()
+    rec = hf.set_index(["horizon", "test_year"])["n_floored"].reindex(per.index)
+    assert (per == rec).all(), "H3: floor equality != recorded n_floored"
+    flo["h3_harx_resid"] = hh[["horizon", "Date", "test_year", "include_in_main"]].assign(
+        floored=eq.values)
+    # The HAR-X used in the package (hybrid file) is floored on exactly the same rows.
+    j = hyb.merge(b[["horizon", "Date", "pred_floor", "pred_har_x"]], on=["horizon", "Date"],
+                  suffixes=("", "_b"), validate="1:1")
+    assert ((j["pred_har_x_b"] == j["pred_floor"])
+            == np.isclose(j["pred_har_x"], j["pred_floor"], rtol=0, atol=1e-15)).all()
+    # Chance equality: models WITHOUT a prediction floor never hit the value exactly, and
+    # the closest non-floored prediction of a floored model stays well above it.
+    chance = {m: int((b[f"pred_{m}"] == b["pred_floor"]).sum())
+              for m in ("har_log", "har_x_log", "garch", "past_vol")}
+    assert not any(chance.values()), chance
+    below = {m: int((b[f"pred_{m}"] < b["pred_floor"]).sum()) for m in ("har_log", "har_x_log")}
+    gaps = []
+    for m in ("har", "har_x"):
+        d = (b[f"pred_{m}"] - b["pred_floor"])[b[f"pred_{m}"] > b["pred_floor"]]
+        gaps.append((d.min(), (d / b.loc[d.index, "pred_floor"]).min()))
+    for m in ("har_ovx", "har_gpr"):
+        g = a[a["variant"] == m]
+        d = (g["pred"] - g["pred_floor"])[g["pred"] > g["pred_floor"]]
+        gaps.append((d.min(), (d / g.loc[d.index, "pred_floor"]).min()))
+    gap_abs, gap_rel = min(x[0] for x in gaps), min(x[1] for x in gaps)
+
+    w("## 12. Taban sıklığı, QLIKE ve fold başına smearing (yayım-hizalı)")
+    w("")
+    w("Yeniden eğitim yok; her şey kayıtlı tahmin ve fold dosyalarından. QLIKE yalnızca "
+      "betimleyicidir: QLIKE kaybıyla DM veya işaret testi koşulmadı, birincil aile 8 testle "
+      "sabittir.")
+    w("")
+    w("### 12a. Tahmin tabanının devreye girme sıklığı")
+    w("")
+    w("Düzey ölçekli OLS tahminleri (HAR, HAR-X, ablasyon basamakları) ve Hibrit H3, "
+      "fold'un **eğitim hedefinin minimumunda** tabanlanır: `max(tahmin, min(y_train))` "
+      "(train-only). Log ölçekli HAR-log ve HAR-X-log tahminleri `exp(·) × smearing` "
+      "olduğu için yapısal olarak pozitiftir; tahmine taban uygulanmaz (0 tanım gereği). "
+      "(Log spesifikasyonların *regresörlerine* uygulanan `LOG_FLOOR = 1e-4` ayrı bir "
+      "şeydir ve burada sayılmaz.)")
+    w("")
+    w("**Tespit yöntemi.** Tahmin dosyalarında taban işareti yok. Tabanlanmış satır, "
+      "tahminin o fold'un kayıtlı tabanına (`bench_folds_all.pred_floor`, H3 için "
+      "`hybrid_folds_all.pred_floor`) **tam eşit** olduğu satır olarak tespit edildi. "
+      "Kontroller (assert):")
+    w("- Her fold'da eşitlik sayısı, uyum anında kaydedilen sayaçla birebir aynı "
+      "(`n_clipped_har`, `n_clipped_har_x`, ablasyon `n_clipped`, H3 `n_floored`).")
+    w(f"- Tesadüfi eşitlik yok: tabansız modellerde (HAR-log, HAR-X-log, GARCH, "
+      f"past-volatility) fold tabanına tam eşit tahmin sayısı "
+      f"{sum(chance.values())}. Oysa HAR-log {below['har_log']}, HAR-X-log "
+      f"{below['har_x_log']} satırda tabanın **altında** tahmin veriyor; yani eşitlik "
+      "ancak `max()` işleminden doğuyor.")
+    w(f"- Tabanlı modellerde tabanlanmamış en yakın tahmin, tabanın {gap_abs:.2e} "
+      f"(göreli %{100 * gap_rel:.3f}) üstünde; sürekli bir OLS tahmininin tabana bit "
+      "düzeyinde tesadüfen eşit çıkması pratikte olanaksız.")
+    w("- Pakette kullanılan HAR-X (hibrit dosyası) aynı satırlarda tabanlanıyor.")
+    w("")
+    specs = [("har", "HAR"), ("har_ovx", "HAR + OVX"), ("har_gpr", "HAR + GPR"),
+             ("har_x", "HAR-X"), ("har_log", "HAR-log"), ("har_x_log", "HAR-X-log"),
+             ("h3_harx_resid", "Hibrit H3 (ek)")]
+    rows = []
+    for m, lab in specs:
+        r = {"model": lab}
+        for h in HORIZONS:
+            if m in flo:
+                g = flo[m][(flo[m]["horizon"] == h) & flo[m]["include_in_main"]]
+                k, n = int(g["floored"].sum()), len(g)
+                pf = g.groupby("test_year")["floored"].mean()
+                top = (f"; en yoğun {pf.idxmax()} %{100 * pf.max():.1f}" if k else "")
+                r[f"h={h}"] = f"{k} / {n} (%{100 * k / n:.2f}{top})"
+            else:
+                g = b[(b["horizon"] == h) & b["include_in_main"]]
+                r[f"h={h}"] = f"0 / {len(g)} (taban yok)"
+        rows.append(r)
+    w(md_table(pd.DataFrame(rows)))
+    w("")
+    tot = {m: (int(f["floored"].sum()), len(f)) for m, f in flo.items()}
+    w("Ana metriğe giren fold'lar (h=66/126'da 2026 hariç). 2026 dahil tüm fold'lar: "
+      + ", ".join(f"{lab} {tot[m][0]}/{tot[m][1]}" for m, lab in specs if m in tot)
+      + f". XGBoost-6 aynı train-min tabanını kullanır; kayıtlı sayaç "
+        f"{int(x6f['n_clipped'].sum())} (tabana takılan tahmin yok).")
+    w("")
+
+    # --- QLIKE ------------------------------------------------------------------------
+    bad = pr[~(pr["pred"] > 0)]
+    if len(bad):
+        raise SystemExit("QLIKE durduruldu: pozitif olmayan tahmin\n"
+                         + bad.groupby(["model", "horizon"]).size().to_string())
+    assert (pr["y_true"] > 0).all(), "non-positive realized target"
+    q = pr.assign(ql=qlike(pr["y_true"].to_numpy(), pr["pred"].to_numpy()))
+    qm = q[q["include_in_main"]]
+    qf = (qm.groupby(["model", "horizon", "test_year"])["ql"].mean()
+          .groupby(["model", "horizon"]).mean().rename("qlike_fold"))
+    qp = qm.groupby(["model", "horizon"])["ql"].mean().rename("qlike_pooled")
+    Q = pd.concat([qf, qp], axis=1).reset_index().merge(
+        A[["model", "horizon", "rmse"]], on=["model", "horizon"], validate="1:1")
+    models = [m for m, _, _ in MODELS]
+    f4 = lambda x: f"{x:.4f}"
+    w("### 12b. QLIKE (Patton 2011), varyans ölçeğinde")
+    w("")
+    w("`QLIKE = σ²/σ̂² − log(σ²/σ̂²) − 1`, σ = gerçekleşen hedef, σ̂ = tahmin. Hedef bir "
+      "standart sapma olduğu için ikisi de karelenir. Düşük = iyi; mükemmel tahminde 0. "
+      "**Taban bağlanan gözlemlerde QLIKE yayımlanan (tabanlanmış) tahmin üzerinden "
+      "hesaplanır** — değerlendirilen şey modelin verdiği tahmindir. Tüm tahminler ve "
+      f"hedefler pozitif (en küçük tahmin {pr['pred'].min():.6f}); durdurma koşulu "
+      "tetiklenmedi. Kalın = sütundaki en düşük.")
+    w("")
+    w("**Fold ortalaması (birincil):**")
+    w("")
+    w(md_table(wide(Q, "qlike_fold", f4, models, bold_min=True)))
+    w("")
+    w("**Havuzlanmış (ikincil):** ana metriğe giren tüm test satırları üzerinden ortalama.")
+    w("")
+    w(md_table(wide(Q, "qlike_pooled", f4, models, bold_min=True)))
+    w("")
+    w("**Tabanlanmış satırların QLIKE payı** (havuzlanmış, ana fold'lar): tabanlanmış "
+      "satırların toplam QLIKE içindeki payı / satır payı. Taban, eğitim hedefinin "
+      "minimumu olduğundan bu satırlarda σ̂ küçüktür ve QLIKE büyür.")
+    w("")
+    rows = []
+    for m, lab in specs:
+        if m not in flo or m in ("har_log", "har_x_log"):
+            continue
+        g = qm[qm["model"] == m].merge(flo[m][["horizon", "Date", "floored"]],
+                                        on=["horizon", "Date"], validate="1:1")
+        r = {"model": lab}
+        for h in HORIZONS:
+            x = g[g["horizon"] == h]
+            k = int(x["floored"].sum())
+            r[f"h={h}"] = ("—" if k == 0 else
+                           f"%{100 * x.loc[x['floored'], 'ql'].sum() / x['ql'].sum():.1f} / "
+                           f"%{100 * k / len(x):.2f}")
+        rows.append(r)
+    w(md_table(pd.DataFrame(rows)))
+    w("")
+    w("### 12c. QLIKE ve RMSE sıralamaları (fold ortalaması)")
+    w("")
+    w("Sıra 1 = en iyi. Yalnızca iki kayıpta sırası farklı olan modeller listelenir. İki "
+      "tutarlı kayıp farklı sıralayabilir (Patton 2011); farklılık bir bulgu olarak "
+      "raporlanır.")
+    w("")
+    from scipy import stats as _st
+    rows, diffs = [], []
+    for h in HORIZONS:
+        g = Q[Q["horizon"] == h].set_index("model")
+        rr = g["rmse"].rank(method="min").astype(int)
+        rq = g["qlike_fold"].rank(method="min").astype(int)
+        tau = float(_st.kendalltau(g["rmse"], g["qlike_fold"])[0])
+        ch = [m for m in models if rr[m] != rq[m]]
+        rows.append({"ufuk": f"h={h}", "Kendall τ (17 model)": f"{tau:.3f}",
+                     "sırası değişen model": f"{len(ch)}/17",
+                     "RMSE'de en iyi": LABEL[rr.idxmin()],
+                     "QLIKE'ta en iyi": LABEL[rq.idxmin()]})
+        for m in sorted(ch, key=lambda m: rr[m]):
+            diffs.append({"ufuk": f"h={h}", "model": LABEL[m], "RMSE sırası": rr[m],
+                          "QLIKE sırası": rq[m],
+                          "fark": f"{rq[m] - rr[m]:+d}".replace("-", "−")})
+    w(md_table(pd.DataFrame(rows)))
+    w("")
+    w(md_table(pd.DataFrame(diffs)))
+    w("")
+    w("**QLIKE'ın yoğunlaşması** (havuzlanmış, ana fold'lar): QLIKE eksik tahmini "
+      "(σ̂ ≪ σ) sert cezalandırır, bu yüzden ortalama birkaç gözleme dayanabilir. Hücre: "
+      "en büyük %1 satırın QLIKE toplamındaki payı; parantezde en büyük tek satırın σ/σ̂ "
+      "oranı ve tarihi. Betimleyicidir.")
+    w("")
+    rows = []
+    for m in models:
+        r = {"model": LABEL[m]}
+        for h in HORIZONS:
+            g = qm[(qm["model"] == m) & (qm["horizon"] == h)]
+            s = g["ql"].sort_values(ascending=False)
+            k1 = max(1, int(len(s) * 0.01))
+            i0 = s.index[0]
+            r[f"h={h}"] = (f"%{100 * s.iloc[:k1].sum() / s.sum():.1f} "
+                           f"({g.loc[i0, 'y_true'] / g.loc[i0, 'pred']:.1f}×, "
+                           f"{g.loc[i0, 'Date']})")
+        rows.append(r)
+    w(md_table(pd.DataFrame(rows)))
+    w("")
+    w("**Birincil ailenin iki karşılaştırmasında yön** (betimleyici; test değil). "
+      "`100 × (kayıp_a / kayıp_b − 1)`, pozitif = a daha kötü.")
+    w("")
+    rows = []
+    for a_, b_ in (("har", "har_x"), ("xgboost", "har_x")):
+        for h in HORIZONS:
+            g = Q[Q["horizon"] == h].set_index("model")
+            rows.append({"a vs b": f"{LABEL[a_]} vs {LABEL[b_]}", "ufuk": f"h={h}",
+                         "RMSE (fold ort.)": pct(100 * (g.loc[a_, "rmse"] / g.loc[b_, "rmse"] - 1)),
+                         "QLIKE (fold ort.)": pct(100 * (g.loc[a_, "qlike_fold"]
+                                                          / g.loc[b_, "qlike_fold"] - 1)),
+                         "QLIKE (havuz)": pct(100 * (g.loc[a_, "qlike_pooled"]
+                                                      / g.loc[b_, "qlike_pooled"] - 1))})
+    w(md_table(pd.DataFrame(rows)))
+    w("")
+
+    # --- smearing -----------------------------------------------------------------------
+    wfs = json.load(open(alignment.out("wf_summary_all.json", PUB), encoding="utf-8"))
+    xs = pd.DataFrame(wfs["folds"])[["horizon", "test_year", "include_in_main", "smearing",
+                                      "resid_log_std"]]
+    bls = rd("bilstm_folds_all.csv", PUB)[["horizon", "test_year", "smearing"]]
+    S = (xs.rename(columns={"smearing": "xgb", "resid_log_std": "xgb_sd"})
+         .merge(bls.rename(columns={"smearing": "bilstm"}), on=["horizon", "test_year"],
+                validate="1:1")
+         .merge(bf[["horizon", "test_year", "har_smearing", "har_x_smearing"]]
+                .rename(columns={"har_smearing": "har_log", "har_x_smearing": "har_x_log"}),
+                on=["horizon", "test_year"], validate="1:1"))
+    assert len(S) == 60
+    w("### 12d. Fold başına Duan smearing katsayısı ve log-artık std'si")
+    w("")
+    w("Smearing `S = mean(exp(e))`, e = eğitim setindeki log ölçekli artıklar (örneklem-içi, "
+      "train-only). XGBoost ve BiLSTM'de hedef `log(σ_h / past_vol_h)`, HAR-log ve "
+      "HAR-X-log'da `log(σ_h)`. Kaynak: `wf_summary_all` (XGBoost: `smearing`, "
+      "`resid_log_std`), `bilstm_folds_all`, `bench_folds_all` (`har_smearing`, "
+      "`har_x_smearing`). **Log-artık std'si yalnızca XGBoost için kayıtlı**; 05 ve 06 "
+      "yalnızca katsayıyı kaydediyor, diğerleri için std yeniden tahmin gerektirir ve "
+      "burada verilmez (—).")
+    w("")
+    rows = []
+    for m, lab in (("xgb", "XGBoost, S"), ("xgb_sd", "XGBoost, log-artık std"),
+                   ("bilstm", "BiLSTM, S"), ("har_log", "HAR-log, S"),
+                   ("har_x_log", "HAR-X-log, S")):
+        r = {"ölçü": lab}
+        for h in HORIZONS:
+            g = S[(S["horizon"] == h) & S["include_in_main"]][m]
+            r[f"h={h}"] = f"{g.median():.4f} ({g.min():.4f}–{g.max():.4f})"
+        rows.append(r)
+    w("Özet, ana metriğe giren fold'lar: medyan (en küçük–en büyük).")
+    w("")
+    w(md_table(pd.DataFrame(rows)))
+    w("")
+    for h in HORIZONS:
+        g = S[S["horizon"] == h].sort_values("test_year")
+        t = pd.DataFrame({
+            "yıl": [f"{y}" + ("" if im else " (ana metrik dışı)")
+                    for y, im in zip(g["test_year"], g["include_in_main"])],
+            "XGBoost S": g["xgb"].map(f4), "XGBoost log-artık std": g["xgb_sd"].map(f4),
+            "BiLSTM S": g["bilstm"].map(f4), "HAR-log S": g["har_log"].map(f4),
+            "HAR-X-log S": g["har_x_log"].map(f4), "log-artık std (diğer)": "—"})
+        w(f"**h={h}**")
+        w("")
+        w(md_table(t))
+        w("")
+    return Q, flo, S
 
 
 # ---------------------------------------------------------------------------
@@ -1376,6 +1668,9 @@ def main():
     w("n=9 (Bölüm 7c, h=22 yüksek kademe) için anlamlılık mümkündür ama 9 fold'un en az "
       "8'inde aynı yön gerekir; gözlenen 6/9 bu eşiğin iki fold altındadır.")
     w("")
+
+    # ---------------- 12. Floor, QLIKE, smearing ----------------
+    section_12(w, pr[PUB], A)
 
     path = OUT_DIR / "paper_numbers_publication_aligned.md"
     path.write_text("\n".join(L) + "\n", encoding="utf-8")
