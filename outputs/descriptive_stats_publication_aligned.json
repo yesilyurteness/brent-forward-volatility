@@ -1,0 +1,23 @@
+{
+  "gpr_alignment": "publication",
+  "sample": {
+    "rows": 4641,
+    "first_date": "2008-01-02",
+    "last_date": "2026-09-01"
+  },
+  "adf": "constant, lag by AIC (statsmodels default max lag)",
+  "ljung_box_lag": 20,
+  "kurtosis": "excess (pandas, bias-corrected)",
+  "own_calendar": {
+    "file": "data/gpr_vintages/data_gpr_daily_recent_accessed_2026-09-24.dta",
+    "sha256": "8017f806626cd6b583dd5d6d3f8eda088832714aee3ff62afee63542b58d4338",
+    "calendar_days": 6818,
+    "trading_days_differing_from_dataset": 44,
+    "differing_range": [
+      "2025-06-02",
+      "2026-09-01"
+    ],
+    "max_abs_diff_GPRD": 33.8214416503906,
+    "max_abs_diff_GPRD_THREAT": 33.76498413085932
+  }
+}

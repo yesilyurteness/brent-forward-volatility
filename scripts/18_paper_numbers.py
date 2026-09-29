@@ -466,6 +466,70 @@ def section_13(w, pr, F):
     w("")
 
 
+def section_14(w):
+    """Table 1: descriptive statistics (22_descriptive_stats.py)."""
+    d = rd("descriptive_stats.csv", PUB)
+    meta = json.load(open(alignment.out("descriptive_stats.json", PUB), encoding="utf-8"))
+    g4 = lambda v: f"{v:.4g}".replace("-", "−")
+
+    def table(x):
+        return md_table(pd.DataFrame({
+            "değişken": x["label"], "N": x["N"], "ortalama": x["mean"].map(g4),
+            "std": x["std"].map(g4), "min": x["min"].map(g4), "maks": x["max"].map(g4),
+            "çarpıklık": x["skew"].map(lambda v: f"{v:.2f}".replace("-", "−")),
+            "fazla basıklık": x["excess_kurtosis"].map(lambda v: f"{v:.2f}".replace("-", "−")),
+            "ADF (gecikme)": [f"{s:.2f} ({k})".replace("-", "−")
+                              for s, k in zip(x["adf_stat"], x["adf_lag"])],
+            "ADF p": x["adf_p"].map(fp),
+            f"Q({meta['ljung_box_lag']})": x["lb_q20"].map(lambda v: f"{v:.1f}"),
+            "Q p": x["lb_p"].map(fp)}))
+
+    s = meta["sample"]
+    w("## 14. Tablo 1: Tanımlayıcı istatistikler")
+    w("")
+    w(table(d[d["role"] == "main"]))
+    w("")
+    w("**Tablo notu.**")
+    w(f"- Örneklem: modelin kullandığı örneklem, {s['rows']} satır, işlem takvimi "
+      f"({s['first_date']} – {s['last_date']}). Getiri ilk satırı kaybeder; `target_vol_h` "
+      "son h satırda tanımsızdır (tamamlanmamış pencere, `skipna=False`).")
+    w("- Getiri: `log(P_t / P_{t−1})`. Hedef: sonraki h günlük log getirinin standart "
+      "sapması. Birim: günlük log getiri. OVX: düzey, endeks puanı.")
+    w("- **GPRD ve GPRD_THREAT modelin gördüğü haliyle, yani yayım-hizalı:** satır t'de, "
+      "t−1'e kadar yayımlanmış en son gözlem (`gprd_lag1`, `gprd_threat_lag1`). Seri iki "
+      "yayım arasında sabit kalır; ilk yayımdan önceki satırlarda tanımsızdır.")
+    w(f"- Çarpıklık ve fazla basıklık pandas'ın yanlılık düzeltmeli tahmincileri (normal "
+      f"dağılımda fazla basıklık 0). ADF: sabitli, gecikme AIC ile (statsmodels varsayılan "
+      f"en büyük gecikme 12(n/100)^(1/4)); H0 birim kök. Ljung–Box Q({meta['ljung_box_lag']}): "
+      "H0 20. gecikmeye kadar otokorelasyon yok.")
+    w("- **Hedeflerde Ljung–Box reddi mekaniktir.** Ardışık `target_vol_h` değerleri h "
+      "getirinin h−1'ini paylaşan örtüşen pencerelerden hesaplanır; otokorelasyon "
+      "yapıdan gelir. Bu red kalıcılık kanıtı olarak okunmamalıdır. Yayım-hizalı GPR "
+      "serisi de iki yayım arasında sabit kaldığından otokorelasyonunun bir kısmı "
+      "yapıdandır (Q(20): GPRD "
+      + f"{d.set_index('variable').loc['GPRD', 'lb_q20']:.1f}; gözlem tarihli seride "
+      + f"{d.set_index('variable').loc['GPRD_obs_trading', 'lb_q20']:.1f}, dipnot).")
+    w("")
+    oc = meta.get("own_calendar")
+    w("**Dipnot: GPR başka takvimlerde** (karşılaştırma için; model bunları görmez).")
+    w("")
+    w(table(d[d["role"] == "footnote"]))
+    w("")
+    note = ("Gözlem tarihli satırlar `data/veriseti.xlsx`'in kaydırılmamış GPR sütunlarıdır "
+            "(işlem günleri).")
+    if oc:
+        note += (f" Kendi takvimi satırları endeksin her takvim gününü (hafta sonları dahil, "
+                 f"{oc['calendar_days']} gün) kapsar; kaynak yerel sürüm dosyası "
+                 f"`{Path(oc['file']).name}` (SHA-256 `{oc['sha256'][:16]}…`, git dışı). Bu "
+                 f"sürüm veri setinin eşleştiği 2026-09-01 sürümünden yenidir: "
+                 f"{oc['trading_days_differing_from_dataset']} işlem günü değeri farklı "
+                 f"({oc['differing_range'][0]} – {oc['differing_range'][1]}, en büyük mutlak "
+                 f"fark GPRD {oc['max_abs_diff_GPRD']:.1f}, GPRD_THREAT "
+                 f"{oc['max_abs_diff_GPRD_THREAT']:.1f}).")
+    w(note)
+    w("")
+
+
 def section_12(w, pr, A):
     fkeys = ["horizon", "fold"]
     ben = rd("bench_predictions_all.csv", PUB)
@@ -1908,6 +1972,9 @@ def main():
 
     # ---------------- 13. Clark-West, XGB-6 vs HAR, 2026 pointer ----------------
     section_13(w, pr[PUB], F)
+
+    # ---------------- 14. Table 1: descriptive statistics ----------------
+    section_14(w)
 
     path = OUT_DIR / "paper_numbers_publication_aligned.md"
     path.write_text("\n".join(L) + "\n", encoding="utf-8")

@@ -57,6 +57,21 @@ The raw data file is **not included in this repository**, because of the Yahoo F
 terms of use. Step-by-step instructions for reconstructing the data from scratch, the
 expected row counts and a validation checklist are in [data/README.md](data/README.md).
 
+**Verifying that you hold the same file.** Because the raw data cannot be shared, its
+SHA-256 digest is recorded in [data/veriseti.xlsx.sha256](data/veriseti.xlsx.sha256):
+
+```
+f13956e7d0eef3dfa49dee1ac83e098f0d1cea872774eb2c72f3fe33661ebd26  veriseti.xlsx
+```
+
+Check it with `cd data && sha256sum -c veriseti.xlsx.sha256` (Linux/macOS) or
+`Get-FileHash data\veriseti.xlsx -Algorithm SHA256` (Windows PowerShell).
+`scripts/validate_data.py` computes the digest as well and warns if it differs. The digest
+is of the file's bytes: a rebuilt file with identical values but saved differently (for
+example re-saved in Excel) will not match, so a mismatch is a warning, not an error. The
+content checks (columns, missing values, date order and duplicates) are errors and stop
+the script with a non-zero exit status.
+
 ---
 
 ## Target variable
@@ -391,6 +406,9 @@ python scripts/11_ablation_exogenous.py       --gpr-alignment publication  # 11.
 python scripts/12_robustness_gapfree.py       --gpr-alignment publication  # 12. main comparison on the gap-free 2017+ folds
 python scripts/13_gap_target_test.py          --gpr-alignment publication  # 13. direct test: gap-corrected target, fixed predictions
 python scripts/15_exploratory_xgb6.py         --gpr-alignment publication  # 15. exploratory: XGBoost on HAR-X's inputs and target
+python scripts/20_log_residual_std.py         --gpr-alignment publication  # 20. log-residual std of HAR-log / HAR-X-log (after step 5)
+python scripts/21_clark_west.py               --gpr-alignment publication  # 21. Clark-West, HAR nested in HAR-X (supplementary family, after step 7)
+python scripts/22_descriptive_stats.py        --gpr-alignment publication  # 22. Table 1, descriptive statistics (after steps 1-2)
 
 # Robustness variants (publication-aligned)
 python scripts/05_benchmarks.py       --gpr-alignment publication --align-start-row 127 --suffix _aligned  # data equalization
@@ -453,8 +471,9 @@ step trains one neural network per fold on CPU. The rest take on the order of mi
 |-- requirements.txt
 |-- data/
 |   |-- README.md          data sources and reconstruction instructions
+|   |-- veriseti.xlsx.sha256  SHA-256 digest of the data file used for the results
 |   +-- veriseti.xlsx      NOT in the repository, built locally
-|-- scripts/               21 independently runnable scripts and 2 shared modules
+|-- scripts/               24 independently runnable scripts and 2 shared modules
 +-- outputs/               metrics, predictions, JSON reports, experiment log
 ```
 

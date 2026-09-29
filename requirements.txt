@@ -1,6 +1,6 @@
 # Brent volatility forecasting -- pinned working environment
 # Python 3.14.7 (Windows). Only the packages actually imported under scripts/
-# are listed, plus two mandatory transitive dependencies.
+# are listed, plus one mandatory transitive dependency.
 #
 #   python -m venv .venv
 #   .venv\Scripts\activate          # Windows
@@ -21,7 +21,7 @@ optuna==4.9.0            # robustness analysis only (04_optuna_walkforward.py)
 
 # --- Statistics -------------------------------------------------------------
 scipy==1.18.0            # Diebold-Mariano, sign test, power analysis
-statsmodels==0.14.6      # arch dependency (not imported directly)
+statsmodels==0.14.6      # ADF and Ljung-Box (22_descriptive_stats.py); also an arch dependency
 
 # NOTE: the `shap` package is NOT required. SHAP values are computed exactly
 # via XGBoost's built-in pred_contribs=True option (see

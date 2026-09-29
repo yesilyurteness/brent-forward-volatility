@@ -97,7 +97,11 @@ Aggregate files add:
 Integrity report for the raw dataset: column and row checks, date monotonicity, NaN
 counts, the largest calendar gap, and valid targets per horizon. The field
 `ovx_record_check` verifies the OVX all-time record of 325.15 on 2020-04-21; if a rebuilt
-dataset does not reproduce it, the wrong ticker was downloaded.
+dataset does not reproduce it, the wrong ticker was downloaded. `errors` lists the
+critical failures (missing column, missing value, unparseable, unordered or duplicated
+date); if it is non-empty the script exits with status 1. `warnings` lists non-fatal
+findings. `sha256` compares the input file's digest with the one recorded in
+`data/veriseti.xlsx.sha256`.
 
 ### `date_gaps_over_10_days.csv` — `validate_data.py`
 Trading-day gaps longer than 10 calendar days. One row: the 17-day gap of April 2009.
@@ -931,6 +935,32 @@ publication-aligned: DM and HLN statistics, raw and HLN p-values, Holm, Benjamin
 and Benjamini-Yekutieli p-values (applied to the HLN p-value; `_by` = BH × c(8), valid
 under arbitrary dependence), HAR-X fold wins, and the sign test with its Holm, BH and BY
 p-values. BY is computed in `18_paper_numbers.py`; Holm and BH come from `08_dm_test.py`.
+
+---
+
+## Stages 19-22: number package Sections 12-14
+
+### `log_residual_std_publication_aligned.csv` — `20_log_residual_std.py`
+Per fold and horizon, for `har_log` and `har_x_log`: training-set size, Duan smearing
+coefficient and the standard deviation of the training log residuals (ddof=1). The OLS
+fits are re-estimated; every fold is asserted to reproduce the saved test predictions and
+smearing coefficients bit for bit before anything is written.
+
+### `clark_west_publication_aligned.csv`, `clark_west_publication_aligned.json` — `21_clark_west.py`
+Clark-West test of HAR nested in HAR-X, one row per horizon: mean MSE difference, mean
+adjustment term `(yhat_HAR - yhat_HARX)^2`, mean of `f_t`, the CW statistic raw and with
+the HLN factor, one-sided p-values (standard normal and HLN/t(n-1)), Holm, BH and BY
+p-values within this 4-test supplementary family (applied to the HLN p-value), the HAC
+variance inflation and a fold-level descriptive summary. The JSON records the family
+label and the commit that declared it.
+
+### `descriptive_stats_publication_aligned.csv`, `descriptive_stats_publication_aligned.json` — `22_descriptive_stats.py`
+Table 1: N, mean, std, min, max, skewness, excess kurtosis, ADF (constant, AIC lag;
+statistic, p-value, lag used) and Ljung-Box Q(20) (statistic, p-value) for the Brent log
+return, the four targets, OVX and the publication-aligned GPR inputs (`role` = `main`),
+plus GPR on other calendars for comparison (`role` = `footnote`). The JSON records the
+sample and the source and SHA-256 of the local GPR vintage file used for the
+own-calendar rows.
 
 ---
 
