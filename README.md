@@ -116,6 +116,12 @@ observation per fold and no statistical power.
   days ahead, without this the training labels would spill into the test period. The
   embargo length always equals that model's forecast horizon.
 - Window length is **not optimized.** The test set is read only once, at the very end.
+  This states the intent. In practice the test period (the 2012–2026 folds) was used
+  repeatedly during development: the specification sequence recorded at the start of
+  `outputs/experiment_log.md`, including the tiered capacity rule, was evaluated on the
+  test folds. This is disclosed in the paper's transparency statement; the protocol was
+  frozen on 29 September 2026. The scope is recorded in the dated note of 2026-09-30 at the
+  end of the experiment log.
 
 **The 2026 partial-year rule.** The 2026 data is available only through September. As the
 horizon lengthens, the number of valid targets in this fold falls rapidly (162
@@ -147,7 +153,9 @@ Hyperparameters are **not searched.** The number of trees, depth, `min_child_wei
 effective number of independent observations. The justification is not test performance
 but the weak selection signal measured on the validation side: in 32 of the 52 folds where
 Optuna was run, the best trial's validation RMSE was less than 5% better than the median
-trial.
+trial. This is the stated criterion for choosing the tiered rule over Optuna; the tiered
+rule itself was introduced during development after the long-horizon failure of an earlier
+version was seen on the test folds (see the note above on the use of the test period).
 
 ---
 

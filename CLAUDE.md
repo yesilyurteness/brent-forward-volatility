@@ -32,6 +32,15 @@ the code; warn me first.
 5. **The test set is read only once, at the very end.** Hyperparameters, window lengths
    and model selection are never decided by looking at test performance — these are chosen
    on the validation set.
+
+   *Note (2026-09-30, post-freeze; presentation only):* the rule above states the intent.
+   In practice the test period (the 2012–2026 folds) was used repeatedly during
+   development: the specification sequence at the start of `outputs/experiment_log.md`
+   (versions 1–7, including the tiered capacity rule, the feature set, the target
+   parametrization and the smearing shrinkage) was evaluated on the test folds. This is
+   disclosed in the paper's transparency statement. The protocol was frozen on
+   29 September 2026 (see Analysis Freeze). The scope is recorded in the dated note of
+   2026-09-30 at the end of `outputs/experiment_log.md`.
 6. **All features must be causal.** Every lag/EMA/rolling feature must be shifted into the
    past with `.shift(1)`; a feature at time t cannot contain information from time t or
    later.

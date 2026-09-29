@@ -2574,3 +2574,40 @@ Yeni test, model ya da analiz yok.
   commit'te eklendiği haliyle çevrildi. Bağlayıcı kayıt bu Türkçe dosyadır; uyuşmazlıkta
   bu dosya geçerlidir. `scripts/check_translation.py log`: her aşamada sayılar, commit
   hash'leri ve dosya yolları çeviride birebir aynı.
+
+---
+
+## Açıklama notu (2026-09-30, dondurma sonrası; yalnızca sunuluş): test döneminin tekrar kullanımı
+
+Açılış paragrafındaki "Nihai seçim test performansına göre yapılmamıştır" ifadesi (satır 7–9)
+dar anlamda doğrudur: sürüm 5 (kademeli kapasite kuralı) ile sürüm 7 (Optuna + büzülmüş
+smearing) arasındaki seçimin gerekçesi validation tarafındaki seçim sinyalidir (satır 117–120),
+iki sürümün test RMSE karşılaştırması değildir. Özgün metin köken kaydı olarak yerinde
+bırakıldı; kapsamı burada sınırlanıyor.
+
+İfade, geliştirmenin test döneminden bağımsız yapıldığı anlamında okunamaz. Test dönemi
+(2012–2026 fold'ları) geliştirme sırasında tekrar kullanıldı:
+- Sürüm 1–7'nin tamamı test fold'larının RMSE ve R²_oos değerleriyle karşılaştırıldı (satır
+  11–13, tablolar satır 27–67).
+- Özellik seti: 252 günlük pencere, test metriklerinde görülen veri penceresi etkisinden sonra
+  çıkarıldı (satır 71–81).
+- Hedef: oran hedefine geçiş test sonuçlarıyla değerlendirildi (satır 83–89).
+- Kapasite kuralı: birincil spesifikasyon, sürüm 4'ün uzun ufuk test başarısızlığının
+  teşhisinden sonra getirildi (satır 91–97). Kademe tablosu kendi koşusundan önce ilan edildi,
+  test dönemi görülmeden önce değil.
+- Smearing büzülmesi, sürüm 6'nın test RMSE'sindeki bozulma ayrıştırıldıktan sonra eklendi
+  (satır 99–111).
+- Sürüm 5 ile 7 arasındaki seçim yapılırken ikisinin test sonuçları biliniyordu (satır
+  122–124).
+- HAR-log spesifikasyonu, iki fold'luk duman testindeki anormal test RMSE'si görüldükten sonra
+  düzeltildi (satır 210–219). HAR-X-log sonradan eklendi; gerekçelerinden biri test
+  gözlemlerinde görülen taban oranıydı (satır 225–229).
+
+Sonuç görüldükten sonra tasarlanan diğer analizler günlükte zaten keşifsel veya post hoc olarak
+etiketli (satır 438–450 ile 1878–1884, 1323–1325, 1619–1629, 2045–2047); birincil aile
+testlerden sonra resmileştirildi (satır 744–747).
+
+CLAUDE.md'deki Kritik Kural 5 ("test seti yalnızca bir kez, en sonda okunur") niyet olarak
+kaldı; uygulamada karşılanmadığı, kuralın altına eklenen notla kaydedildi. Test döneminin
+tekrar kullanımı makalenin şeffaflık beyanında açıklanıyor. Protokol 2026-09-29'da donduruldu
+(dondurma notu yukarıda).

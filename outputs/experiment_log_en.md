@@ -2,8 +2,8 @@
 > in case of any discrepancy the original prevails.
 >
 > It translates `outputs/experiment_log.md` line by line: lines 1–2556 as they stand at commit
-> `378d551` (the freeze record), and the dated translation note after them (lines 2557–2576) as
-> added in the same commit as this file. Line n of the original is line n + 14 of this file.
+> `378d551` (the freeze record), and the dated notes after them (lines 2557–2613) as
+> added after the freeze, each translated in the commit that added it. Line n of the original is line n + 14 of this file.
 > Numbers are carried over exactly as written in the original, including decimal commas and
 > space-separated thousands (for example "2 764"); only the words around them are translated.
 > The one change of notation is the Turkish prefix percent sign, written here as a suffix
@@ -20,7 +20,7 @@ together with the result of each. This table will be given in the paper's Limita
 The aim is transparency: which ideas were tried, which did not work and why the final
 specification was chosen are visible here. The final choice **was not made according to test
 performance** (see CLAUDE.md "Model Selection Policy"); the justification for the choice is the
-weak selection signal measured on the validation side.
+weak selection signal measured on the validation side. [Translator's note: the scope of this statement is limited later in the log; see line 2594 of this file.]
 
 All metrics are **fold-mean RMSE**, in units of the standard deviation of daily log returns.
 The validation scheme is fixed: expanding window, 15 folds, test years 2012–2026, embargo = h.
@@ -2588,3 +2588,40 @@ No new test, model or analysis.
   as added in the same commit. The authoritative record is this Turkish file; in case of discrepancy
   this file prevails. `scripts/check_translation.py log`: in every stage the numbers, commit
   hashes and file paths are identical in the translation.
+
+---
+
+## Clarification note (2026-09-30, post-freeze; presentation only): repeated use of the test period
+
+The statement in the opening paragraph, "The final choice was not made according to test performance" (lines 7–9)
+is correct in a narrow sense: the justification for the choice between version 5 (the tiered capacity rule) and version 7 (Optuna + shrunk
+smearing) is the selection signal on the validation side (lines 117–120),
+not a comparison of the two versions' test RMSE. The original text was left in place as a provenance
+record; its scope is limited here.
+
+The statement cannot be read to mean that the development was independent of the test period. The test period
+(the 2012–2026 folds) was used repeatedly during development:
+- All of versions 1–7 were compared on the RMSE and R²_oos values of the test folds (lines
+  11–13, tables lines 27–67).
+- Feature set: the 252-day window was removed after the data-window effect seen in the test metrics
+  (lines 71–81).
+- Target: the switch to the ratio target was assessed with test results (lines 83–89).
+- Capacity rule: the primary specification was introduced after the diagnosis of version 4's long-horizon
+  test failure (lines 91–97). The tier table was declared before its own run,
+  not before the test period was seen.
+- The smearing shrinkage was added after the degradation in version 6's test RMSE was decomposed
+  (lines 99–111).
+- When the choice between versions 5 and 7 was made, the test results of both were known (lines
+  122–124).
+- The HAR-log specification was corrected after the anomalous test RMSE in the two-fold smoke test was seen
+  (lines 210–219). HAR-X-log was added later; one of its motivations was the floor rate seen in the test
+  observations (lines 225–229).
+
+The other analyses designed after the result was seen are already labeled exploratory or post hoc in the log
+(lines 438–450 and 1878–1884, 1323–1325, 1619–1629, 2045–2047); the primary family
+was formalized after the tests (lines 744–747). (Line numbers here are those of the Turkish original.)
+
+Critical Rule 5 in CLAUDE.md ("the test set is read only once, at the very end") stays as the
+intent; that it was not met in practice was recorded with the note added below the rule. The repeated
+use of the test period is disclosed in the paper's transparency statement. The protocol was frozen on 2026-09-29
+(freeze note above).
