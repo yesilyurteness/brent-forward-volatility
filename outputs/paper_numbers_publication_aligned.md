@@ -1,7 +1,7 @@
 # Makale sayıları — yayım-hizalı GPR sürümü (BİRİNCİL)
 
-- **Üretildiği commit:** `3bb6ead8b80ab9c1a58b3e3f3db7c9a0bfa907f7` (Add the Clark-West supplementary family and XGB-6 vs HAR fold counts)
-- **Üretim tarihi:** 2026-09-29T17:11:13+03:00
+- **Üretildiği commit:** `f3aa449ef25127fa86e8cf74a969135a6fd65e70` (Note the HLN choice in the Clark-West section of the number package)
+- **Üretim tarihi:** 2026-09-29T17:23:58+03:00
 - **Çalışma ağacı:** temiz — girdiler bu commit'teki dosyalarla birebir aynı.
 - Doğrulama: `git checkout <commit> && python scripts/18_paper_numbers.py` aynı sayıları üretmelidir (yalnızca bu başlık değişir).
 
@@ -970,6 +970,8 @@ En büyük %1 satır HAR-X'in h=5 QLIKE toplamının %30.0'ini, σ̂ ≤ 1.25 ×
 | h=22 | 3645 | 7.89e−06 | 2.60e−05 | 3.39e−05 | 3.608 | 3.587 | <0.001 | <0.001 | <0.001 | <0.001 | <0.001 | 6.73 |
 | h=66 | 3500 | −3.24e−06 | 1.80e−05 | 1.47e−05 | 3.032 | 2.975 | 0.001 | 0.001 | 0.003 | 0.002 | 0.004 | 3.08 |
 | h=126 | 3500 | −5.56e−06 | 1.10e−05 | 5.48e−06 | 1.238 | 1.194 | 0.108 | 0.116 | 0.116 | 0.116 | 0.242 | 5.55 |
+
+Not: Clark & West (2007) standart normal kullanır; burada DM ailesiyle tutarlılık için HLN uygulandı, sonuç değişmiyor (normal p'lerle Holm, BH ve BY altında %5'te reddedilen testler aynı; kontrol edildi).
 
 **Fold düzeyinde (betimleyici, test değil):** f'nin fold ortalamalarının ortalaması ve f ortalaması pozitif olan fold sayısı: h=5: 3.74e−05, 15/15; h=22: 3.71e−05, 15/15; h=66: 1.48e−05, 12/14; h=126: 5.55e−06, 10/14.
 
