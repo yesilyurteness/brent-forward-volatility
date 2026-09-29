@@ -271,6 +271,89 @@ def qlike(y, p):
     return r - np.log(r) - 1
 
 
+def section_12e(w, qm, b):
+    """Exploratory: is the h=5 HAR vs HAR-X QLIKE reversal driven by low HAR-X forecasts?
+    Both checks were designed AFTER seeing the QLIKE results (post hoc)."""
+    x = (qm[qm["model"].isin(["har_x", "har"])]
+         .pivot_table(index=["horizon", "Date", "test_year"], columns="model",
+                      values=["pred", "ql"], aggfunc="first"))
+    x.columns = [f"{v}_{m}" for v, m in x.columns]
+    x = x.reset_index().merge(b[["horizon", "Date", "pred_floor"]], on=["horizon", "Date"],
+                              validate="1:1")
+    x["kx"] = x["pred_har_x"] / x["pred_floor"]
+    x["kh"] = x["pred_har"] / x["pred_floor"]
+    w("### 12e. Keşifsel: h=5 QLIKE yön dönmesi ve HAR-X'in düşük tahminleri")
+    w("")
+    w("**Statü: keşifsel ve post hoc.** Her iki kontrol de QLIKE sonuçları görüldükten sonra "
+      "tasarlandı; eşikler (1.25 × taban, 0.5 × σ̂_HAR) sonuçlara bakılarak seçildi. Test "
+      "yok. Havuzlanmış, ana fold'lar.")
+    w("")
+    w("**(1) Tabana yakınlık, h=5.** σ̂ / fold tabanı; eşik σ̂ ≤ 1.25 × taban.")
+    w("")
+    g = x[x["horizon"] == 5]
+    k1 = max(1, int(len(g) * 0.01))
+    top = g.sort_values("ql_har_x", ascending=False).iloc[:k1]
+    rows = []
+    for lab, s in ((f"HAR-X'in en büyük %1 QLIKE satırı", top),
+                   ("bütün h=5 test gözlemleri", g)):
+        nx, nh = int((s["kx"] <= 1.25).sum()), int((s["kh"] <= 1.25).sum())
+        rows.append({
+            "küme": lab, "n": len(s),
+            "HAR-X σ̂/taban, medyan (min–maks)":
+                f"{s['kx'].median():.2f} ({s['kx'].min():.2f}–{s['kx'].max():.2f})",
+            "HAR-X ≤ 1.25 × taban": f"{nx} (%{100 * nx / len(s):.1f})",
+            "HAR σ̂/taban, medyan (min–maks)":
+                f"{s['kh'].median():.2f} ({s['kh'].min():.2f}–{s['kh'].max():.2f})",
+            "HAR ≤ 1.25 × taban": f"{nh} (%{100 * nh / len(s):.1f})"})
+    w(md_table(pd.DataFrame(rows)))
+    w("")
+    near = g["kx"] <= 1.25
+    w(f"En büyük %1 satır HAR-X'in h=5 QLIKE toplamının "
+      f"%{100 * top['ql_har_x'].sum() / g['ql_har_x'].sum():.1f}'ini, σ̂ ≤ 1.25 × taban "
+      f"olan {int(near.sum())} satır %{100 * g.loc[near, 'ql_har_x'].sum() / g['ql_har_x'].sum():.1f}'ini "
+      f"oluşturuyor. Bu satırlar hariç ortalama QLIKE: HAR-X "
+      f"{g.loc[~near, 'ql_har_x'].mean():.4f}, HAR {g.loc[~near, 'ql_har'].mean():.4f} "
+      f"(tümü: {g['ql_har_x'].mean():.4f} / {g['ql_har'].mean():.4f}).")
+    w("")
+    tt = top.merge(qm[(qm["model"] == "har_x") & (qm["horizon"] == 5)][["Date", "y_true"]],
+                   on="Date", validate="1:1")
+    w(md_table(pd.DataFrame({
+        "tarih": tt["Date"], "σ": tt["y_true"].map(lambda v: f"{v:.5f}"),
+        "σ̂ HAR-X": tt["pred_har_x"].map(lambda v: f"{v:.6f}"),
+        "HAR-X/taban": tt["kx"].map(lambda v: f"{v:.2f}"),
+        "QLIKE HAR-X": tt["ql_har_x"].map(lambda v: f"{v:.1f}"),
+        "σ̂ HAR": tt["pred_har"].map(lambda v: f"{v:.5f}"),
+        "HAR/taban": tt["kh"].map(lambda v: f"{v:.2f}"),
+        "QLIKE HAR": tt["ql_har"].map(lambda v: f"{v:.3f}")})))
+    w("")
+    w("**(2) Mekanik kural: \"HAR-X belirgin düşük\" = σ̂_HAR-X < 0.5 × σ̂_HAR.** Pay: "
+      "kural satırlarının Σ(QLIKE_HAR-X − QLIKE_HAR) içindeki payı (toplam fark negatifse "
+      "pay işaretiyle okunmalı). Çıkarma sonrası ortalamalar havuzlanmış ve fold "
+      "ortalaması olarak verilir.")
+    w("")
+    rows = []
+    for h in HORIZONS:
+        g = x[x["horizon"] == h]
+        rule = g["pred_har_x"] < 0.5 * g["pred_har"]
+        d = g["ql_har_x"] - g["ql_har"]
+        yrs = g.loc[rule, "test_year"].value_counts().sort_index()
+        rest = g[~rule]
+        fm_ = rest.groupby("test_year")[["ql_har_x", "ql_har"]].mean().mean()
+        rows.append({
+            "ufuk": f"h={h}", "kural satırı": f"{int(rule.sum())} / {len(g)}",
+            "yıllar": ", ".join(f"{y} ({n})" for y, n in yrs.items()) or "—",
+            "Σ fark (tümü)": f"{d.sum():+.2f}".replace("-", "−"),
+            "Σ fark (kural satırları)": f"{d[rule].sum():+.2f}".replace("-", "−"),
+            "pay": (f"%{100 * d[rule].sum() / d.sum():.1f}".replace("-", "−")
+                    if rule.any() else "—"),
+            "hariç ort. QLIKE, havuz (HAR-X / HAR)":
+                f"{rest['ql_har_x'].mean():.4f} / {rest['ql_har'].mean():.4f}",
+            "hariç ort. QLIKE, fold ort. (HAR-X / HAR)":
+                f"{fm_['ql_har_x']:.4f} / {fm_['ql_har']:.4f}"})
+    w(md_table(pd.DataFrame(rows)))
+    w("")
+
+
 def section_12(w, pr, A):
     fkeys = ["horizon", "fold"]
     ben = rd("bench_predictions_all.csv", PUB)
@@ -524,7 +607,6 @@ def section_12(w, pr, A):
       f"{fl5:.6f}; tahmin tabanın %{100 * (top['pred'] / fl5 - 1):.2f} üstünde, "
       "tabanlanmamış.")
     w("")
-
     # --- smearing -----------------------------------------------------------------------
     wfs = json.load(open(alignment.out("wf_summary_all.json", PUB), encoding="utf-8"))
     xs = pd.DataFrame(wfs["folds"])[["horizon", "test_year", "include_in_main", "smearing",
@@ -588,6 +670,7 @@ def section_12(w, pr, A):
         w("")
         w(md_table(t))
         w("")
+    section_12e(w, qm, b)
     return Q, flo, S
 
 
