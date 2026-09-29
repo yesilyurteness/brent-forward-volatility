@@ -501,6 +501,29 @@ def section_12(w, pr, A):
                                                       / g.loc[b_, "qlike_pooled"] - 1))})
     w(md_table(pd.DataFrame(rows)))
     w("")
+    # --- the largest single h=5 HAR-X QLIKE row: origin vs target window -------------
+    g = qm[(qm["model"] == "har_x") & (qm["horizon"] == 5)]
+    top = g.loc[g["ql"].idxmax()]
+    raw = pd.read_excel(ROOT / "data" / "veriseti.xlsx")
+    rix = int(np.flatnonzero(raw["Date"].astype(str).values == top["Date"])[0])
+    ret = np.log(raw["Brent_Petrol"] / raw["Brent_Petrol"].shift(1))
+    win = raw["Date"].iloc[rix + 1: rix + 6].astype(str).tolist()
+    assert np.isclose(ret.iloc[rix + 1: rix + 6].std(ddof=1), top["y_true"], rtol=1e-12)
+    fl5 = b.loc[(b["horizon"] == 5) & (b["Date"] == top["Date"])]
+    assert len(fl5) == 1 and not bool(flo["har_x"].loc[fl5.index[0], "floored"])
+    fl5 = float(fl5["pred_floor"].iloc[0])
+    w(f"**h=5 HAR-X'in en büyük tek QLIKE satırı ({top['Date']}).** Tarih, satırın kendi "
+      f"tarihi t'dir, yani **tahmin kökeni**; hedef penceresinin başı değildir. Özellikler "
+      f"`.shift(1)` ile t−1'e ({raw['Date'].iloc[rix - 1]}) kadarki bilgiyi kullanır. Hedef "
+      "`std(r_{t+1}, …, r_{t+5})` olduğundan pencere, t'den sonraki beş işlem gününün "
+      "getirileridir: " + ", ".join(win) + f" (her getiri bir önceki işlem gününün "
+      f"kapanışından; ilki {raw['Date'].iloc[rix]} kapanışından {win[0]} kapanışına). "
+      f"t günü getirisi ne özelliklerde ne hedefte yer alır. Gerçekleşen σ = "
+      f"{top['y_true']:.6f}, HAR-X tahmini σ̂ = {top['pred']:.6f} (σ/σ̂ = "
+      f"{top['y_true'] / top['pred']:.1f}, QLIKE = {top['ql']:.1f}). Fold tabanı "
+      f"{fl5:.6f}; tahmin tabanın %{100 * (top['pred'] / fl5 - 1):.2f} üstünde, "
+      "tabanlanmamış.")
+    w("")
 
     # --- smearing -----------------------------------------------------------------------
     wfs = json.load(open(alignment.out("wf_summary_all.json", PUB), encoding="utf-8"))
@@ -513,27 +536,41 @@ def section_12(w, pr, A):
          .merge(bf[["horizon", "test_year", "har_smearing", "har_x_smearing"]]
                 .rename(columns={"har_smearing": "har_log", "har_x_smearing": "har_x_log"}),
                 on=["horizon", "test_year"], validate="1:1"))
+    lrs = rd("log_residual_std.csv", PUB)  # 20_log_residual_std.py, OLS re-estimation
+    lw = lrs.pivot(index=["horizon", "test_year"], columns="model",
+                   values=["smearing", "resid_log_std"])
+    lw.columns = [f"{m}{'_chk' if v == 'smearing' else '_sd'}" for v, m in lw.columns]
+    S = S.merge(lw.reset_index(), on=["horizon", "test_year"], validate="1:1")
     assert len(S) == 60
+    assert (S["har_log_chk"] == S["har_log"]).all() and         (S["har_x_log_chk"] == S["har_x_log"]).all(), "re-estimated smearing != bench_folds"
     w("### 12d. Fold başına Duan smearing katsayısı ve log-artık std'si")
     w("")
     w("Smearing `S = mean(exp(e))`, e = eğitim setindeki log ölçekli artıklar (örneklem-içi, "
       "train-only). XGBoost ve BiLSTM'de hedef `log(σ_h / past_vol_h)`, HAR-log ve "
       "HAR-X-log'da `log(σ_h)`. Kaynak: `wf_summary_all` (XGBoost: `smearing`, "
       "`resid_log_std`), `bilstm_folds_all`, `bench_folds_all` (`har_smearing`, "
-      "`har_x_smearing`). **Log-artık std'si yalnızca XGBoost için kayıtlı**; 05 ve 06 "
-      "yalnızca katsayıyı kaydediyor, diğerleri için std yeniden tahmin gerektirir ve "
-      "burada verilmez (—).")
+      "`har_x_smearing`). Log-artık std'si (ddof=1): XGBoost için 03'ün kaydı "
+      "(`resid_log_std`); HAR-log ve HAR-X-log için 05 yalnızca katsayıyı kaydettiğinden "
+      "OLS `20_log_residual_std.py` ile yeniden tahmin edildi. Yeniden tahminin **her "
+      "fold'da kayıtlı test tahminlerini ve smearing katsayısını bit düzeyinde ürettiği** "
+      "assert edildi (120/120). **BiLSTM için log-artık std'si kaydedilmedi:** 06 eğitilmiş "
+      "ağırlıkları saklamıyor, hesaplamak yeniden eğitim gerektirir. XGBoost/BiLSTM ile "
+      "HAR-log ailesinin std'leri farklı hedeflerde (log-oran vs log-düzey) olduğundan "
+      "doğrudan karşılaştırılamaz.")
     w("")
     rows = []
     for m, lab in (("xgb", "XGBoost, S"), ("xgb_sd", "XGBoost, log-artık std"),
                    ("bilstm", "BiLSTM, S"), ("har_log", "HAR-log, S"),
-                   ("har_x_log", "HAR-X-log, S")):
+                   ("har_log_sd", "HAR-log, log-artık std"),
+                   ("har_x_log", "HAR-X-log, S"),
+                   ("har_x_log_sd", "HAR-X-log, log-artık std")):
         r = {"ölçü": lab}
         for h in HORIZONS:
             g = S[(S["horizon"] == h) & S["include_in_main"]][m]
             r[f"h={h}"] = f"{g.median():.4f} ({g.min():.4f}–{g.max():.4f})"
         rows.append(r)
-    w("Özet, ana metriğe giren fold'lar: medyan (en küçük–en büyük).")
+    w("Özet, ana metriğe giren fold'lar: medyan (en küçük–en büyük). BiLSTM log-artık "
+      "std'si: kaydedilmedi.")
     w("")
     w(md_table(pd.DataFrame(rows)))
     w("")
@@ -543,8 +580,10 @@ def section_12(w, pr, A):
             "yıl": [f"{y}" + ("" if im else " (ana metrik dışı)")
                     for y, im in zip(g["test_year"], g["include_in_main"])],
             "XGBoost S": g["xgb"].map(f4), "XGBoost log-artık std": g["xgb_sd"].map(f4),
-            "BiLSTM S": g["bilstm"].map(f4), "HAR-log S": g["har_log"].map(f4),
-            "HAR-X-log S": g["har_x_log"].map(f4), "log-artık std (diğer)": "—"})
+            "BiLSTM S": g["bilstm"].map(f4), "BiLSTM log-artık std": "kaydedilmedi",
+            "HAR-log S": g["har_log"].map(f4), "HAR-log log-artık std": g["har_log_sd"].map(f4),
+            "HAR-X-log S": g["har_x_log"].map(f4),
+            "HAR-X-log log-artık std": g["har_x_log_sd"].map(f4)})
         w(f"**h={h}**")
         w("")
         w(md_table(t))
