@@ -962,6 +962,21 @@ plus GPR on other calendars for comparison (`role` = `footnote`). The JSON recor
 sample and the source and SHA-256 of the local GPR vintage file used for the
 own-calendar rows.
 
+### `figure2a_rmse_ratio_publication_aligned.{csv,pdf,svg}` — `23_figure2.py`
+Figure 2(a), main text: per fold and horizon, `rmse_xgboost`, `rmse_har_x` and
+`ratio_xgboost_over_har_x` (above 1 = XGBoost worse). The 2026 fold at h=66/126 is kept in
+the CSV with `include_in_main = False` and left out of the plot. Vector PDF and SVG,
+grayscale, Arial.
+
+### `figure2b_shap_groups_publication_aligned.{csv,pdf,svg}` — `23_figure2.py`
+Figure 2(b), appendix: SHAP group share of the primary XGBoost per horizon
+(`share_pct_h*`), with each group's feature count (`n_features`).
+
+### `appendix_a_source_map.md`
+Maps each Appendix A item cited by the methodology text to its source output file, the
+script that produces it and the number-package section, and marks what is missing.
+Written by hand; it contains no numbers of its own.
+
 ---
 
 ## Experiment log

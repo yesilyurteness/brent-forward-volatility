@@ -409,6 +409,7 @@ python scripts/15_exploratory_xgb6.py         --gpr-alignment publication  # 15.
 python scripts/20_log_residual_std.py         --gpr-alignment publication  # 20. log-residual std of HAR-log / HAR-X-log (after step 5)
 python scripts/21_clark_west.py               --gpr-alignment publication  # 21. Clark-West, HAR nested in HAR-X (supplementary family, after step 7)
 python scripts/22_descriptive_stats.py        --gpr-alignment publication  # 22. Table 1, descriptive statistics (after steps 1-2)
+python scripts/23_figure2.py                  --gpr-alignment publication  # 23. Figure 2 data and PDF/SVG (after steps 7, 10 and 18)
 
 # Robustness variants (publication-aligned)
 python scripts/05_benchmarks.py       --gpr-alignment publication --align-start-row 127 --suffix _aligned  # data equalization
@@ -473,7 +474,7 @@ step trains one neural network per fold on CPU. The rest take on the order of mi
 |   |-- README.md          data sources and reconstruction instructions
 |   |-- veriseti.xlsx.sha256  SHA-256 digest of the data file used for the results
 |   +-- veriseti.xlsx      NOT in the repository, built locally
-|-- scripts/               24 independently runnable scripts and 2 shared modules
+|-- scripts/               25 independently runnable scripts and 2 shared modules
 +-- outputs/               metrics, predictions, JSON reports, experiment log
 ```
 
