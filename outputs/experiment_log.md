@@ -2526,3 +2526,18 @@ fold'larda artık tahmini, kayıtlı tahminlerden geri elde edilemiyor.
 | h=22 | +0.900 | −0.457 | −0.222 | 2/15 |
 | h=66 | +0.708 | −1.104 | −0.406 | 3/14 |
 | h=126 | +0.587 | −0.295 | +0.019 | 8/14 |
+
+---
+
+# Aşama 28 (2026-09-29): XGB-6 ile HAR-X, havuzlanmış kare hata farkının yıllara ayrışması
+
+Commit `29b20dd`; paketin §18'i. Betimleyici, test yok; kayıtlı tahminlerden.
+
+Katkı, fold'un Σ(e²_HAR-X − e²_XGB-6) değeri. Pozitif katkı, o yılda XGB-6'nın kare
+hatasının daha düşük olduğu anlamına geliyor. Toplam her iki ufukta pozitif: h=66'da
++2.74e−02, h=126'da +2.63e−02.
+
+| ufuk | 2020'nin payı | pozitif katkılı yıllar | negatif katkılı yıllar | en büyük negatif pay |
+| --- | --- | --- | --- | --- |
+| h=66 | +193.6% | 2 (2020 ve 2019, +7.6%) | 12 | 2013, −33.5% |
+| h=126 | +154.9% | 6 | 8 | 2013, −34.8% |

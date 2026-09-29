@@ -1,7 +1,7 @@
 # Makale sayıları — yayım-hizalı GPR sürümü (BİRİNCİL)
 
-- **Üretildiği commit:** `c06218286a25325a73661b4ea6666b9bf582ce32` (Add pooled R2_oos (common reference) and the H3 residual-stage R2 to the package)
-- **Üretim tarihi:** 2026-09-29T22:07:11+03:00
+- **Üretildiği commit:** `29b20dd006bdf7937aa996865f6927bc4c2d3e4b` (Add the year decomposition of the XGB-6 vs HAR-X pooled squared-error difference)
+- **Üretim tarihi:** 2026-09-29T22:11:14+03:00
 - **Çalışma ağacı:** temiz — girdiler bu commit'teki dosyalarla birebir aynı.
 - Doğrulama: `git checkout <commit> && python scripts/18_paper_numbers.py` aynı sayıları üretmelidir (yalnızca bu başlık değişir).
 
@@ -1209,4 +1209,46 @@ Bu asimetrinin sonuca etkisi §7a'da (veri eşitleme) ölçülmüştür.
 | h=22 | 15 | +0.900 | −0.457 | −0.222 | 2/15 | −2.584 – +0.083 |
 | h=66 | 14 | +0.708 | −1.104 | −0.406 | 3/14 | −7.803 – +0.014 |
 | h=126 | 14 | +0.587 | −0.295 | +0.019 | 8/14 | −1.946 – +0.522 |
+
+## 18. XGBoost-6 ile HAR-X: havuzlanmış kare hata farkının yıllara ayrışması (h=66, h=126; betimleyici)
+
+**Betimleyici; test yok.** Katkı = fold'un Σ(e²_HAR-X − e²_XGB-6); pozitif = o yılda XGBoost-6'nın kare hatası daha düşük. Pay = katkı / ufuktaki toplam (toplam = 100%; negatif pay, toplamın aksi yönündeki yıllardır). Ana fold'lar; 2026 bu iki ufukta hariç. Kayıtlı tahminlerden (`hybrid_predictions_all`, `exploratory_xgb6_predictions`).
+
+**h=66.** Toplam Σ(e²_HAR-X − e²_XGB-6) = +2.7386e−02 (n = 3500; havuzlanmış MSE farkı +7.825e−06; toplam pozitif: XGBoost-6 havuzda daha iyi).
+
+| yıl | n | katkı | pay | kümülatif pay (büyükten küçüğe) |
+| --- | --- | --- | --- | --- |
+| 2020 | 253 | +5.303e−02 | +193.6% | 193.6% |
+| 2019 | 252 | +2.074e−03 | +7.6% | 201.2% |
+| 2012 | 243 | −4.547e−05 | −0.2% | 201.1% |
+| 2017 | 251 | −1.191e−04 | −0.4% | 200.6% |
+| 2014 | 250 | −1.413e−04 | −0.5% | 200.1% |
+| 2022 | 251 | −2.683e−04 | −1.0% | 199.1% |
+| 2018 | 251 | −1.127e−03 | −4.1% | 195.0% |
+| 2025 | 250 | −1.337e−03 | −4.9% | 190.1% |
+| 2021 | 252 | −1.565e−03 | −5.7% | 184.4% |
+| 2016 | 250 | −1.705e−03 | −6.2% | 178.2% |
+| 2024 | 252 | −2.167e−03 | −7.9% | 170.3% |
+| 2023 | 250 | −4.213e−03 | −15.4% | 154.9% |
+| 2015 | 252 | −5.867e−03 | −21.4% | 133.5% |
+| 2013 | 243 | −9.166e−03 | −33.5% | 100.0% |
+
+**h=126.** Toplam Σ(e²_HAR-X − e²_XGB-6) = +2.6260e−02 (n = 3500; havuzlanmış MSE farkı +7.503e−06; toplam pozitif: XGBoost-6 havuzda daha iyi).
+
+| yıl | n | katkı | pay | kümülatif pay (büyükten küçüğe) |
+| --- | --- | --- | --- | --- |
+| 2020 | 253 | +4.068e−02 | +154.9% | 154.9% |
+| 2012 | 243 | +3.585e−03 | +13.7% | 168.6% |
+| 2014 | 250 | +1.800e−03 | +6.9% | 175.4% |
+| 2025 | 250 | +1.344e−03 | +5.1% | 180.5% |
+| 2015 | 252 | +1.134e−03 | +4.3% | 184.8% |
+| 2017 | 251 | +4.552e−05 | +0.2% | 185.0% |
+| 2021 | 252 | −2.938e−04 | −1.1% | 183.9% |
+| 2018 | 251 | −8.086e−04 | −3.1% | 180.8% |
+| 2022 | 251 | −9.786e−04 | −3.7% | 177.1% |
+| 2016 | 250 | −1.685e−03 | −6.4% | 170.7% |
+| 2024 | 252 | −2.135e−03 | −8.1% | 162.5% |
+| 2023 | 250 | −3.021e−03 | −11.5% | 151.0% |
+| 2019 | 252 | −4.277e−03 | −16.3% | 134.8% |
+| 2013 | 243 | −9.127e−03 | −34.8% | 100.0% |
 
